@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScoreCard Plus - Comprehensive Basketball Performance Dashboard</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --success-color: #2E7D32;
+            --warning-color: #F57C00;
+            --danger-color: #D32F2F;
+            --neutral-color: #757575;
+            --positive-color: #4CAF50;
+            --negative-color: #F44336;
+            --border-color: #E0E0E0;
+            --grid-color: #F5F5F5;
+            --cell-border: #F0F0F0;
+            --header-border: #CCCCCC;
+        }
+        
+        body {
+            background: #FFFFFF;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1f2937;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .dashboard-container {
+            width: 816px;
+            min-height: 1056px;
+            margin: 0 auto;
+            background: white;
+            padding: 48px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-section {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        
+        .header-separator {
+            height: 2px;
+            background: var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 20px 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .primary-metric {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .primary-metric.success {
+            color: var(--success-color);
+            background: rgba(46, 125, 50, 0.1);
+        }
+        
+        .primary-metric.primary {
+            color: var(--secondary-color);
+            background: rgba(25, 118, 210, 0.1);
+        }
+        
+        .metric-grid {
+            display: grid;
+            gap: 2px;
+            margin: 12px 0;
+        }
+        
+        .metric-grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .metric-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .metric-grid-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        
+        .metric-cell {
+            background: #F9F9F9;
+            border: 0.5px solid var(--cell-border);
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 10px;
+            border-radius: 4px;
+        }
+        
+        .metric-cell:nth-child(even) {
+            background: #FFFFFF;
+        }
+        
+        .metric-cell.header {
+            background: var(--grid-color);
+            font-weight: 600;
+            font-size: 11px;
+            border-bottom: 2px solid var(--header-border);
+        }
+        
+        .performance-blocks {
+            display: flex;
+            gap: 2px;
+            margin: 20px 0;
+        }
+        
+        .performance-block {
+            width: 140px;
+            height: 60px;
+            border: 1px solid var(--header-border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 8px;
+        }
+        
+        .performance-block.primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+        }
+        
+        .performance-block .label {
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .performance-block .value {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        .performance-block .subtext {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+        
+        .data-table th,
+        .data-table td {
+            border: 0.5px solid var(--cell-border);
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 10px;
+        }
+        
+        .data-table th {
+            background: var(--grid-color);
+            font-weight: 600;
+            font-size: 11px;
+            border-bottom: 2px solid var(--header-border);
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: #F9F9F9;
+        }
+        
+        .info-blocks {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        
+        .info-block {
+            border: 1px solid var(--header-border);
+            border-radius: 4px;
+            padding: 12px;
+            min-width: 120px;
+        }
+        
+        .info-block .title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .info-block .value {
+            font-size: 10px;
+            margin: 2px 0;
+        }
+        
+        .info-block .highlight {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .info-block .zero {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        .scoring-summary {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .scoring-item {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            border: 1px solid var(--header-border);
+            border-radius: 4px;
+        }
+        
+        .scoring-item .label {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .scoring-item .value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .scoring-item .zero {
+            color: var(--danger-color);
+        }
+        
+        .shot-distribution {
+            border: 1px solid var(--header-border);
+            border-radius: 4px;
+            padding: 12px;
+            margin: 20px 0;
+        }
+        
+        .shot-distribution .header {
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 12px;
+            color: var(--primary-color);
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .comparison-column h6 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        
+        .percentage-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+        
+        .percentage-item {
+            background: #F9F9F9;
+            border: 0.5px solid var(--cell-border);
+            padding: 6px;
+            text-align: center;
+            font-size: 10px;
+            border-radius: 2px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            margin: 20px 0;
+        }
+        
+        .metric-item {
+            background: #F9F9F9;
+            border: 1px solid var(--header-border);
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+            min-height: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .metric-item .label {
+            font-size: 9px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--primary-color);
+        }
+        
+        .metric-item .value {
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .positive {
+            color: var(--positive-color);
+        }
+        
+        .negative {
+            color: var(--negative-color);
+        }
+        
+        .zero {
+            color: var(--danger-color);
+        }
+        
+        .high-performance {
+            color: var(--success-color);
+        }
+        
+        .medium-performance {
+            color: var(--warning-color);
+        }
+        
+        .low-performance {
+            color: var(--danger-color);
+        }
+        
+        .neutral {
+            color: var(--neutral-color);
+        }
+        
+        .navigation-bar {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .nav-link.active {
+            border-bottom: 2px solid white;
+        }
+        
+        .refresh-button {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .refresh-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            color: white;
+        }
+        
+        .refresh-button:active {
+            transform: translateY(0);
+        }
+        
+        .refresh-button i {
+            transition: transform 0.3s ease;
+        }
+        
+        .refresh-button:hover i {
+            transform: rotate(180deg);
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .data-loading {
+            text-align: center;
+            padding: 40px;
+            background: #F9F9F9;
+            border: 2px dashed var(--header-border);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div class="navigation-bar">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-basketball-ball me-2"></i>
+                    <strong>Basketball Cognitive Performance Dashboard</strong>
+                </div>
+                <div>
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-upload me-1"></i>
+                        Upload Data
+                    </a>
+                    <a href="/scorecard" class="nav-link">
+                        <i class="fas fa-chart-line me-1"></i>
+                        ScoreCard
+                    </a>
+                    <a href="/scorecard-plus" class="nav-link active">
+                        <i class="fas fa-chart-bar me-1"></i>
+                        ScoreCard Plus
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div>
+                <span class="text-primary">Player | {{ scorecard_metrics.player if scorecard_metrics else 'KP' }}</span>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="text-primary me-3">Versus | {{ scorecard_metrics.opponent if scorecard_metrics else 'MIN' }}</span>
+                {% if scorecard_metrics %}
+                <a href="{{ url_for('scorecard_plus_refresh', filename=filename) }}" class="refresh-button" title="Refresh Dashboard">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="header-separator"></div>
+
+        {% if refreshed %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            Dashboard refreshed successfully with latest data!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+
+        {% if scorecard_metrics %}
+        <!-- Data Timestamp -->
+        <div class="text-center mb-3">
+            <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>
+                Data last refreshed: {{ scorecard_metrics.date if scorecard_metrics.date else '06.21.25' }}
+                {% if refreshed %}
+                <span class="text-success">(Just refreshed)</span>
+                {% endif %}
+            </small>
+        </div>
+
+        <!-- Section 1: On Ball Cognition -->
+        <div class="section-title">On Ball Cognition</div>
+        <div class="primary-metric success">
+            {{ scorecard_metrics.on_ball_cognition }}% On Ball Cognition
+        </div>
+        
+        <div class="metric-grid metric-grid-4">
+            <div class="metric-cell header">Space Read</div>
+            <div class="metric-cell header">Decision on the Catch</div>
+            <div class="metric-cell header">Driving</div>
+            <div class="metric-cell header">QB12</div>
+            <div class="metric-cell">
+                {{ scorecard_metrics.space_read_ratio }}
+            </div>
+            <div class="metric-cell">PPP N/A</div>
+            <div class="metric-cell">
+                Positive {{ scorecard_metrics.driving_positive_count }}
+            </div>
+            <div class="metric-cell">
+                {{ scorecard_metrics.qb12_percentage }}%
+            </div>
+        </div>
+
+        <!-- Section 2: Performance Overview -->
+        <div class="section-title">Performance Overview</div>
+        <div class="performance-blocks">
+            <div class="performance-block">
+                <div class="label">INTEGRITY</div>
+                <div class="subtext">Game Moment (+0/0-)</div>
+            </div>
+            <div class="performance-block">
+                <div class="label">HOOPS</div>
+                <div class="subtext">72% Technical Breakdown</div>
+            </div>
+            <div class="performance-block primary">
+                <div class="label">Overall Cognition</div>
+                <div class="value">
+                    {{ scorecard_metrics.overall_cognition }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Technical Breakdown -->
+        <div class="section-title">Technical Breakdown</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Footwork</th>
+                    <th>Finishing</th>
+                    <th>Passing</th>
+                    <th>Negative Turnovers</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ scorecard_metrics.footwork_percentage }}%</td>
+                    <td>{{ scorecard_metrics.finishing_percentage }}%</td>
+                    <td>{{ scorecard_metrics.passing_percentage }}%</td>
+                    <td>{{ scorecard_metrics.negative_turnovers }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Section 4: Off Ball Cognition -->
+        <div class="section-title">Off Ball Cognition</div>
+        <div class="primary-metric primary">
+            {{ scorecard_metrics.off_ball_cognition }}% Off Ball Cognition
+        </div>
+        
+        <div class="metric-grid metric-grid-3">
+            <div class="metric-cell header">Positioning</div>
+            <div class="metric-cell header">Cutting & Screening</div>
+            <div class="metric-cell header">Relocation</div>
+            <div class="metric-cell">
+                {{ scorecard_metrics.positioning_percentage }}%
+            </div>
+            <div class="metric-cell">
+                {{ scorecard_metrics.cutting_percentage }}%
+            </div>
+            <div class="metric-cell">
+                {{ scorecard_metrics.relocation_percentage }}%
+            </div>
+        </div>
+
+        <!-- Section 5: Game Metadata -->
+        <div class="section-title">Game Information</div>
+        <div class="info-blocks">
+            <div class="info-block">
+                <div class="title">Date</div>
+                <div class="value">{{ scorecard_metrics.date }}</div>
+            </div>
+            <div class="info-block">
+                <div class="title">Time Modifier</div>
+                <div class="value highlight">7 - 41.2%</div>
+                <div class="value">2, 1, 1</div>
+                <div class="value highlight">2- 11.8%</div>
+                <div class="value zero">0, 0</div>
+            </div>
+            <div class="info-block">
+                <div class="title">Total Events</div>
+                <div class="value">
+                    {{ scorecard_metrics.total_events }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Scoring Summary -->
+        <div class="section-title">Scoring Summary</div>
+        <div class="scoring-summary">
+            <div class="scoring-item">
+                <div class="label">Transition</div>
+                <div class="value zero">
+                    {{ scorecard_metrics.transition_count }} - {{ scorecard_metrics.transition_percentage }}%
+                </div>
+            </div>
+            <div class="scoring-item">
+                <div class="label">Points Scored</div>
+                <div class="value">
+                    {{ scorecard_metrics.points_scored }} - {{ scorecard_metrics.points_percentage }}%
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 7: Shot Distribution Analysis -->
+        <div class="section-title">Overall Shot Distribution</div>
+        <div class="shot-distribution">
+            <div class="header">Technical Breakdown</div>
+            <div class="comparison-grid">
+                <div class="comparison-column">
+                    <h6>On Ball</h6>
+                    <div class="percentage-list">
+                        <div class="percentage-item">{{ scorecard_metrics.space_read_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.dm_catch_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.driving_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.qb12_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.footwork_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.passing_percentage }}%</div>
+                    </div>
+                </div>
+                <div class="comparison-column">
+                    <h6>Off Ball</h6>
+                    <div class="percentage-list">
+                        <div class="percentage-item">{{ scorecard_metrics.positioning_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.cutting_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.relocation_percentage }}%</div>
+                        <div class="percentage-item">{{ scorecard_metrics.finishing_percentage }}%</div>
+                        <div class="percentage-item">100%</div>
+                        <div class="percentage-item">75%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 8: Performance Metrics Grid -->
+        <div class="section-title">Performance Metrics</div>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">% Live Dribble</div>
+                <div class="value positive">(+4/0-): 100</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Catch on Ball</div>
+                <div class="value positive">(+7/3-): 70</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Paint Touch</div>
+                <div class="value positive">(+12/2-): 85.7</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Driving Physicality</div>
+                <div class="value zero">(+0/0-): 0</div>
+            </div>
+        </div>
+
+        <!-- Section 9: Detailed Performance Metrics -->
+        <div class="section-title">Detailed Performance Metrics</div>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">Read the Length</div>
+                <div class="value">{{ scorecard_metrics.read_length_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Create</div>
+                <div class="value">{{ scorecard_metrics.create_shape_percentage }} 0</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">Driving Positioning</div>
+                <div class="value">1</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">Teammate on Move</div>
+                <div class="value">{{ scorecard_metrics.teammate_on_move_percentage }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">Shape</div>
+                <div class="value positive">{{ scorecard_metrics.shape_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Advantage Awareness</div>
+                <div class="value zero">(+0/0-): 0</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Effort & Pace</div>
+                <div class="value positive">{{ scorecard_metrics.effort_pace_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Pitch Ahead</div>
+                <div class="value zero">{{ scorecard_metrics.pitch_ahead_ratio }}</div>
+            </div>
+        </div>
+
+        <!-- Section 10: Shot Quality & Decision Making -->
+        <div class="section-title">Shot Quality & Decision Making</div>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">Step to Ball</div>
+                <div class="value">{{ scorecard_metrics.step_to_ball_percentage }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Back to Back</div>
+                <div class="value positive">{{ scorecard_metrics.back_to_back_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Uncontested Shot</div>
+                <div class="value positive">{{ scorecard_metrics.uncontested_shot_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Swing</div>
+                <div class="value negative">{{ scorecard_metrics.swing_ratio }}</div>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">% Denial</div>
+                <div class="value positive">{{ scorecard_metrics.denial_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Movement</div>
+                <div class="value zero">{{ scorecard_metrics.movement_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Body to Body</div>
+                <div class="value zero">{{ scorecard_metrics.body_to_body_ratio }}</div>
+            </div>
+        </div>
+
+        <!-- Section 11: Court Positioning & Movement -->
+        <div class="section-title">Court Positioning & Movement</div>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">% Strong Side</div>
+                <div class="value positive">{{ scorecard_metrics.strong_side_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Baseline</div>
+                <div class="value zero">{{ scorecard_metrics.baseline_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Fill Behind</div>
+                <div class="value positive">{{ scorecard_metrics.fill_behind_ratio }}</div>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="label">% Weak Side</div>
+                <div class="value neutral">{{ scorecard_metrics.weak_side_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Weak Corner</div>
+                <div class="value negative">{{ scorecard_metrics.weak_corner_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% 45 Cut</div>
+                <div class="value zero">{{ scorecard_metrics.cut_45_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Slide Away</div>
+                <div class="value positive">{{ scorecard_metrics.slide_away_ratio }}</div>
+            </div>
+            <div class="metric-item">
+                <div class="label">% Fill Behind</div>
+                <div class="value neutral">(+2/2-): 50</div>
+            </div>
+        </div>
+
+        <!-- Section 12: Relocation & Movement Patterns -->
+        <div class="section-title">Relocation & Movement Patterns</div>
+        <div class="comparison-grid">
+            <div class="comparison-column">
+                <div class="metric-item">
+                    <div class="label">Stride Pivot</div>
+                    <div class="value">{{ scorecard_metrics.stride_pivot_ratio }}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">% Roller</div>
+                    <div class="value neutral">{{ scorecard_metrics.roller_ratio }}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">Stride Holds</div>
+                    <div class="value">{{ scorecard_metrics.stride_holds }}</div>
+                </div>
+            </div>
+            <div class="comparison-column">
+                <div class="metric-item">
+                    <div class="label">% Skip Pass</div>
+                    <div class="value zero">{{ scorecard_metrics.skip_pass_ratio }}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">% Cutter</div>
+                    <div class="value zero">{{ scorecard_metrics.cutter_ratio }}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="label">% Dunker-Baseline</div>
+                    <div class="value zero">{{ scorecard_metrics.dunker_baseline_ratio }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Play Data -->
+        <div class="section-title">Additional Play Data</div>
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-value">Ball Security</div>
+                <div class="data-label">{{ scorecard_metrics.ball_security }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">Earn a Foul</div>
+                <div class="data-label">{{ scorecard_metrics.earn_foul_ratio }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Strong Side</div>
+                <div class="data-label">{{ scorecard_metrics.strong_side_ratio.split(': ')[1] if ': ' in scorecard_metrics.strong_side_ratio else '72.9%' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Baseline</div>
+                <div class="data-label">N/A</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Fill Behind</div>
+                <div class="data-label">{{ scorecard_metrics.fill_behind_ratio.split(': ')[1] if ': ' in scorecard_metrics.fill_behind_ratio else '69.4%' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Weak Side</div>
+                <div class="data-label">{{ scorecard_metrics.weak_side_ratio.split(': ')[1] if ': ' in scorecard_metrics.weak_side_ratio else '66.7%' }}</div>
+            </div>
+        </div>
+
+        <!-- Physicality & Relocation -->
+        <div class="section-title">Physicality & Relocation</div>
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-value">Physicality - Finishing</div>
+                <div class="data-label">1/1</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Weak Corner</div>
+                <div class="data-label">{{ scorecard_metrics.weak_corner_ratio.split(': ')[1] if ': ' in scorecard_metrics.weak_corner_ratio else '3/5' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% 45 Cut</div>
+                <div class="data-label">N/A</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Slide Away</div>
+                <div class="data-label">{{ scorecard_metrics.slide_away_ratio.split(': ')[1] if ': ' in scorecard_metrics.slide_away_ratio else '18/20' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Fill Behind</div>
+                <div class="data-label">{{ scorecard_metrics.fill_behind_ratio.split(': ')[1] if ': ' in scorecard_metrics.fill_behind_ratio else '2/3' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">Stride Pivot</div>
+                <div class="data-label">{{ scorecard_metrics.stride_pivot_count }}/{{ scorecard_metrics.stride_pivot_count }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Roller</div>
+                <div class="data-label">{{ scorecard_metrics.roller_ratio.split(': ')[1] if ': ' in scorecard_metrics.roller_ratio else '1/2' }}</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Skip Pass</div>
+                <div class="data-label">N/A</div>
+            </div>
+            <div class="data-item">
+                <div class="data-value">% Dunker-Baseline</div>
+                <div class="data-label">1/1</div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- No Data Available -->
+        <div class="data-loading">
+            <h3><i class="fas fa-chart-bar me-2"></i>ScoreCard Plus Dashboard</h3>
+            <p class="text-muted">Upload and process your basketball cognitive performance data to view the comprehensive dashboard.</p>
+            {% if latest_file %}
+            <div class="mt-3">
+                <a href="{{ url_for('scorecard_plus_with_data', filename=latest_file) }}" class="btn btn-primary me-2">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Load Latest Data: {{ latest_file }}
+                </a>
+                <a href="{{ url_for('scorecard_plus_refresh', filename=latest_file) }}" class="refresh-button">
+                    <i class="fas fa-sync-alt"></i>
+                    Refresh & Reload
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Handle refresh button loading state
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshButton = document.querySelector('.refresh-button');
+            if (refreshButton) {
+                refreshButton.addEventListener('click', function(e) {
+                    // Add loading state
+                    const icon = this.querySelector('i');
+                    const originalText = this.textContent.trim();
+                    
+                    // Disable button and show loading
+                    this.style.pointerEvents = 'none';
+                    this.style.opacity = '0.7';
+                    icon.className = 'fas fa-spinner fa-spin';
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                    
+                    // Re-enable after a short delay (in case of error)
+                    setTimeout(() => {
+                        this.style.pointerEvents = 'auto';
+                        this.style.opacity = '1';
+                        icon.className = 'fas fa-sync-alt';
+                        this.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                    }, 10000); // 10 second timeout
+                });
+            }
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.style.transition = 'opacity 0.5s ease';
+                        alert.style.opacity = '0';
+                        setTimeout(() => {
+                            if (alert.parentNode) {
+                                alert.remove();
+                            }
+                        }, 500);
+                    }
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html> 

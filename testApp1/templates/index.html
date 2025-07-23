@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CSV - CSV ETL Processor{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" id="uploadForm">
+            <div class="upload-area mb-4">
+                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                <h4>Upload Your CSV File</h4>
+                <p class="text-muted">Drag and drop your file here or click to browse</p>
+                <input type="file" class="form-control" id="file" name="file" accept=".csv,.xlsx,.xls" required>
+                <div class="file-info" style="display: none;"></div>
+            </div>
+            
+            <div class="processing-options">
+                <h5 class="mb-3">
+                    <i class="fas fa-cogs me-2"></i>
+                    Processing Options
+                </h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="remove_duplicates" name="remove_duplicates">
+                            <label class="form-check-label" for="remove_duplicates">
+                                <i class="fas fa-filter me-2"></i>
+                                Remove Duplicates
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="fill_missing" name="fill_missing">
+                            <label class="form-check-label" for="fill_missing">
+                                <i class="fas fa-fill me-2"></i>
+                                Fill Missing Values
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="add_timestamp" name="add_timestamp">
+                            <label class="form-check-label" for="add_timestamp">
+                                <i class="fas fa-clock me-2"></i>
+                                Add Timestamp
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="scrape_additional_data" name="scrape_additional_data">
+                            <label class="form-check-label" for="scrape_additional_data">
+                                <i class="fas fa-spider me-2"></i>
+                                Scrape Additional Data
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Scrape Additional Data:</strong> This will attempt to gather additional information for each row (e.g., company details, website info, etc.)
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button type="submit" class="btn btn-custom btn-lg" id="submitBtn">
+                    <i class="fas fa-play me-2"></i>
+                    Process Data
+                </button>
+                
+                <div class="loading mt-3" id="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Processing your data...</p>
+                </div>
+            </div>
+        </form>
+        
+        <div class="mt-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        How to Use
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Upload your CSV or Excel file using the upload area above</li>
+                        <li>Select the processing options you want to apply</li>
+                        <li>Click "Process Data" to start the ETL pipeline</li>
+                        <li>View the results in the interactive table</li>
+                        <li>Download the processed file if needed</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+});
+
+// File input change handler
+document.getElementById('file').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const fileInfo = document.querySelector('.file-info');
+    
+    if (file) {
+        fileInfo.innerHTML = `<i class="fas fa-file me-2"></i>Selected: ${file.name}`;
+        fileInfo.style.display = 'block';
+    } else {
+        fileInfo.style.display = 'none';
+    }
+});
+</script>
+{% endblock %} 
