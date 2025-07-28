@@ -137,6 +137,29 @@ def process_data_etl(df, processing_options):
         raise
 
 @app.route('/')
+def homepage():
+    """Homepage with overview and quick actions"""
+    # Get recent processed files
+    recent_files = []
+    if os.path.exists(PROCESSED_FOLDER):
+        files = []
+        for file in os.listdir(PROCESSED_FOLDER):
+            if file.endswith('.csv'):
+                file_path = os.path.join(PROCESSED_FOLDER, file)
+                files.append({
+                    'filename': file,
+                    'name': file.replace('processed_cognitive_', '').replace('processed_', '').replace('.csv', ''),
+                    'date': datetime.fromtimestamp(os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M'),
+                    'size': os.path.getsize(file_path)
+                })
+        
+        # Sort by creation time (newest first) and take top 5
+        files.sort(key=lambda x: os.path.getctime(os.path.join(PROCESSED_FOLDER, x['filename'])), reverse=True)
+        recent_files = files[:5]
+    
+    return render_template('homepage.html', recent_files=recent_files)
+
+@app.route('/upload')
 def index():
     return render_template('index.html')
 
@@ -335,10 +358,10 @@ def upload_file():
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}')
-            return redirect(url_for('index'))
+            return redirect(url_for('homepage'))
     
     flash('Invalid file type')
-    return redirect(url_for('index'))
+    return redirect(url_for('homepage'))
 
 @app.route('/download/<filename>')
 def download_file(filename):
@@ -347,7 +370,7 @@ def download_file(filename):
         return send_file(file_path, as_attachment=True)
     except Exception as e:
         flash(f'Error downloading file: {str(e)}')
-        return redirect(url_for('index'))
+        return redirect(url_for('homepage'))
 
 @app.route('/api/process', methods=['POST'])
 def api_process():

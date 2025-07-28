@@ -60,7 +60,11 @@
                     <strong>Basketball Cognitive Performance Dashboard</strong>
                 </div>
                 <div>
-                    <a href="/" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                    <a href="/" class="nav-link {% if request.endpoint == 'homepage' %}active{% endif %}">
+                        <i class="fas fa-home me-1"></i>
+                        Home
+                    </a>
+                    <a href="/upload" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
                         <i class="fas fa-upload me-1"></i>
                         Upload Data
                     </a>
