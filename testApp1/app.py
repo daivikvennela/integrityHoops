@@ -305,6 +305,16 @@ def scorecard_plus_refresh(filename):
         flash(f'Error refreshing data: {str(e)}')
         return redirect(url_for('scorecard_plus_with_data', filename=filename))
 
+@app.route('/smartdash')
+def smartdash():
+    """SmartDash analytics page"""
+    return render_template('smartdash.html')
+
+@app.route('/test-route')
+def test_route():
+    """Test route to verify app is working"""
+    return "Test route is working!"
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:

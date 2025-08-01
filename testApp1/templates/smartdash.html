@@ -1,0 +1,578 @@
+{% extends "base.html" %}
+
+{% block title %}SmartDash - Basketball Cognitive Performance Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .phase-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .phase-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--primary-color);
+    }
+    
+    .phase-number {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    .phase-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    
+    .upload-area {
+        border: 3px dashed var(--border-color);
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: var(--light-color);
+    }
+    
+    .upload-area:hover {
+        border-color: var(--primary-color);
+        background: #f0f4ff;
+    }
+    
+    .upload-area.dragover {
+        border-color: var(--success-color);
+        background: #f0fff4;
+    }
+    
+    .file-info {
+        margin-top: 15px;
+        padding: 15px;
+        background: var(--success-color);
+        color: white;
+        border-radius: 10px;
+        display: none;
+    }
+    
+    .preview-table {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .stat-card {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-header {
+        font-weight: bold;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .stat-value {
+        font-weight: bold;
+        color: var(--success-color);
+    }
+    
+    .loading-spinner {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .btn-phase {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-phase:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        color: white;
+    }
+    
+    .btn-phase:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .phase-content {
+        display: none;
+    }
+    
+    .phase-content.active {
+        display: block;
+    }
+    
+    .progress-bar {
+        height: 8px;
+        background: var(--light-color);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-brain me-3"></i>
+                SmartDash Analytics
+            </h1>
+            
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 33%;"></div>
+            </div>
+            
+            <!-- Phase 1: Data Preview -->
+            <div class="phase-container">
+                <div class="phase-header">
+                    <div class="phase-number">1</div>
+                    <div class="phase-title">Data Preview</div>
+                </div>
+                
+                <div class="phase-content active" id="phase1">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h4>Upload Your Excel File</h4>
+                        <p class="text-muted">Drag and drop your file here or click to browse</p>
+                        <input type="file" class="form-control" id="fileInput" name="file" accept=".xlsx,.xls,.csv" style="display: none;">
+                        <button class="btn btn-primary btn-lg" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open me-2"></i>
+                            Choose File
+                        </button>
+                    </div>
+                    
+                    <div class="file-info" id="fileInfo">
+                        <i class="fas fa-file-excel me-2"></i>
+                        <span id="fileName"></span>
+                        <span id="fileSize"></span>
+                    </div>
+                    
+                    <div class="preview-section" id="previewSection" style="display: none;">
+                        <h5 class="mb-3">
+                            <i class="fas fa-table me-2"></i>
+                            Data Preview
+                        </h5>
+                        <div class="preview-table">
+                            <div id="previewTable"></div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-phase" id="nextPhase1">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                Continue to Calculate Stats
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Phase 2: Calculate Stats -->
+            <div class="phase-container">
+                <div class="phase-header">
+                    <div class="phase-number">2</div>
+                    <div class="phase-title">Calculate Stats</div>
+                </div>
+                
+                <div class="phase-content" id="phase2">
+                    <div class="text-center">
+                        <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
+                        <h4>Custom Statistics Calculation</h4>
+                        <p class="text-muted">Analyzing your data and generating custom statistics...</p>
+                        
+                        <div class="loading-spinner" id="loadingSpinner">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Processing data...</p>
+                        </div>
+                        
+                        <div class="stats-section" id="statsSection" style="display: none;">
+                            <h5 class="mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Calculated Statistics
+                            </h5>
+                            <div class="stats-grid" id="statsGrid"></div>
+                            <div class="text-center mt-4">
+                                <button class="btn btn-phase" id="nextPhase2">
+                                    <i class="fas fa-arrow-right me-2"></i>
+                                    View Results
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Phase 3: Results -->
+            <div class="phase-container">
+                <div class="phase-header">
+                    <div class="phase-number">3</div>
+                    <div class="phase-title">Results & Analysis</div>
+                </div>
+                
+                <div class="phase-content" id="phase3">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                        <h4>SmartDash Analysis Complete</h4>
+                        <p class="text-muted">Your custom statistics have been calculated and analyzed.</p>
+                        
+                        <div class="results-section" id="resultsSection" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-primary text-white">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-download me-2"></i>
+                                                Export Results
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <button class="btn btn-success w-100 mb-2" id="exportCSV">
+                                                <i class="fas fa-file-csv me-2"></i>
+                                                Export as CSV
+                                            </button>
+                                            <button class="btn btn-info w-100" id="exportJSON">
+                                                <i class="fas fa-file-code me-2"></i>
+                                                Export as JSON
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-chart-pie me-2"></i>
+                                                Summary
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="summaryStats"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let uploadedData = null;
+let calculatedStats = null;
+
+// File upload handling
+document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+document.getElementById('uploadArea').addEventListener('dragover', handleDragOver);
+document.getElementById('uploadArea').addEventListener('drop', handleDrop);
+
+// Phase navigation
+document.getElementById('nextPhase1').addEventListener('click', () => goToPhase(2));
+document.getElementById('nextPhase2').addEventListener('click', () => goToPhase(3));
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        processFile(file);
+    }
+}
+
+function handleDragOver(event) {
+    event.preventDefault();
+    document.getElementById('uploadArea').classList.add('dragover');
+}
+
+function handleDrop(event) {
+    event.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragover');
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        processFile(files[0]);
+    }
+}
+
+function processFile(file) {
+    // Show file info
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = ` (${(file.size / 1024).toFixed(1)} KB)`;
+    document.getElementById('fileInfo').style.display = 'block';
+    
+    // Read and preview file
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = e.target.result;
+        uploadedData = parseCSV(data);
+        showPreview(uploadedData);
+    };
+    reader.readAsText(file);
+}
+
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+    const data = [];
+    
+    for (let i = 1; i < Math.min(lines.length, 11); i++) { // Show first 10 rows
+        if (lines[i].trim()) {
+            const values = lines[i].split(',').map(v => v.trim());
+            const row = {};
+            headers.forEach((header, index) => {
+                row[header] = values[index] || '';
+            });
+            data.push(row);
+        }
+    }
+    
+    return { headers, data };
+}
+
+function showPreview(data) {
+    const previewTable = document.getElementById('previewTable');
+    let html = '<table class="table table-striped table-sm">';
+    
+    // Headers
+    html += '<thead><tr>';
+    data.headers.forEach(header => {
+        html += `<th>${header}</th>`;
+    });
+    html += '</tr></thead>';
+    
+    // Data rows
+    html += '<tbody>';
+    data.data.forEach(row => {
+        html += '<tr>';
+        data.headers.forEach(header => {
+            html += `<td>${row[header] || ''}</td>`;
+        });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    
+    previewTable.innerHTML = html;
+    document.getElementById('previewSection').style.display = 'block';
+}
+
+function goToPhase(phase) {
+    // Hide all phases
+    document.querySelectorAll('.phase-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    // Show target phase
+    document.getElementById(`phase${phase}`).classList.add('active');
+    
+    // Update progress bar
+    const progress = (phase / 3) * 100;
+    document.getElementById('progressFill').style.width = `${progress}%`;
+    
+    // Handle phase-specific actions
+    if (phase === 2) {
+        calculateStats();
+    } else if (phase === 3) {
+        showResults();
+    }
+}
+
+function calculateStats() {
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const statsSection = document.getElementById('statsSection');
+    
+    loadingSpinner.style.display = 'block';
+    
+    // Simulate processing time
+    setTimeout(() => {
+        calculatedStats = performTallyAnalysis(uploadedData);
+        displayStats(calculatedStats);
+        
+        loadingSpinner.style.display = 'none';
+        statsSection.style.display = 'block';
+    }, 2000);
+}
+
+function performTallyAnalysis(data) {
+    const stats = {};
+    
+    // Loop through each column
+    data.headers.forEach(header => {
+        if (header.trim()) {
+            stats[header] = {};
+            
+            // Count unique values in this column
+            data.data.forEach(row => {
+                const value = row[header];
+                if (value && value.trim()) {
+                    if (stats[header][value]) {
+                        stats[header][value]++;
+                    } else {
+                        stats[header][value] = 1;
+                    }
+                }
+            });
+        }
+    });
+    
+    return stats;
+}
+
+function displayStats(stats) {
+    const statsGrid = document.getElementById('statsGrid');
+    let html = '';
+    
+    Object.keys(stats).forEach(column => {
+        const columnStats = stats[column];
+        const uniqueValues = Object.keys(columnStats).length;
+        
+        if (uniqueValues > 0) {
+            html += `
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <i class="fas fa-columns me-2"></i>
+                        ${column}
+                        <span class="badge bg-primary ms-2">${uniqueValues} unique values</span>
+                    </div>
+            `;
+            
+            // Sort by count (descending)
+            const sortedItems = Object.entries(columnStats)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10); // Show top 10
+            
+            sortedItems.forEach(([value, count]) => {
+                html += `
+                    <div class="stat-item">
+                        <span>${value}</span>
+                        <span class="stat-value">${count}</span>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        }
+    });
+    
+    statsGrid.innerHTML = html;
+}
+
+function showResults() {
+    const resultsSection = document.getElementById('resultsSection');
+    const summaryStats = document.getElementById('summaryStats');
+    
+    // Calculate summary
+    const totalColumns = Object.keys(calculatedStats).length;
+    const totalUniqueValues = Object.values(calculatedStats).reduce((sum, column) => {
+        return sum + Object.keys(column).length;
+    }, 0);
+    
+    summaryStats.innerHTML = `
+        <div class="row text-center">
+            <div class="col-6">
+                <h4 class="text-primary">${totalColumns}</h4>
+                <small class="text-muted">Columns Analyzed</small>
+            </div>
+            <div class="col-6">
+                <h4 class="text-success">${totalUniqueValues}</h4>
+                <small class="text-muted">Unique Values</small>
+            </div>
+        </div>
+    `;
+    
+    resultsSection.style.display = 'block';
+}
+
+// Export functions
+document.getElementById('exportCSV').addEventListener('click', exportCSV);
+document.getElementById('exportJSON').addEventListener('click', exportJSON);
+
+function exportCSV() {
+    if (!calculatedStats) return;
+    
+    let csv = 'Column,Value,Count\n';
+    Object.keys(calculatedStats).forEach(column => {
+        Object.entries(calculatedStats[column]).forEach(([value, count]) => {
+            csv += `"${column}","${value}",${count}\n`;
+        });
+    });
+    
+    downloadFile(csv, 'smartdash_stats.csv', 'text/csv');
+}
+
+function exportJSON() {
+    if (!calculatedStats) return;
+    
+    const json = JSON.stringify(calculatedStats, null, 2);
+    downloadFile(json, 'smartdash_stats.json', 'application/json');
+}
+
+function downloadFile(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %} 
