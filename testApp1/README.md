@@ -1,3 +1,13 @@
+
+
+
+python -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+python3 main.py
+
+
+
 # CSV ETL Processor Web Application
 
 A modern web application for processing CSV files with ETL (Extract, Transform, Load) capabilities and data scraping functionality. Built with Flask, Pandas, and BeautifulSoup.
@@ -26,28 +36,87 @@ A modern web application for processing CSV files with ETL (Extract, Transform, 
 ## Installation
 
 ### Prerequisites
-- Python 3.8 or higher
+- Python 3.12 (recommended) or Python 3.8+ (minimum)
 - pip (Python package installer)
 
 ### Setup Instructions
 
-1. **Clone or download the project**
+#### Option 1: Using Python 3.12 (Recommended)
+
+**Note**: Python 3.13 has compatibility issues with pandas. Use Python 3.12 for best results.
+
+1. **Navigate to the project directory**
    ```bash
    cd testApp1
    ```
 
-2. **Install dependencies**
+2. **Create a virtual environment with Python 3.12**
+   ```bash
+   python3.12 -m venv venv312
+   ```
+
+3. **Activate the virtual environment**
+   ```bash
+   source venv312/bin/activate
+   ```
+
+4. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the application**
+5. **Run the application**
    ```bash
    python app.py
    ```
 
-4. **Access the application**
-   Open your browser and go to: `http://localhost:5000`
+6. **Access the application**
+   Open your browser and go to: `http://localhost:8080`
+
+#### Option 2: Using Python 3.13 (Alternative)
+
+If you must use Python 3.13, you may encounter pandas compatibility issues. In that case:
+
+1. **Navigate to the project directory**
+   ```bash
+   cd testApp1
+   ```
+
+2. **Create a virtual environment**
+   ```bash
+   python3 -m venv venv
+   ```
+
+3. **Activate the virtual environment**
+   ```bash
+   source venv/bin/activate
+   ```
+
+4. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. **Run the application**
+   ```bash
+   python app.py
+   ```
+
+6. **Access the application**
+   Open your browser and go to: `http://localhost:8080`
+
+#### Troubleshooting
+
+**Port Issues**: If port 8080 is already in use, the app will automatically try alternative ports. Check the terminal output for the correct URL.
+
+**Pandas Import Error**: If you encounter pandas import errors with Python 3.13, switch to Python 3.12 as described in Option 1.
+
+**Virtual Environment**: Always activate the virtual environment before running the app:
+   ```bash
+   source venv312/bin/activate  # for Python 3.12
+   # or
+   source venv/bin/activate      # for Python 3.13
+   ```
 
 ## Usage Guide
 

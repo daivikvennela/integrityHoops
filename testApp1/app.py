@@ -282,6 +282,57 @@ def scorecard_plus_refresh(filename):
         flash(f'Error refreshing data: {str(e)}')
         return redirect(url_for('scorecard_plus_with_data', filename=filename))
 
+@app.route('/smartdash')
+def smartdash():
+    """SmartDash dashboard route"""
+    # Check if there are any processed cognitive performance files
+    processed_files = []
+    if os.path.exists(PROCESSED_FOLDER):
+        for file in os.listdir(PROCESSED_FOLDER):
+            if file.startswith('processed_cognitive_') and file.endswith('.csv'):
+                processed_files.append(file)
+    
+    # Get the most recent file if available
+    latest_file = None
+    if processed_files:
+        latest_file = max(processed_files, key=lambda x: os.path.getctime(os.path.join(PROCESSED_FOLDER, x)))
+    
+    # Check if a specific file was requested
+    requested_file = request.args.get('file')
+    if requested_file and requested_file in processed_files:
+        return redirect(url_for('smartdash_with_data', filename=requested_file))
+    
+    return render_template('smartdash.html', latest_file=latest_file, processed_files=processed_files)
+
+@app.route('/smartdash/<filename>')
+def smartdash_with_data(filename):
+    """SmartDash dashboard with specific data file"""
+    try:
+        file_path = os.path.join(PROCESSED_FOLDER, filename)
+        if not os.path.exists(file_path):
+            flash('File not found')
+            return redirect(url_for('smartdash'))
+        
+        # Load the processed data
+        df = pd.read_csv(file_path)
+        
+        # Extract smart dashboard metrics using the basketball cognitive processor
+        processor = BasketballCognitiveProcessor()
+        smart_metrics = processor.calculate_smart_dashboard_metrics(df)
+        
+        # Get the original CSV filename for display
+        original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
+        
+        return render_template('smartdash.html', 
+                             filename=filename,
+                             original_filename=original_filename,
+                             smart_metrics=smart_metrics,
+                             df=df)
+        
+    except Exception as e:
+        flash(f'Error loading data: {str(e)}')
+        return redirect(url_for('smartdash'))
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -377,4 +428,4 @@ def api_process():
         }), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=8080) 

@@ -793,6 +793,136 @@ class BasketballCognitiveProcessor:
         metrics['earn_foul_ratio'] = f"{foul_positive}/{foul_total}" if foul_total > 0 else "1/1"
         
         return metrics
+    
+    def calculate_smart_dashboard_metrics(self, df):
+        """Calculate SmartDash dashboard metrics with advanced analytics"""
+        metrics = {}
+        
+        # Overall Performance Summary
+        total_events = len(df)
+        positive_events = df['BREAKDOWN'].str.contains('\\+ve', na=False).sum()
+        negative_events = df['BREAKDOWN'].str.contains('\\-ve', na=False).sum()
+        
+        metrics['total_events'] = total_events
+        metrics['positive_events'] = positive_events
+        metrics['negative_events'] = negative_events
+        metrics['success_rate'] = round((positive_events / total_events * 100), 1) if total_events > 0 else 0
+        
+        # Player Performance Analysis
+        if 'PLAYER' in df.columns:
+            player_stats = df.groupby('PLAYER').agg({
+                'BREAKDOWN': lambda x: x.str.contains('\\+ve', na=False).sum(),
+                'Row': 'count'
+            }).rename(columns={'BREAKDOWN': 'positive_actions', 'Row': 'total_actions'})
+            
+            player_stats['success_rate'] = (player_stats['positive_actions'] / player_stats['total_actions'] * 100).round(1)
+            metrics['player_performance'] = player_stats.to_dict('index')
+        
+        # Category Performance Breakdown
+        category_performance = {}
+        for category in self.performance_categories.values():
+            if category in df.columns:
+                category_data = df[df[category].notna()]
+                if len(category_data) > 0:
+                    positive_count = category_data[category].str.contains('\\+ve', na=False).sum()
+                    total_count = len(category_data)
+                    category_performance[category] = {
+                        'total_actions': total_count,
+                        'positive_actions': positive_count,
+                        'success_rate': round((positive_count / total_count * 100), 1)
+                    }
+        
+        metrics['category_performance'] = category_performance
+        
+        # Shot Analysis
+        shot_metrics = {}
+        if 'Shot Outcome' in df.columns:
+            shot_outcomes = df['Shot Outcome'].value_counts()
+            shot_metrics['total_shots'] = shot_outcomes.sum()
+            shot_metrics['made_shots'] = shot_outcomes.get('Made', 0)
+            shot_metrics['shot_percentage'] = round((shot_metrics['made_shots'] / shot_metrics['total_shots'] * 100), 1) if shot_metrics['total_shots'] > 0 else 0
+            shot_metrics['shot_breakdown'] = shot_outcomes.to_dict()
+        
+        metrics['shot_analysis'] = shot_metrics
+        
+        # Game Flow Analysis
+        if 'PERIOD' in df.columns:
+            period_performance = df.groupby('PERIOD').agg({
+                'BREAKDOWN': lambda x: x.str.contains('\\+ve', na=False).sum(),
+                'Row': 'count'
+            }).rename(columns={'BREAKDOWN': 'positive_actions', 'Row': 'total_actions'})
+            
+            period_performance['success_rate'] = (period_performance['positive_actions'] / period_performance['total_actions'] * 100).round(1)
+            metrics['period_performance'] = period_performance.to_dict('index')
+        
+        # Cognitive Intelligence Score
+        # Weighted average of different cognitive aspects
+        cognitive_scores = []
+        
+        # Space Read Score
+        if 'Space Read' in df.columns:
+            space_read_data = df[df['Space Read'].notna()]
+            if len(space_read_data) > 0:
+                space_read_positive = space_read_data['Space Read'].str.contains('\\+ve', na=False).sum()
+                space_read_score = (space_read_positive / len(space_read_data)) * 100
+                cognitive_scores.append(space_read_score)
+        
+        # Decision Making Score
+        if 'DM Catch' in df.columns:
+            dm_data = df[df['DM Catch'].notna()]
+            if len(dm_data) > 0:
+                dm_positive = dm_data['DM Catch'].str.contains('\\+ve', na=False).sum()
+                dm_score = (dm_positive / len(dm_data)) * 100
+                cognitive_scores.append(dm_score)
+        
+        # QB12 Decision Making Score
+        if 'QB12 DM' in df.columns:
+            qb12_data = df[df['QB12 DM'].notna()]
+            if len(qb12_data) > 0:
+                qb12_positive = qb12_data['QB12 DM'].str.contains('\\+ve', na=False).sum()
+                qb12_score = (qb12_positive / len(qb12_data)) * 100
+                cognitive_scores.append(qb12_score)
+        
+        # Calculate overall cognitive intelligence score
+        if cognitive_scores:
+            metrics['cognitive_intelligence_score'] = round(sum(cognitive_scores) / len(cognitive_scores), 1)
+        else:
+            metrics['cognitive_intelligence_score'] = 0
+        
+        # Performance Trends
+        if 'Timeline' in df.columns:
+            # Analyze performance over time
+            df_sorted = df.sort_values('Timeline')
+            window_size = max(1, len(df_sorted) // 4)  # Divide into 4 segments
+            
+            if window_size > 0:
+                trends = []
+                for i in range(0, len(df_sorted), window_size):
+                    segment = df_sorted.iloc[i:i+window_size]
+                    positive_count = segment['BREAKDOWN'].str.contains('\\+ve', na=False).sum()
+                    segment_success_rate = (positive_count / len(segment)) * 100
+                    trends.append(round(segment_success_rate, 1))
+                
+                metrics['performance_trends'] = trends
+                metrics['trend_direction'] = 'Improving' if len(trends) > 1 and trends[-1] > trends[0] else 'Declining' if len(trends) > 1 and trends[-1] < trends[0] else 'Stable'
+        
+        # Key Insights
+        insights = []
+        if metrics['success_rate'] > 75:
+            insights.append("Excellent overall performance with high success rate")
+        elif metrics['success_rate'] > 60:
+            insights.append("Good performance with room for improvement")
+        else:
+            insights.append("Performance needs attention - focus on fundamentals")
+        
+        if 'cognitive_intelligence_score' in metrics and metrics['cognitive_intelligence_score'] > 80:
+            insights.append("Strong cognitive decision-making skills")
+        elif 'cognitive_intelligence_score' in metrics and metrics['cognitive_intelligence_score'] < 60:
+            insights.append("Cognitive decision-making needs improvement")
+        
+        metrics['key_insights'] = insights
+        
+        return metrics
 
 def create_sample_cognitive_data():
     """Create sample basketball cognitive performance data"""
