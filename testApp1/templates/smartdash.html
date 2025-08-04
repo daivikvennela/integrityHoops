@@ -16,7 +16,7 @@
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
-        margin-bottom: 20px;
+        margin-bottom: 35px;
         overflow: hidden;
     }
     
@@ -24,8 +24,8 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
         text-align: center;
         transition: transform 0.3s ease;
     }
@@ -49,8 +49,8 @@
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
     }
     
     .trend-indicator {
@@ -79,15 +79,15 @@
     .performance-chart {
         background: white;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
     }
     
     .category-breakdown {
         background: white;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
     }
     
     .progress-bar-custom {
@@ -118,8 +118,8 @@
     .file-selector {
         background: white;
         border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
+        padding: 25px;
+        margin-bottom: 30px;
         text-align: center;
     }
     
@@ -135,7 +135,7 @@
     .upload-area {
         border: 2px dashed #cbd5e1;
         border-radius: 12px;
-        padding: 30px;
+        padding: 40px;
         text-align: center;
         background: #f8fafc;
         transition: all 0.3s ease;
@@ -204,7 +204,7 @@
                             Upload Basketball Cognitive Data
                         </h5>
                         <form method="POST" action="{{ url_for('smartdash_upload') }}" enctype="multipart/form-data" id="smartdashUploadForm">
-                            <div class="upload-area mb-4" onclick="document.getElementById('smartdashFile').click();">
+                            <div class="upload-area mb-5" onclick="document.getElementById('smartdashFile').click();">
                                 <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
                                 <h4>Upload Your Basketball Cognitive Data</h4>
                                 <p class="text-muted">Drag and drop your file here or click to browse</p>
@@ -220,7 +220,7 @@
                                 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-check mb-3">
+                                        <div class="form-check mb-4">
                                             <input class="form-check-input" type="checkbox" id="remove_duplicates" name="remove_duplicates">
                                             <label class="form-check-label" for="remove_duplicates">
                                                 <i class="fas fa-filter me-2"></i>
@@ -228,7 +228,7 @@
                                             </label>
                                         </div>
                                         
-                                        <div class="form-check mb-3">
+                                        <div class="form-check mb-4">
                                             <input class="form-check-input" type="checkbox" id="fill_missing" name="fill_missing">
                                             <label class="form-check-label" for="fill_missing">
                                                 <i class="fas fa-fill me-2"></i>
@@ -238,7 +238,7 @@
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <div class="form-check mb-3">
+                                        <div class="form-check mb-4">
                                             <input class="form-check-input" type="checkbox" id="add_timestamp" name="add_timestamp">
                                             <label class="form-check-label" for="add_timestamp">
                                                 <i class="fas fa-clock me-2"></i>
@@ -299,7 +299,7 @@
 
         {% if smart_metrics %}
         <!-- Key Metrics -->
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-md-3">
                 <div class="metric-card">
                     <div class="metric-value">{{ smart_metrics.success_rate }}%</div>
@@ -336,7 +336,7 @@
 
         <!-- Key Insights -->
         {% if smart_metrics.key_insights %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="insight-card">
                     <h5 class="mb-3">
@@ -358,7 +358,7 @@
 
         <!-- Performance Trends -->
         {% if smart_metrics.performance_trends %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="performance-chart">
                     <h5 class="mb-3">
@@ -367,7 +367,7 @@
                     </h5>
                     <div class="row">
                         {% for i, trend in enumerate(smart_metrics.performance_trends) %}
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3 mb-4">
                             <div class="text-center">
                                 <div class="h4 mb-1">{{ trend }}%</div>
                                 <div class="text-muted">Segment {{ i + 1 }}</div>
@@ -387,7 +387,7 @@
 
         <!-- Category Performance -->
         {% if smart_metrics.category_performance %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="category-breakdown">
                     <h5 class="mb-3">
@@ -396,7 +396,7 @@
                     </h5>
                     <div class="row">
                         {% for category, data in smart_metrics.category_performance.items() %}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="fw-bold">{{ category }}</span>
                                 <span class="text-muted">{{ data.success_rate }}%</span>
@@ -422,7 +422,7 @@
 
         <!-- Shot Analysis -->
         {% if smart_metrics.shot_analysis and smart_metrics.shot_analysis.total_shots > 0 %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="dashboard-card">
                     <div class="p-4">
@@ -452,7 +452,7 @@
 
         <!-- Player Performance -->
         {% if smart_metrics.player_performance %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="dashboard-card">
                     <div class="p-4">
@@ -497,7 +497,7 @@
 
         <!-- Performance Tally Table -->
         {% if flattened_tally is not none and not flattened_tally.empty %}
-        <div class="row mb-4">
+        <div class="row mb-5">
             <div class="col-12">
                 <div class="dashboard-card">
                     <div class="p-4">
