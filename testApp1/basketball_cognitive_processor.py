@@ -924,6 +924,35 @@ class BasketballCognitiveProcessor:
         
         return metrics
 
+    def create_flattened_tally_table(self, df):
+        """
+        Create a single tally table for all performance columns, with the column name included.
+        """
+        try:
+            all_tallies = []
+            performance_columns = list(self.performance_categories.values())
+            for category in performance_columns:
+                if category in df.columns:
+                    value_counts = df[category].value_counts()
+                    for action, count in value_counts.items():
+                        all_tallies.append({
+                            'Column': category,
+                            'Action': action,
+                            'Count': count,
+                            'Percentage': round((count / len(df)) * 100, 2),
+                            'Type': 'Positive' if '+ve' in str(action) else 'Negative' if '-ve' in str(action) else 'Neutral'
+                        })
+            # Create a DataFrame for easy display
+            tally_df = pd.DataFrame(all_tallies)
+            tally_df = tally_df.sort_values(['Column', 'Count'], ascending=[True, False])
+            return tally_df
+        except Exception as e:
+            logger.error(f"Error creating flattened tally table: {e}")
+            return pd.DataFrame()
+
+        return pd.DataFrame(sample_data)
+
+
 def create_sample_cognitive_data():
     """Create sample basketball cognitive performance data"""
     sample_data = {
@@ -946,6 +975,7 @@ def create_sample_cognitive_data():
     }
     
     return pd.DataFrame(sample_data)
+
 
 if __name__ == "__main__":
     # Test the cognitive processor

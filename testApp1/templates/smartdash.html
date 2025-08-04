@@ -132,6 +132,34 @@
         font-size: 1rem;
     }
     
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    }
+    
+    .upload-area input[type="file"] {
+        display: none;
+    }
+    
+    .processing-options {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e5e7eb;
+    }
+    
     .no-data-message {
         text-align: center;
         padding: 60px 20px;
@@ -166,6 +194,85 @@
             </div>
         </div>
 
+        <!-- Upload Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>
+                            Upload Basketball Cognitive Data
+                        </h5>
+                        <form method="POST" action="{{ url_for('smartdash_upload') }}" enctype="multipart/form-data" id="smartdashUploadForm">
+                            <div class="upload-area mb-4" onclick="document.getElementById('smartdashFile').click();">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h4>Upload Your Basketball Cognitive Data</h4>
+                                <p class="text-muted">Drag and drop your file here or click to browse</p>
+                                <input type="file" class="form-control" id="smartdashFile" name="file" accept=".csv,.xlsx,.xls" required style="display: none;">
+                                <div class="file-info" style="display: none;"></div>
+                            </div>
+                            
+                            <div class="processing-options">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-cogs me-2"></i>
+                                    Processing Options
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="remove_duplicates" name="remove_duplicates">
+                                            <label class="form-check-label" for="remove_duplicates">
+                                                <i class="fas fa-filter me-2"></i>
+                                                Remove Duplicates
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="fill_missing" name="fill_missing">
+                                            <label class="form-check-label" for="fill_missing">
+                                                <i class="fas fa-fill me-2"></i>
+                                                Fill Missing Values
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="add_timestamp" name="add_timestamp">
+                                            <label class="form-check-label" for="add_timestamp">
+                                                <i class="fas fa-clock me-2"></i>
+                                                Add Timestamp
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>SmartDash Processing:</strong> This will process your basketball cognitive performance data and create analytics-ready tables.
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-custom btn-lg" id="smartdashSubmitBtn">
+                                    <i class="fas fa-play me-2"></i>
+                                    Process & Analyze
+                                </button>
+                                
+                                <div class="loading mt-3" id="smartdashLoading" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Processing your data...</p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- File Selector -->
         {% if latest_file %}
         <div class="row mb-4">
@@ -173,7 +280,7 @@
                 <div class="file-selector">
                     <h5 class="mb-3">
                         <i class="fas fa-file-csv me-2"></i>
-                        Select Data File
+                        Select Existing Data File
                     </h5>
                     <form method="GET" action="{{ url_for('smartdash') }}" class="d-inline">
                         <select name="file" onchange="this.form.submit()" class="form-select">
@@ -388,6 +495,53 @@
         </div>
         {% endif %}
 
+        <!-- Performance Tally Table -->
+        {% if flattened_tally is not none and not flattened_tally.empty %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="p-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-list me-2"></i>
+                            Performance Action Tally
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Column</th>
+                                        <th>Action</th>
+                                        <th>Count</th>
+                                        <th>Percentage</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for _, row in flattened_tally.iterrows() %}
+                                    <tr>
+                                        <td>{{ row.Column }}</td>
+                                        <td>{{ row.Action }}</td>
+                                        <td>{{ row.Count }}</td>
+                                        <td>{{ row.Percentage }}%</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if row.Type == 'Positive' %}bg-success
+                                                {% elif row.Type == 'Negative' %}bg-danger
+                                                {% else %}bg-secondary{% endif %}">
+                                                {{ row.Type }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% else %}
         <!-- No Data Message -->
         <div class="row">
@@ -426,6 +580,43 @@
                 }, 100);
             }, index * 100);
         });
+
+        // SmartDash upload form functionality
+        const smartdashUploadForm = document.getElementById('smartdashUploadForm');
+        const smartdashFile = document.getElementById('smartdashFile');
+        const smartdashSubmitBtn = document.getElementById('smartdashSubmitBtn');
+        const smartdashLoading = document.getElementById('smartdashLoading');
+        const fileInfo = document.querySelector('.file-info');
+
+        // File input change handler
+        smartdashFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                fileInfo.innerHTML = `<i class="fas fa-file me-2"></i>Selected: ${file.name}`;
+                fileInfo.style.display = 'block';
+                
+                // Enable submit button when file is selected
+                smartdashSubmitBtn.disabled = false;
+            } else {
+                fileInfo.style.display = 'none';
+                smartdashSubmitBtn.disabled = true;
+            }
+        });
+
+        // Form submit handler
+        smartdashUploadForm.addEventListener('submit', function() {
+            if (smartdashFile.files.length > 0) {
+                smartdashLoading.style.display = 'block';
+                smartdashSubmitBtn.disabled = true;
+            } else {
+                alert('Please select a file to upload.');
+                return false;
+            }
+        });
+
+        // Initially disable submit button
+        smartdashSubmitBtn.disabled = true;
     });
 </script>
 {% endblock %} 

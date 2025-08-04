@@ -320,6 +320,9 @@ def smartdash_with_data(filename):
         processor = BasketballCognitiveProcessor()
         smart_metrics = processor.calculate_smart_dashboard_metrics(df)
         
+        # Get the flattened tally table
+        flattened_tally = processor.create_flattened_tally_table(df)
+        
         # Get the original CSV filename for display
         original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
         
@@ -327,11 +330,78 @@ def smartdash_with_data(filename):
                              filename=filename,
                              original_filename=original_filename,
                              smart_metrics=smart_metrics,
+                             flattened_tally=flattened_tally,
                              df=df)
         
     except Exception as e:
         flash(f'Error loading data: {str(e)}')
         return redirect(url_for('smartdash'))
+
+@app.route('/smartdash-upload', methods=['POST'])
+def smartdash_upload():
+    """Handle file upload specifically for SmartDash with results table"""
+    if 'file' not in request.files:
+        flash('No file selected')
+        return redirect(url_for('smartdash'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('No file selected')
+        return redirect(url_for('smartdash'))
+    
+    if file and allowed_file(file.filename):
+        try:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            # Load the file
+            df = load_csv_file(file_path)
+            
+            # Get processing options
+            processing_options = {
+                'remove_duplicates': request.form.get('remove_duplicates') == 'on',
+                'fill_missing': request.form.get('fill_missing') == 'on',
+                'add_timestamp': request.form.get('add_timestamp') == 'on',
+                'scrape_additional_data': False  # Disable for SmartDash
+            }
+            
+            # Process the data
+            processed_df, output_path = process_data_etl(df, processing_options)
+            
+            # Convert to JSON for display (same as main upload)
+            data_json = processed_df.to_json(orient='records', date_format='iso')
+            
+            # Get data type and summary statistics
+            data_type = getattr(processed_df, 'attrs', {}).get('data_type', 'general_stats')
+            summary_stats = getattr(processed_df, 'attrs', {}).get('summary_stats', {})
+            completeness = summary_stats.get('completeness_percentage', 100)
+            performance_summary_path = getattr(processed_df, 'attrs', {}).get('performance_summary_path', None)
+            
+            # Check if this is basketball cognitive data
+            processor = BasketballCognitiveProcessor()
+            is_cognitive_data = processor.detect_cognitive_data(processed_df)
+            
+            if is_cognitive_data:
+                data_type = 'basketball_cognitive_performance'
+            
+            flash('File uploaded and processed successfully!')
+            return render_template('smartdash_results.html', 
+                                 data=json.loads(data_json),
+                                 columns=processed_df.columns.tolist(),
+                                 filename=filename,
+                                 output_path=output_path,
+                                 data_type=data_type,
+                                 completeness=completeness,
+                                 summary_stats=summary_stats,
+                                 performance_summary_path=performance_summary_path)
+            
+        except Exception as e:
+            flash(f'Error processing file: {str(e)}')
+            return redirect(url_for('smartdash'))
+    
+    flash('Invalid file type. Please upload a CSV or Excel file.')
+    return redirect(url_for('smartdash'))
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -428,4 +498,4 @@ def api_process():
         }), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080) 
+    app.run(debug=True, host='0.0.0.0', port=8081) 
