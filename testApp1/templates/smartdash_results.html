@@ -474,6 +474,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- Create Scorecard Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="results-card">
+                    <div class="p-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Create New Scorecard
+                        </h5>
+                        <form method="POST" action="{{ url_for('create_scorecard') }}" id="createScorecardForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="player_dropdown" class="form-label">
+                                            <i class="fas fa-user me-2"></i>
+                                            Select Player
+                                        </label>
+                                        <select class="form-select" id="player_dropdown" name="player_dropdown" required>
+                                            <option value="">Choose a player...</option>
+                                            {% for player in players %}
+                                            <option value="{{ player.name }}">{{ player.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="player_name" class="form-label">
+                                            <i class="fas fa-id-card me-2"></i>
+                                            Player Name
+                                        </label>
+                                        <input type="text" class="form-control" id="player_name" name="player_name" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="date_created" class="form-label">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            Date Created
+                                        </label>
+                                        <input type="text" class="form-control" id="date_created" value="Current timestamp" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="scorecard_id" class="form-label">
+                                            <i class="fas fa-hashtag me-2"></i>
+                                            Scorecard ID
+                                        </label>
+                                        <input type="text" class="form-control" id="scorecard_id" value="Auto-generated" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Scorecard Creation:</strong> This will create a new scorecard for the selected player with current timestamp.
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-custom btn-lg" id="createScorecardBtn">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Create Scorecard
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -770,6 +844,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Add sort indicator
         header.innerHTML += ' <i class="fas fa-sort text-muted"></i>';
+    }
+    
+    // Create Scorecard functionality
+    const playerDropdown = document.getElementById('player_dropdown');
+    const playerNameInput = document.getElementById('player_name');
+    const createScorecardBtn = document.getElementById('createScorecardBtn');
+    
+    // Handle player dropdown change
+    if (playerDropdown) {
+        playerDropdown.addEventListener('change', function() {
+            const selectedPlayer = this.value;
+            if (selectedPlayer) {
+                playerNameInput.value = selectedPlayer;
+                createScorecardBtn.disabled = false;
+            } else {
+                playerNameInput.value = '';
+                createScorecardBtn.disabled = true;
+            }
+        });
+    }
+    
+    // Initially disable create scorecard button
+    if (createScorecardBtn) {
+        createScorecardBtn.disabled = true;
     }
 });
 

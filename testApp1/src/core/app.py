@@ -416,6 +416,11 @@ def smartdash_upload():
                 data_type = 'basketball_cognitive_performance'
             
             flash('File uploaded and processed successfully!')
+            
+            # Get all players for the dropdown
+            db_manager = DatabaseManager()
+            players = db_manager.get_all_players()
+            
             return render_template('smartdash_results.html', 
                                  data=json.loads(data_json),
                                  columns=processed_df.columns.tolist(),
@@ -424,7 +429,8 @@ def smartdash_upload():
                                  data_type=data_type,
                                  completeness=completeness,
                                  summary_stats=summary_stats,
-                                 performance_summary_path=performance_summary_path)
+                                 performance_summary_path=performance_summary_path,
+                                 players=players)
             
         except Exception as e:
             flash(f'Error processing file: {str(e)}')
