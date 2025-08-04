@@ -11,6 +11,7 @@ from src.processors.custom_etl_processor import StatisticalDataProcessor
 from src.processors.basketball_cognitive_processor import BasketballCognitiveProcessor
 from src.api.player_api import player_api
 from src.api.player_management_dashboard import player_dashboard
+from src.database.db_manager import DatabaseManager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -324,7 +325,14 @@ def smartdash():
     if requested_file and requested_file in processed_files:
         return redirect(url_for('smartdash_with_data', filename=requested_file))
     
-    return render_template('smartdash.html', latest_file=latest_file, processed_files=processed_files)
+    # Get all players for the dropdown
+    db_manager = DatabaseManager()
+    players = db_manager.get_all_players()
+    
+    return render_template('smartdash.html', 
+                         latest_file=latest_file, 
+                         processed_files=processed_files,
+                         players=players)
 
 @app.route('/smartdash/<filename>')
 def smartdash_with_data(filename):
@@ -424,6 +432,39 @@ def smartdash_upload():
     
     flash('Invalid file type. Please upload a CSV or Excel file.')
     return redirect(url_for('smartdash'))
+
+@app.route('/create-scorecard', methods=['POST'])
+def create_scorecard():
+    """Create a new scorecard for a selected player"""
+    try:
+        from src.models.scorecard import Scorecard
+        
+        # Get form data
+        player_name = request.form.get('player_name')
+        date_created = int(datetime.now().timestamp())
+        
+        if not player_name:
+            flash('Please select a player')
+            return redirect(url_for('smartdash'))
+        
+        # Create scorecard
+        scorecard = Scorecard(player_name, date_created)
+        
+        # Save to database
+        db_manager = DatabaseManager()
+        success = db_manager.create_scorecard(scorecard)
+        
+        if success:
+            flash(f'Scorecard created successfully for {player_name}!')
+        else:
+            flash(f'Failed to create scorecard for {player_name}')
+            
+        return redirect(url_for('smartdash'))
+        
+    except Exception as e:
+        logger.error(f"Error creating scorecard: {e}")
+        flash(f'Error creating scorecard: {str(e)}')
+        return redirect(url_for('smartdash'))
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
