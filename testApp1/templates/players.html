@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}Player Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">🏀 Player Management</h1>
+            
+            <!-- Database Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📊 Database Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div id="stats-content">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Player Form -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">➕ Create New Player</h5>
+                </div>
+                <div class="card-body">
+                    <form id="create-player-form">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="player-name" 
+                                       placeholder="Enter player name" required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Create Player
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Players List -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">👥 Players</h5>
+                </div>
+                <div class="card-body">
+                    <div id="players-content">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Scorecard Modal -->
+<div class="modal fade" id="createScorecardModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Scorecard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-scorecard-form">
+                    <div class="mb-3">
+                        <label class="form-label">Player Name</label>
+                        <input type="text" class="form-control" id="scorecard-player-name" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Date Created</label>
+                        <input type="datetime-local" class="form-control" id="scorecard-date">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="create-scorecard-btn">Create Scorecard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scorecards Modal -->
+<div class="modal fade" id="scorecardsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Player Scorecards</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="scorecards-content">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentPlayerName = '';
+
+// Load database statistics
+function loadStats() {
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const stats = data.stats;
+                document.getElementById('stats-content').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 class="text-primary">${stats.player_count}</h3>
+                                <p class="text-muted">Players</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3 class="text-success">${stats.scorecard_count}</h3>
+                                <p class="text-muted">Scorecards</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-info">${stats.database_path}</h6>
+                                <p class="text-muted">Database</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('stats-content').innerHTML = `
+                    <div class="alert alert-danger">Error loading statistics: ${data.error}</div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('stats-content').innerHTML = `
+                <div class="alert alert-danger">Error: ${error.message}</div>
+            `;
+        });
+}
+
+// Load all players
+function loadPlayers() {
+    fetch('/api/players')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const players = data.players;
+                if (players.length === 0) {
+                    document.getElementById('players-content').innerHTML = `
+                        <div class="text-center text-muted">
+                            <p>No players found. Create your first player above!</p>
+                        </div>
+                    `;
+                } else {
+                    let html = '<div class="row">';
+                    players.forEach(player => {
+                        html += `
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title">${player.name}</h6>
+                                        <p class="card-text text-muted small">
+                                            Created: ${player.date_created_readable}
+                                        </p>
+                                        <p class="card-text">
+                                            <span class="badge bg-info">${player.scorecards.length} scorecards</span>
+                                        </p>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="btn-group w-100" role="group">
+                                            <button class="btn btn-outline-primary btn-sm" 
+                                                    onclick="viewScorecards('${player.name}')">
+                                                View Scorecards
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm" 
+                                                    onclick="createScorecard('${player.name}')">
+                                                Add Scorecard
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" 
+                                                    onclick="deletePlayer('${player.name}')">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    document.getElementById('players-content').innerHTML = html;
+                }
+            } else {
+                document.getElementById('players-content').innerHTML = `
+                    <div class="alert alert-danger">Error loading players: ${data.error}</div>
+                `;
+            }
+        })
+        .catch(error => {
+            document.getElementById('players-content').innerHTML = `
+                <div class="alert alert-danger">Error: ${error.message}</div>
+            `;
+        });
+}
+
+// Create player
+document.getElementById('create-player-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const playerName = document.getElementById('player-name').value.trim();
+    if (!playerName) return;
+    
+    fetch('/api/players', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: playerName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('player-name').value = '';
+            loadPlayers();
+            loadStats();
+            showAlert('Player created successfully!', 'success');
+        } else {
+            showAlert(`Error: ${data.error}`, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert(`Error: ${error.message}`, 'danger');
+    });
+});
+
+// Delete player
+function deletePlayer(playerName) {
+    if (!confirm(`Are you sure you want to delete player "${playerName}"?`)) {
+        return;
+    }
+    
+    fetch(`/api/players/${encodeURIComponent(playerName)}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadPlayers();
+            loadStats();
+            showAlert('Player deleted successfully!', 'success');
+        } else {
+            showAlert(`Error: ${data.error}`, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert(`Error: ${error.message}`, 'danger');
+    });
+}
+
+// View scorecards
+function viewScorecards(playerName) {
+    currentPlayerName = playerName;
+    
+    fetch(`/api/players/${encodeURIComponent(playerName)}/scorecards`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const scorecards = data.scorecards;
+                if (scorecards.length === 0) {
+                    document.getElementById('scorecards-content').innerHTML = `
+                        <div class="text-center text-muted">
+                            <p>No scorecards found for ${playerName}.</p>
+                        </div>
+                    `;
+                } else {
+                    let html = `
+                        <h6>Scorecards for ${playerName}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    scorecards.forEach(scorecard => {
+                        html += `
+                            <tr>
+                                <td>${scorecard.date_created_readable}</td>
+                                <td>
+                                    <button class="btn btn-outline-danger btn-sm" 
+                                            onclick="deleteScorecard('${playerName}', ${scorecard.date_created})">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    document.getElementById('scorecards-content').innerHTML = html;
+                }
+            } else {
+                document.getElementById('scorecards-content').innerHTML = `
+                    <div class="alert alert-danger">Error: ${data.error}</div>
+                `;
+            }
+            
+            new bootstrap.Modal(document.getElementById('scorecardsModal')).show();
+        })
+        .catch(error => {
+            document.getElementById('scorecards-content').innerHTML = `
+                <div class="alert alert-danger">Error: ${error.message}</div>
+            `;
+            new bootstrap.Modal(document.getElementById('scorecardsModal')).show();
+        });
+}
+
+// Create scorecard
+function createScorecard(playerName) {
+    currentPlayerName = playerName;
+    document.getElementById('scorecard-player-name').value = playerName;
+    document.getElementById('scorecard-date').value = '';
+    
+    new bootstrap.Modal(document.getElementById('createScorecardModal')).show();
+}
+
+// Create scorecard button
+document.getElementById('create-scorecard-btn').addEventListener('click', function() {
+    const dateInput = document.getElementById('scorecard-date').value;
+    let dateCreated = null;
+    
+    if (dateInput) {
+        dateCreated = Math.floor(new Date(dateInput).getTime() / 1000);
+    }
+    
+    const data = {};
+    if (dateCreated) {
+        data.date_created = dateCreated;
+    }
+    
+    fetch(`/api/players/${encodeURIComponent(currentPlayerName)}/scorecards`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createScorecardModal')).hide();
+            loadPlayers();
+            loadStats();
+            showAlert('Scorecard created successfully!', 'success');
+        } else {
+            showAlert(`Error: ${data.error}`, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert(`Error: ${error.message}`, 'danger');
+    });
+});
+
+// Delete scorecard
+function deleteScorecard(playerName, dateCreated) {
+    if (!confirm('Are you sure you want to delete this scorecard?')) {
+        return;
+    }
+    
+    fetch(`/api/players/${encodeURIComponent(playerName)}/scorecards/${dateCreated}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            viewScorecards(playerName); // Refresh the scorecards list
+            loadPlayers();
+            loadStats();
+            showAlert('Scorecard deleted successfully!', 'success');
+        } else {
+            showAlert(`Error: ${data.error}`, 'danger');
+        }
+    })
+    .catch(error => {
+        showAlert(`Error: ${error.message}`, 'danger');
+    });
+}
+
+// Show alert
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    loadPlayers();
+});
+</script>
+{% endblock %} 
