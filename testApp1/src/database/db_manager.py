@@ -52,6 +52,12 @@ class DatabaseManager:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     player_name TEXT NOT NULL,
                     date_created INTEGER NOT NULL,
+                    space_read_live_dribble INTEGER DEFAULT 0,
+                    space_read_catch INTEGER DEFAULT 0,
+                    driving_paint_touch_positive INTEGER DEFAULT 0,
+                    driving_paint_touch_negative INTEGER DEFAULT 0,
+                    driving_physicality_positive INTEGER DEFAULT 0,
+                    driving_physicality_negative INTEGER DEFAULT 0,
                     FOREIGN KEY (player_name) REFERENCES players (name)
                 )
             ''')
@@ -197,8 +203,8 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'INSERT INTO scorecards (player_name, date_created) VALUES (?, ?)',
-                    (scorecard.player_name, scorecard.date_created)
+                    'INSERT INTO scorecards (player_name, date_created, space_read_live_dribble, space_read_catch, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    (scorecard.player_name, scorecard.date_created, scorecard.space_read_live_dribble, scorecard.space_read_catch, scorecard.driving_paint_touch_positive, scorecard.driving_paint_touch_negative, scorecard.driving_physicality_positive, scorecard.driving_physicality_negative)
                 )
                 conn.commit()
                 return True
@@ -220,14 +226,14 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT player_name, date_created FROM scorecards WHERE player_name = ? ORDER BY date_created DESC',
+                    'SELECT player_name, date_created, space_read_live_dribble, space_read_catch, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative FROM scorecards WHERE player_name = ? ORDER BY date_created DESC',
                     (player_name,)
                 )
                 rows = cursor.fetchall()
                 
                 scorecards = []
                 for row in rows:
-                    scorecard = Scorecard(row[0], row[1])
+                    scorecard = Scorecard(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7])
                     scorecards.append(scorecard)
                 
                 return scorecards

@@ -257,6 +257,28 @@
         padding: 25px;
         margin-bottom: 30px;
     }
+    
+    .btn-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-custom:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
 </style>
 {% endblock %}
 
@@ -492,7 +514,7 @@
                                             <i class="fas fa-user me-2"></i>
                                             Select Player
                                         </label>
-                                        <select class="form-select" id="player_dropdown" name="player_dropdown" required>
+                                        <select class="form-select" id="player_dropdown" name="player_name" required>
                                             <option value="">Choose a player...</option>
                                             {% for player in players %}
                                             <option value="{{ player.name }}">{{ player.name }}</option>
@@ -531,10 +553,252 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-car me-2"></i>
+                                                On Ball - Driving Metrics
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving: Paint Touch (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_positive" 
+                                                                   name="driving_paint_touch_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving: Paint Touch (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_negative" 
+                                                                   name="driving_paint_touch_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving Physicality (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_positive" 
+                                                                   name="driving_physicality_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving Physicality (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_negative" 
+                                                                   name="driving_physicality_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
-                                <strong>Scorecard Creation:</strong> This will create a new scorecard for the selected player with current timestamp.
+                                <strong>Scorecard Creation:</strong> This will create a new scorecard for the selected player with current timestamp, Space Read metrics, and Driving metrics.
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-custom btn-lg" id="createScorecardBtn">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Create Scorecard
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                            
+                            <!-- Space Read Section -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-basketball-ball me-2"></i>
+                                        On Ball - Space Read Metrics
+                                    </h6>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_live_dribble" class="form-label">
+                                            <i class="fas fa-running me-2"></i>
+                                            Space Read: Live Dribble
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_live_dribble" 
+                                                   name="space_read_live_dribble" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "+ve Space Read: Live Dribble" actions</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_catch" class="form-label">
+                                            <i class="fas fa-hands me-2"></i>
+                                            Space Read: Catch
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_catch" 
+                                                   name="space_read_catch" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "+ve Space Read: Catchs" actions</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- On Ball - Driving Metrics Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-car me-2"></i>
+                                                On Ball - Driving Metrics
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving: Paint Touch (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_positive" 
+                                                                   name="driving_paint_touch_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving: Paint Touch (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_negative" 
+                                                                   name="driving_paint_touch_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving Physicality (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_positive" 
+                                                                   name="driving_physicality_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving Physicality (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_negative" 
+                                                                   name="driving_physicality_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Scorecard Creation:</strong> This will create a new scorecard for the selected player with current timestamp, Space Read metrics, and Driving metrics.
                             </div>
                             
                             <div class="text-center">
@@ -870,6 +1134,120 @@ document.addEventListener('DOMContentLoaded', function() {
         createScorecardBtn.disabled = true;
     }
 });
+
+// Autofill Space Read metrics function
+function autofillSpaceRead() {
+    // Get the current data from the table
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    // Find the Space Read column
+    let spaceReadColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('Space Read') || headerText.toLowerCase().includes('space read')) {
+            spaceReadColumnIndex = i;
+            break;
+        }
+    }
+    
+    if (spaceReadColumnIndex === -1) {
+        alert('Space Read column not found in the data. Please ensure the data contains a "Space Read" column.');
+        return;
+    }
+    
+    // Count the metrics
+    let liveDribbleCount = 0;
+    let catchCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > spaceReadColumnIndex) {
+            const cellValue = cells[spaceReadColumnIndex].textContent.trim();
+            
+            if (cellValue.includes('+ve Space Read: Live Dribble')) {
+                liveDribbleCount++;
+            }
+            
+            if (cellValue.includes('+ve Space Read: Catch')) {
+                catchCount++;
+            }
+        }
+    }
+    
+    // Update the form fields
+    document.getElementById('space_read_live_dribble').value = liveDribbleCount;
+    document.getElementById('space_read_catch').value = catchCount;
+    
+    // Show success message
+    const message = `Autofill completed!\nLive Dribble: ${liveDribbleCount}\nCatch: ${catchCount}`;
+    alert(message);
+}
+
+// Autofill Driving Metrics function
+function autofillDrivingMetrics() {
+    // Get the current data from the table
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    // Find the Driving column - look for various possible column names
+    let drivingColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('Driving') || 
+            headerText.toLowerCase().includes('driving') ||
+            headerText.includes('Drive')) {
+            drivingColumnIndex = i;
+            break;
+        }
+    }
+    
+    if (drivingColumnIndex === -1) {
+        alert('Driving column not found in the data. Please ensure the data contains a "Driving" column.');
+        return;
+    }
+    
+    // Count the metrics
+    let paintTouchPositiveCount = 0;
+    let paintTouchNegativeCount = 0;
+    let physicalityPositiveCount = 0;
+    let physicalityNegativeCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > drivingColumnIndex) {
+            const cellValue = cells[drivingColumnIndex].textContent.trim();
+            
+            if (cellValue.includes('+ve Driving: Paint Touch')) {
+                paintTouchPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve Driving: Paint Touch')) {
+                paintTouchNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve Driving: Physicality')) {
+                physicalityPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve Driving: Physicality')) {
+                physicalityNegativeCount++;
+            }
+        }
+    }
+    
+    // Update the form fields
+    document.getElementById('driving_paint_touch_positive').value = paintTouchPositiveCount;
+    document.getElementById('driving_paint_touch_negative').value = paintTouchNegativeCount;
+    document.getElementById('driving_physicality_positive').value = physicalityPositiveCount;
+    document.getElementById('driving_physicality_negative').value = physicalityNegativeCount;
+    
+    // Show success message
+    const message = `Autofill completed!\nPaint Touch (+): ${paintTouchPositiveCount}\nPaint Touch (-): ${paintTouchNegativeCount}\nPhysicality (+): ${physicalityPositiveCount}\nPhysicality (-): ${physicalityNegativeCount}`;
+    alert(message);
+}
 
 function sortTable(table, columnIndex) {
     const tbody = table.getElementsByTagName('tbody')[0];

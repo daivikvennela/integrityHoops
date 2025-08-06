@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Player Data Overview - Comprehensive Dashboard Data{% endblock %}
+
+{% block extra_css %}
+<style>
+    .overview-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px 0;
+    }
+    
+    .overview-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .stats-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .data-section {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .section-header {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .player-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .api-call-item {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+    }
+    
+    .api-success { border-left: 4px solid #28a745; }
+    .api-error { border-left: 4px solid #dc3545; }
+    .api-info { border-left: 4px solid #17a2b8; }
+    
+    .scorecard-item {
+        background: #e3f2fd;
+        border-radius: 6px;
+        padding: 8px;
+        margin: 5px 0;
+        font-size: 0.9rem;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+    
+    .badge-custom {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .data-highlight {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .export-section {
+        background: #e8f5e8;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="overview-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="overview-card">
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-2">
+                                    <i class="fas fa-database me-2"></i>
+                                    Player Data Overview
+                                </h2>
+                                <p class="text-muted mb-0">
+                                    Comprehensive view of all Advanced Player Management Dashboard data
+                                </p>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('player_dashboard.player_management_dashboard') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Dashboard
+                                </a>
+                                <button class="btn btn-success" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>
+                                    Print Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if data.error %}
+        <!-- Error Message -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error:</strong> {{ data.error }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Key Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-value">{{ data.total_players }}</div>
+                    <div class="stats-label">Total Players</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-value">{{ data.total_scorecards }}</div>
+                    <div class="stats-label">Total Scorecards</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-value">{{ data.recent_activity.last_30_days }}</div>
+                    <div class="stats-label">Recent Players (30d)</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card">
+                    <div class="stats-value">{{ data.recent_activity.last_7_days }}</div>
+                    <div class="stats-label">Recent Scorecards (7d)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Statistics -->
+        {% if data.player_statistics %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="data-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-chart-bar me-2"></i>Player Statistics</h4>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Activity Overview</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Total Players:</strong> {{ data.player_statistics.total_players }}</li>
+                                <li><strong>Total Scorecards:</strong> {{ data.player_statistics.total_scorecards }}</li>
+                                <li><strong>Recent Players (30d):</strong> {{ data.player_statistics.recent_players }}</li>
+                                <li><strong>Recent Scorecards (7d):</strong> {{ data.player_statistics.recent_scorecards }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Top Players by Scorecards</h6>
+                            {% if data.player_statistics.top_players %}
+                            <ul class="list-unstyled">
+                                {% for player in data.player_statistics.top_players %}
+                                <li><strong>{{ player.name }}:</strong> {{ player.scorecards|length }} scorecards</li>
+                                {% endfor %}
+                            </ul>
+                            {% else %}
+                            <p class="text-muted">No players with scorecards found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- All Players Data -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="data-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-users me-2"></i>All Players & Scorecards</h4>
+                        <p class="text-muted mb-0">Complete list of players with their associated scorecards</p>
+                    </div>
+                    
+                    {% if data.players %}
+                    <div class="row">
+                        {% for player in data.players %}
+                        <div class="col-md-6 mb-3">
+                            <div class="player-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ player.name }}</h6>
+                                        <small class="text-muted">
+                                            Created: {{ moment(player.date_created).format('YYYY-MM-DD HH:mm:ss') }}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-primary badge-custom">
+                                        {{ player.scorecards|length }} scorecards
+                                    </span>
+                                </div>
+                                
+                                {% if player.scorecards %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Scorecards:</small>
+                                    {% for scorecard in player.scorecards %}
+                                    <div class="scorecard-item">
+                                        <i class="fas fa-chart-line me-1"></i>
+                                        Scorecard created: {{ moment(scorecard.date_created).format('YYYY-MM-DD HH:mm:ss') }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p class="text-muted mt-2 mb-0"><small>No scorecards yet</small></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Players Found</h5>
+                        <p class="text-muted">No players have been created yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- API Call Log -->
+        {% if data.api_calls %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="data-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-terminal me-2"></i>API Call Log (Last 50 Calls)</h4>
+                        <p class="text-muted mb-0">Recent API activity and monitoring data</p>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Method</th>
+                                    <th>Endpoint</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for call in data.api_calls %}
+                                <tr>
+                                    <td>{{ call.timestamp }}</td>
+                                    <td><span class="badge bg-info">{{ call.method }}</span></td>
+                                    <td><code>{{ call.endpoint }}</code></td>
+                                    <td>
+                                        {% if call.status == 200 %}
+                                        <span class="badge bg-success">{{ call.status }}</span>
+                                        {% elif call.status >= 400 %}
+                                        <span class="badge bg-danger">{{ call.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">{{ call.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ call.duration_ms }}ms</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Database Statistics -->
+        {% if data.database_stats %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="data-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-database me-2"></i>Database Statistics</h4>
+                        <p class="text-muted mb-0">System database information and metrics</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Database Overview</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Database File:</strong> {{ data.database_stats.database_path }}</li>
+                                <li><strong>Total Players:</strong> {{ data.database_stats.players_count }}</li>
+                                <li><strong>Total Scorecards:</strong> {{ data.database_stats.scorecards_count }}</li>
+                                <li><strong>Database Size:</strong> {{ data.database_stats.database_size }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>System Information</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Generated:</strong> {{ moment().format('YYYY-MM-DD HH:mm:ss') }}</li>
+                                <li><strong>Report Type:</strong> Comprehensive Data Overview</li>
+                                <li><strong>Data Source:</strong> Advanced Player Management Dashboard</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Export Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="export-section">
+                    <div class="section-header">
+                        <h4><i class="fas fa-download me-2"></i>Export Options</h4>
+                        <p class="text-muted mb-0">Download this comprehensive data report</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="exportToJSON()">
+                                <i class="fas fa-file-code me-2"></i>
+                                Export JSON
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100" onclick="exportToCSV()">
+                                <i class="fas fa-file-csv me-2"></i>
+                                Export CSV
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100" onclick="exportToPDF()">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Export PDF
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning w-100" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>
+                                Print Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Export functions
+function exportToJSON() {
+    const data = {{ data|tojson }};
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'player_data_overview.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportToCSV() {
+    // Create CSV content
+    let csv = 'Player Name,Created Date,Scorecards Count\n';
+    {% if data.players %}
+    {% for player in data.players %}
+    csv += '{{ player.name }},{{ moment(player.date_created).format("YYYY-MM-DD HH:mm:ss") }},{{ player.scorecards|length }}\n';
+    {% endfor %}
+    {% endif %}
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'player_data_overview.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function exportToPDF() {
+    window.print();
+}
+
+// Auto-refresh data every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %} 

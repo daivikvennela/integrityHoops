@@ -326,7 +326,28 @@ def smartdash():
         return redirect(url_for('smartdash_with_data', filename=requested_file))
     
     # Get all players for the dropdown
-    db_manager = DatabaseManager()
+    db_manager = DatabaseManager("data/basketball.db")
+    # Ensure database has required columns
+    try:
+        with db_manager.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(scorecards)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            # Add space_read_live_dribble if missing
+            if "space_read_live_dribble" not in columns:
+                cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_live_dribble INTEGER DEFAULT 0")
+                print("Added space_read_live_dribble column")
+            
+            # Add space_read_catch if missing
+            if "space_read_catch" not in columns:
+                cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch INTEGER DEFAULT 0")
+                print("Added space_read_catch column")
+            
+            conn.commit()
+            print("Database migration completed successfully")
+    except Exception as e:
+        print(f"Error during database migration: {e}")
     players = db_manager.get_all_players()
     
     return render_template('smartdash.html', 
@@ -417,8 +438,50 @@ def smartdash_upload():
             
             flash('File uploaded and processed successfully!')
             
-            # Get all players for the dropdown
-            db_manager = DatabaseManager()
+            # Get all players for the dropdown - using correct database path
+            db_manager = DatabaseManager("data/basketball.db")
+            # Ensure database has required columns
+            try:
+                with db_manager.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("PRAGMA table_info(scorecards)")
+                    columns = [column[1] for column in cursor.fetchall()]
+                    
+                    # Add space_read_live_dribble if missing
+                    if "space_read_live_dribble" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_live_dribble INTEGER DEFAULT 0")
+                        print("Added space_read_live_dribble column")
+                    
+                    # Add space_read_catch if missing
+                    if "space_read_catch" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch INTEGER DEFAULT 0")
+                        print("Added space_read_catch column")
+                    
+                    # Add driving_paint_touch_positive if missing
+                    if "driving_paint_touch_positive" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_paint_touch_positive INTEGER DEFAULT 0")
+                        print("Added driving_paint_touch_positive column")
+                    
+                    # Add driving_paint_touch_negative if missing
+                    if "driving_paint_touch_negative" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_paint_touch_negative INTEGER DEFAULT 0")
+                        print("Added driving_paint_touch_negative column")
+                    
+                    # Add driving_physicality_positive if missing
+                    if "driving_physicality_positive" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_physicality_positive INTEGER DEFAULT 0")
+                        print("Added driving_physicality_positive column")
+                    
+                    # Add driving_physicality_negative if missing
+                    if "driving_physicality_negative" not in columns:
+                        cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_physicality_negative INTEGER DEFAULT 0")
+                        print("Added driving_physicality_negative column")
+                    
+                    conn.commit()
+                    print("Database migration completed successfully")
+            except Exception as e:
+                print(f"Error during database migration: {e}")
+            
             players = db_manager.get_all_players()
             
             return render_template('smartdash_results.html', 
@@ -431,7 +494,7 @@ def smartdash_upload():
                                  summary_stats=summary_stats,
                                  performance_summary_path=performance_summary_path,
                                  players=players)
-            
+    
         except Exception as e:
             flash(f'Error processing file: {str(e)}')
             return redirect(url_for('smartdash'))
@@ -446,18 +509,74 @@ def create_scorecard():
         from src.models.scorecard import Scorecard
         
         # Get form data
-        player_name = request.form.get('player_name')
+        player_name = request.form.get('player_name') or request.form.get('player_dropdown')
         date_created = int(datetime.now().timestamp())
+        space_read_live_dribble = int(request.form.get('space_read_live_dribble', 0))
+        space_read_catch = int(request.form.get('space_read_catch', 0))
+        driving_paint_touch_positive = int(request.form.get('driving_paint_touch_positive', 0))
+        driving_paint_touch_negative = int(request.form.get('driving_paint_touch_negative', 0))
+        driving_physicality_positive = int(request.form.get('driving_physicality_positive', 0))
+        driving_physicality_negative = int(request.form.get('driving_physicality_negative', 0))
         
         if not player_name:
             flash('Please select a player')
             return redirect(url_for('smartdash'))
         
-        # Create scorecard
-        scorecard = Scorecard(player_name, date_created)
+        # Create scorecard with new attributes
+        scorecard = Scorecard(
+            player_name=player_name, 
+            date_created=date_created,
+            space_read_live_dribble=space_read_live_dribble,
+            space_read_catch=space_read_catch,
+            driving_paint_touch_positive=driving_paint_touch_positive,
+            driving_paint_touch_negative=driving_paint_touch_negative,
+            driving_physicality_positive=driving_physicality_positive,
+            driving_physicality_negative=driving_physicality_negative
+        )
         
         # Save to database
-        db_manager = DatabaseManager()
+        db_manager = DatabaseManager("data/basketball.db")
+        # Ensure database has required columns
+        try:
+            with db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("PRAGMA table_info(scorecards)")
+                columns = [column[1] for column in cursor.fetchall()]
+                
+                # Add space_read_live_dribble if missing
+                if "space_read_live_dribble" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_live_dribble INTEGER DEFAULT 0")
+                    print("Added space_read_live_dribble column")
+                
+                # Add space_read_catch if missing
+                if "space_read_catch" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch INTEGER DEFAULT 0")
+                    print("Added space_read_catch column")
+                
+                # Add driving_paint_touch_positive if missing
+                if "driving_paint_touch_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_paint_touch_positive INTEGER DEFAULT 0")
+                    print("Added driving_paint_touch_positive column")
+                
+                # Add driving_paint_touch_negative if missing
+                if "driving_paint_touch_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_paint_touch_negative INTEGER DEFAULT 0")
+                    print("Added driving_paint_touch_negative column")
+                
+                # Add driving_physicality_positive if missing
+                if "driving_physicality_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_physicality_positive INTEGER DEFAULT 0")
+                    print("Added driving_physicality_positive column")
+                
+                # Add driving_physicality_negative if missing
+                if "driving_physicality_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_physicality_negative INTEGER DEFAULT 0")
+                    print("Added driving_physicality_negative column")
+                
+                conn.commit()
+                print("Database migration completed successfully")
+        except Exception as e:
+            print(f"Error during database migration: {e}")
         success = db_manager.create_scorecard(scorecard)
         
         if success:
@@ -471,6 +590,47 @@ def create_scorecard():
         logger.error(f"Error creating scorecard: {e}")
         flash(f'Error creating scorecard: {str(e)}')
         return redirect(url_for('smartdash'))
+
+@app.route('/autofill-scorecard', methods=['POST'])
+def autofill_scorecard():
+    """Autofill scorecard attributes from uploaded data"""
+    try:
+        from src.processors.scorecard_autofill_processor import ScorecardAutofillProcessor
+        
+        # Get uploaded file
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            # Save file temporarily
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"temp_{filename}")
+            file.save(file_path)
+            
+            # Load the file
+            df = load_csv_file(file_path)
+            
+            # Process with autofill processor
+            processor = ScorecardAutofillProcessor()
+            autofill_data = processor.autofill_scorecard_attributes(df)
+            
+            # Clean up temp file
+            os.remove(file_path)
+            
+            return jsonify({
+                'success': True,
+                'autofill_data': autofill_data
+            })
+        else:
+            return jsonify({'error': 'Invalid file type'}), 400
+            
+    except Exception as e:
+        logger.error(f"Error in autofill: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():

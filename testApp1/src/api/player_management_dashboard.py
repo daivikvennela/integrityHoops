@@ -200,6 +200,47 @@ def player_management_dashboard():
     """Main player management dashboard page"""
     return render_template('player_management_dashboard.html')
 
+@player_dashboard.route('/player-data-overview')
+def player_data_overview():
+    """Comprehensive data overview page showing all dashboard information"""
+    try:
+        # Get all analytics data
+        player_stats = DashboardAnalytics.get_player_statistics()
+        scorecard_analytics = DashboardAnalytics.get_scorecard_analytics()
+        
+        # Get all players with their scorecards
+        players = db_manager.get_all_players()
+        
+        # Get API call log
+        api_calls = api_call_log[-50:] if api_call_log else []  # Last 50 calls
+        
+        # Get database statistics
+        db_stats = db_manager.get_database_stats()
+        
+        # Prepare comprehensive data
+        overview_data = {
+            'player_statistics': player_stats,
+            'scorecard_analytics': scorecard_analytics,
+            'players': [player.to_dict() for player in players],
+            'api_calls': api_calls,
+            'database_stats': db_stats,
+            'total_players': len(players),
+            'total_scorecards': sum(len(player.scorecards) for player in players),
+            'recent_activity': {
+                'last_7_days': len([s for p in players for s in p.scorecards 
+                                   if datetime.fromtimestamp(s.date_created) > datetime.now() - timedelta(days=7)]),
+                'last_30_days': len([p for p in players 
+                                   if datetime.fromtimestamp(p.date_created) > datetime.now() - timedelta(days=30)])
+            }
+        }
+        
+        return render_template('player_data_overview.html', data=overview_data)
+        
+    except Exception as e:
+        logger.error(f"Error loading data overview: {e}")
+        return render_template('player_data_overview.html', 
+                             data={'error': str(e)})
+
 @player_dashboard.route('/api/dashboard/stats')
 def get_dashboard_statistics():
     """Get comprehensive dashboard statistics"""
