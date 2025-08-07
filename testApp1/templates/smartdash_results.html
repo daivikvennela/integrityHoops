@@ -947,6 +947,23 @@
                                                 </div>
                                             </div>
 
+                                            <!-- Fill Behind (-) Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_fill_behind_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Fill Behind (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_fill_behind_negative" name="qb12_fill_behind_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Fill Behind" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <!-- Weak Side (-) / Roller Row -->
                                             <div class="row">
                                                 <div class="col-md-6">
@@ -1682,7 +1699,7 @@ function autofillQB12() {
 
     let strongSidePos = 0, strongSideNeg = 0;
     let baselinePos = 0, baselineNeg = 0;
-    let fillBehindPos = 0;
+    let fillBehindPos = 0, fillBehindNeg = 0;
     let weakSidePos = 0, weakSideNeg = 0;
     let rollerPos = 0, rollerNeg = 0;
     let skipPassPos = 0, skipPassNeg = 0;
@@ -1697,6 +1714,7 @@ function autofillQB12() {
             if (cellValue.includes('+ve QB12: Baseline')) baselinePos++;
             if (cellValue.includes('-ve QB12: Baseline')) baselineNeg++;
             if (cellValue.includes('+ve QB12: Fill Behind')) fillBehindPos++;
+            if (cellValue.includes('-ve QB12: Fill Behind')) fillBehindNeg++;
             if (cellValue.includes('+ve QB12: Weak Side')) weakSidePos++;
             if (cellValue.includes('-ve QB12: Weak Side')) weakSideNeg++;
             if (cellValue.includes('+ve QB12: Roller')) rollerPos++;
@@ -1713,6 +1731,8 @@ function autofillQB12() {
     document.getElementById('qb12_baseline_positive').value = baselinePos;
     document.getElementById('qb12_baseline_negative').value = baselineNeg;
     document.getElementById('qb12_fill_behind_positive').value = fillBehindPos;
+    const fbNegEl = document.getElementById('qb12_fill_behind_negative');
+    if (fbNegEl) fbNegEl.value = fillBehindNeg;
     document.getElementById('qb12_weak_side_positive').value = weakSidePos;
     document.getElementById('qb12_weak_side_negative').value = weakSideNeg;
     document.getElementById('qb12_roller_positive').value = rollerPos;
@@ -1722,7 +1742,7 @@ function autofillQB12() {
     document.getElementById('qb12_cutter_positive').value = cutterPos;
     document.getElementById('qb12_cutter_negative').value = cutterNeg;
 
-    const message = `Autofill QB12 completed!\nStrong Side (+): ${strongSidePos} (-): ${strongSideNeg}\nBaseline (+): ${baselinePos} (-): ${baselineNeg}\nFill Behind (+): ${fillBehindPos}\nWeak Side (+): ${weakSidePos} (-): ${weakSideNeg}\nRoller (+): ${rollerPos} (-): ${rollerNeg}\nSkip Pass (+): ${skipPassPos} (-): ${skipPassNeg}\nCutter (+): ${cutterPos} (-): ${cutterNeg}`;
+    const message = `Autofill QB12 completed!\nStrong Side (+): ${strongSidePos} (-): ${strongSideNeg}\nBaseline (+): ${baselinePos} (-): ${baselineNeg}\nFill Behind (+): ${fillBehindPos} (-): ${fillBehindNeg}\nWeak Side (+): ${weakSidePos} (-): ${weakSideNeg}\nRoller (+): ${rollerPos} (-): ${rollerNeg}\nSkip Pass (+): ${skipPassPos} (-): ${skipPassNeg}\nCutter (+): ${cutterPos} (-): ${cutterNeg}`;
     alert(message);
 }
 
