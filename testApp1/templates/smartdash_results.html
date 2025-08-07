@@ -1356,8 +1356,13 @@ function autofillDMCatch() {
     }
     
     if (dmCatchColumnIndex === -1) {
-        alert('DM Catch column not found in the data. Please ensure the data contains a "DM Catch" column.');
-        return;
+        // Fallback to 13th column (index 12) as specified
+        dmCatchColumnIndex = 12;
+        const sampleRow = rows.length > 0 ? rows[0] : null;
+        if (!sampleRow || sampleRow.getElementsByTagName('td').length <= dmCatchColumnIndex) {
+            alert('DM Catch column not found (expected col 13). Please ensure the data contains a "DM Catch" column.');
+            return;
+        }
     }
     
     // Count the metrics
