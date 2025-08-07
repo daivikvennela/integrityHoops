@@ -513,6 +513,8 @@ def create_scorecard():
         date_created = int(datetime.now().timestamp())
         space_read_live_dribble = int(request.form.get('space_read_live_dribble', 0))
         space_read_catch = int(request.form.get('space_read_catch', 0))
+        space_read_live_dribble_negative = int(request.form.get('space_read_live_dribble_negative', 0))
+        space_read_catch_negative = int(request.form.get('space_read_catch_negative', 0))
         driving_paint_touch_positive = int(request.form.get('driving_paint_touch_positive', 0))
         driving_paint_touch_negative = int(request.form.get('driving_paint_touch_negative', 0))
         driving_physicality_positive = int(request.form.get('driving_physicality_positive', 0))
@@ -528,6 +530,8 @@ def create_scorecard():
             date_created=date_created,
             space_read_live_dribble=space_read_live_dribble,
             space_read_catch=space_read_catch,
+            space_read_live_dribble_negative=space_read_live_dribble_negative,
+            space_read_catch_negative=space_read_catch_negative,
             driving_paint_touch_positive=driving_paint_touch_positive,
             driving_paint_touch_negative=driving_paint_touch_negative,
             driving_physicality_positive=driving_physicality_positive,
@@ -552,6 +556,16 @@ def create_scorecard():
                 if "space_read_catch" not in columns:
                     cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch INTEGER DEFAULT 0")
                     print("Added space_read_catch column")
+                
+                # Add space_read_live_dribble_negative if missing
+                if "space_read_live_dribble_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_live_dribble_negative INTEGER DEFAULT 0")
+                    print("Added space_read_live_dribble_negative column")
+                
+                # Add space_read_catch_negative if missing
+                if "space_read_catch_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch_negative INTEGER DEFAULT 0")
+                    print("Added space_read_catch_negative column")
                 
                 # Add driving_paint_touch_positive if missing
                 if "driving_paint_touch_positive" not in columns:

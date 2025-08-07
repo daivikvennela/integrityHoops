@@ -9,6 +9,7 @@ class Scorecard:
     
     def __init__(self, player_name: str, date_created: Optional[int] = None, 
                  space_read_live_dribble: int = 0, space_read_catch: int = 0,
+                 space_read_live_dribble_negative: int = 0, space_read_catch_negative: int = 0,
                  driving_paint_touch_positive: int = 0, driving_paint_touch_negative: int = 0,
                  driving_physicality_positive: int = 0, driving_physicality_negative: int = 0):
         """
@@ -20,6 +21,8 @@ class Scorecard:
                                         If None, uses current timestamp.
             space_read_live_dribble (int): Count of positive space read live dribble actions
             space_read_catch (int): Count of positive space read catch actions
+            space_read_live_dribble_negative (int): Count of negative space read live dribble actions
+            space_read_catch_negative (int): Count of negative space read catch actions
             driving_paint_touch_positive (int): Count of positive driving paint touch actions
             driving_paint_touch_negative (int): Count of negative driving paint touch actions
             driving_physicality_positive (int): Count of positive driving physicality actions
@@ -29,6 +32,8 @@ class Scorecard:
         self.date_created = date_created or int(datetime.now().timestamp())
         self.space_read_live_dribble = space_read_live_dribble
         self.space_read_catch = space_read_catch
+        self.space_read_live_dribble_negative = space_read_live_dribble_negative
+        self.space_read_catch_negative = space_read_catch_negative
         self.driving_paint_touch_positive = driving_paint_touch_positive
         self.driving_paint_touch_negative = driving_paint_touch_negative
         self.driving_physicality_positive = driving_physicality_positive
@@ -46,6 +51,8 @@ class Scorecard:
             'date_created': self.date_created,
             'space_read_live_dribble': self.space_read_live_dribble,
             'space_read_catch': self.space_read_catch,
+            'space_read_live_dribble_negative': self.space_read_live_dribble_negative,
+            'space_read_catch_negative': self.space_read_catch_negative,
             'driving_paint_touch_positive': self.driving_paint_touch_positive,
             'driving_paint_touch_negative': self.driving_paint_touch_negative,
             'driving_physicality_positive': self.driving_physicality_positive,
@@ -68,6 +75,8 @@ class Scorecard:
             data['date_created'],
             data.get('space_read_live_dribble', 0),
             data.get('space_read_catch', 0),
+            data.get('space_read_live_dribble_negative', 0),
+            data.get('space_read_catch_negative', 0),
             data.get('driving_paint_touch_positive', 0),
             data.get('driving_paint_touch_negative', 0),
             data.get('driving_physicality_positive', 0),
@@ -76,11 +85,11 @@ class Scorecard:
     
     def __str__(self) -> str:
         """String representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
     
     def __repr__(self) -> str:
         """Detailed string representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
     
     def __eq__(self, other) -> bool:
         """Check if two scorecards are equal."""
@@ -90,6 +99,8 @@ class Scorecard:
                 self.date_created == other.date_created and
                 self.space_read_live_dribble == other.space_read_live_dribble and
                 self.space_read_catch == other.space_read_catch and
+                self.space_read_live_dribble_negative == other.space_read_live_dribble_negative and
+                self.space_read_catch_negative == other.space_read_catch_negative and
                 self.driving_paint_touch_positive == other.driving_paint_touch_positive and
                 self.driving_paint_touch_negative == other.driving_paint_touch_negative and
                 self.driving_physicality_positive == other.driving_physicality_positive and
@@ -97,4 +108,4 @@ class Scorecard:
     
     def __hash__(self) -> int:
         """Hash the scorecard for use in sets and as dictionary keys."""
-        return hash((self.player_name, self.date_created, self.space_read_live_dribble, self.space_read_catch, self.driving_paint_touch_positive, self.driving_paint_touch_negative, self.driving_physicality_positive, self.driving_physicality_negative)) 
+        return hash((self.player_name, self.date_created, self.space_read_live_dribble, self.space_read_catch, self.space_read_live_dribble_negative, self.space_read_catch_negative, self.driving_paint_touch_positive, self.driving_paint_touch_negative, self.driving_physicality_positive, self.driving_physicality_negative)) 
