@@ -1391,22 +1391,22 @@
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="cs_cut_fill_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening:  Cut Fill (+)</label>
+                                                        <label for="cs_cut_fill_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Cut Fill (+)</label>
                                                         <div class="input-group">
                                                             <input type="number" class="form-control" id="cs_cut_fill_positive" name="cs_cut_fill_positive" value="0" min="0">
                                                             <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
                                                         </div>
-                                                        <small class="text-muted">Count of "+ve Cutting & Screening:  Cut Fill"</small>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Cut Fill"</small>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="mb-3">
-                                                        <label for="cs_cut_fill_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening:  Cut Fill (-)</label>
+                                                        <label for="cs_cut_fill_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Cut Fill (-)</label>
                                                         <div class="input-group">
                                                             <input type="number" class="form-control" id="cs_cut_fill_negative" name="cs_cut_fill_negative" value="0" min="0">
                                                             <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
                                                         </div>
-                                                        <small class="text-muted">Count of "-ve Cutting & Screening:  Cut Fill"</small>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Cut Fill"</small>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2341,35 +2341,68 @@ function autofillOffBallTransition() {
     alert(`Autofill Transition completed!\nEffort and Pace (+): ${effortPacePos} (-): ${effortPaceNeg}`);
 }
 
-// Autofill Cutting & Screening (search single column that contains Cutting & Screening)
+// Autofill Cutting & Screening (robust detection + column resolution)
 function autofillCuttingScreening() {
     const table = document.getElementById('dataTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
     const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Try to identify the column by header text
     let colIndex = -1;
     for (let i = 0; i < headers.length; i++) {
-        const text = headers[i].textContent.trim();
-        if (text.includes('Cutting') || text.includes('Screening')) { colIndex = i; break; }
+        const text = headers[i].textContent.trim().toLowerCase();
+        if (text.includes('cutting') || text.includes('screen')) { colIndex = i; break; }
     }
+    // 2) If not found, try column 11 (index 10) as a user hint
+    if (colIndex === -1 && headers.length > 10) {
+        colIndex = 10;
+    }
+    // 3) If still not found, scan all columns and pick the one with most matches
     if (colIndex === -1) {
-        // fallback: try to locate a likely column by keyword in rows
-        colIndex = 0;
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                if (norm.includes('cutting') || norm.includes('screen')) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
     }
+
+    // Helper to normalize and match multiple variants
+    const normalize = (s) => s.toLowerCase()
+        .replace(/\s+/g, ' ')             // condense spaces
+        .replace(/&/g, 'and')              // & -> and
+        .replace(/body\s*-\s*to\s*-\s*body/g, 'body to body') // unify hyphenated
+        .trim();
+    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+
     let denialPos=0, denialNeg=0, movePos=0, moveNeg=0, bodyPos=0, bodyNeg=0, screenPos=0, screenNeg=0, cutFillPos=0, cutFillNeg=0;
     for (let row of rows) {
         const cell = row.getElementsByTagName('td')[colIndex];
         if (!cell) continue;
-        const v = cell.textContent.trim();
-        if (v.includes('+ve Cutting & Screening: Denial')) denialPos++;
-        if (v.includes('-ve Cutting & Screening: Denial')) denialNeg++;
-        if (v.includes('+ve Cutting & Screening: Movement')) movePos++;
-        if (v.includes('-ve Cutting & Screening: Movement')) moveNeg++;
-        if (v.includes('+ve Cutting & Screening: Body to Body')) bodyPos++;
-        if (v.includes('-ve Cutting & Screening: Body to Body')) bodyNeg++;
-        if (v.includes('+ve Cutting & Screening: Screen Principle')) screenPos++;
-        if (v.includes('-ve Cutting & Screening: Screen Principle')) screenNeg++;
-        if (v.includes('+ve Cutting & Screening:  Cut Fill')) cutFillPos++;
-        if (v.includes('-ve Cutting & Screening:  Cut Fill')) cutFillNeg++;
+        const v = normalize(cell.textContent);
+
+        // Allow both +ve/-ve prefix and (+)/(-) suffix styles
+        if (hasAny(v, ['+ve cutting and screening: denial', 'cutting and screening: denial (+)', 'cutting & screening: denial (+)'.replace('&','and')])) denialPos++;
+        if (hasAny(v, ['-ve cutting and screening: denial', 'cutting and screening: denial (-)', 'cutting & screening: denial (-)'.replace('&','and')])) denialNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: movement', 'cutting and screening: movement (+)', 'cutting & screening: movement (+)'.replace('&','and')])) movePos++;
+        if (hasAny(v, ['-ve cutting and screening: movement', 'cutting and screening: movement (-)', 'cutting & screening: movement (-)'.replace('&','and')])) moveNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: body to body', 'cutting and screening: body to body (+)'])) bodyPos++;
+        if (hasAny(v, ['-ve cutting and screening: body to body', 'cutting and screening: body to body (-)'])) bodyNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: screen principle', 'cutting and screening: screen principle (+)', 'cutting and screening: screen principles (+)'])) screenPos++;
+        if (hasAny(v, ['-ve cutting and screening: screen principle', 'cutting and screening: screen principle (-)', 'cutting and screening: screen principles (-)'])) screenNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: cut fill', 'cutting and screening: cut fill (+)'])) cutFillPos++;
+        if (hasAny(v, ['-ve cutting and screening: cut fill', 'cutting and screening: cut fill (-)'])) cutFillNeg++;
     }
     document.getElementById('cs_denial_positive').value = denialPos;
     document.getElementById('cs_denial_negative').value = denialNeg;
@@ -2381,7 +2414,13 @@ function autofillCuttingScreening() {
     document.getElementById('cs_screen_principle_negative').value = screenNeg;
     document.getElementById('cs_cut_fill_positive').value = cutFillPos;
     document.getElementById('cs_cut_fill_negative').value = cutFillNeg;
-    alert(`Autofill Cutting & Screening completed!`);
+    const summary = `Autofill Cutting & Screening completed!\n` +
+        `Denial (+): ${denialPos} (-): ${denialNeg}\n` +
+        `Movement (+): ${movePos} (-): ${moveNeg}\n` +
+        `Body to Body (+): ${bodyPos} (-): ${bodyNeg}\n` +
+        `Screen Principle (+): ${screenPos} (-): ${screenNeg}\n` +
+        `Cut Fill (+): ${cutFillPos} (-): ${cutFillNeg}`;
+    alert(summary);
 }
 
 // Autofill Relocation (search Relocation column)
