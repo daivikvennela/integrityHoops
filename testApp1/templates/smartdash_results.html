@@ -530,7 +530,7 @@
                                             <i class="fas fa-id-card me-2"></i>
                                             Player Name
                                         </label>
-                                        <input type="text" class="form-control" id="player_name" name="player_name" readonly>
+                                        <input type="text" class="form-control" id="player_name" name="player_name_display" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -1647,9 +1647,18 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
+    document.getElementById('searchInput').addEventListener('keyup', function() {
     applySearch();
 });
+
+    // Keep readonly player_name_display in sync with dropdown so POST has player_name from select
+    const playerSelect = document.getElementById('player_dropdown');
+    const playerNameDisplay = document.getElementById('player_name');
+    if (playerSelect && playerNameDisplay) {
+        playerSelect.addEventListener('change', function() {
+            playerNameDisplay.value = this.value || '';
+        });
+    }
 
 // Row filter functionality
 document.getElementById('rowFilterInput').addEventListener('keyup', function() {
