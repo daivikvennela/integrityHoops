@@ -2315,26 +2315,58 @@ function autofillOffBallPositioning() {
     alert(`Autofill Positioning completed!\nCreate Shape (+): ${createShapePos} (-): ${createShapeNeg}\nAdvantage Awareness (+): ${advAwarePos} (-): ${advAwareNeg}`);
 }
 
-// Autofill Off Ball - Transition (col 62)
+// Autofill Off Ball - Transition (col 62) with robust detection
 function autofillOffBallTransition() {
     const table = document.getElementById('dataTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
     const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Try to identify the column by header text
     let colIndex = -1;
     for (let i = 0; i < headers.length; i++) {
-        const text = headers[i].textContent.trim();
-        if (text.includes('Transition') || text.toLowerCase().includes('transition')) { colIndex = i; break; }
+        const text = headers[i].textContent.trim().toLowerCase();
+        if (text.includes('transition')) { colIndex = i; break; }
     }
+    // 2) If not found, fallback to column 62 (index 61)
+    if (colIndex === -1 && headers.length > 61) {
+        colIndex = 61;
+    }
+    // 3) If still not confident, scan all columns and pick the best match for transition content
     if (colIndex === -1) {
-        colIndex = 61; // fallback to col 62
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                if (norm.includes('transition')) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
     }
+
+    const normalize = (s) => s.toLowerCase().replace(/\s+/g, ' ').replace(/&/g, 'and').trim();
+    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+
     let effortPacePos = 0, effortPaceNeg = 0;
     for (let row of rows) {
         const cell = row.getElementsByTagName('td')[colIndex];
         if (!cell) continue;
-        const val = cell.textContent.trim();
-        if (val.includes('+ve Transition: Effort and Pace')) effortPacePos++;
-        if (val.includes('-ve Transition: Effort and Pace')) effortPaceNeg++;
+        const v = normalize(cell.textContent);
+        // Support both prefix +ve/-ve and suffix (+)/(-), and '&' vs 'and'
+        if (hasAny(v, [
+            '+ve transition: effort and pace',
+            'transition: effort and pace (+)',
+            'effort and pace (+)'
+        ])) effortPacePos++;
+        if (hasAny(v, [
+            '-ve transition: effort and pace',
+            'transition: effort and pace (-)',
+            'effort and pace (-)'
+        ])) effortPaceNeg++;
     }
     document.getElementById('transition_effort_pace_positive').value = effortPacePos;
     document.getElementById('transition_effort_pace_negative').value = effortPaceNeg;
@@ -2423,36 +2455,72 @@ function autofillCuttingScreening() {
     alert(summary);
 }
 
-// Autofill Relocation (search Relocation column)
+// Autofill Relocation (robust detection + column resolution, default col 49)
 function autofillRelocation() {
     const table = document.getElementById('dataTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
     const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Try header match
     let colIndex = -1;
     for (let i = 0; i < headers.length; i++) {
-        const text = headers[i].textContent.trim();
-        if (text.includes('Relocation') || text.toLowerCase().includes('relocation')) { colIndex = i; break; }
+        const text = headers[i].textContent.trim().toLowerCase();
+        if (text.includes('relocation')) { colIndex = i; break; }
     }
-    if (colIndex === -1) { colIndex = 0; }
+    // 2) Fallback to column 49 (index 48)
+    if (colIndex === -1 && headers.length > 48) {
+        colIndex = 48;
+    }
+    // 3) Scan for best match if still unknown
+    if (colIndex === -1) {
+        const keywords = ['relocation','weak corner','45 cut','slide away','fill behind','dunker','corner fill','reverse direction'];
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                if (keywords.some(k => norm.includes(k))) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
+    }
+
+    const normalize = (s) => s.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/-/g, '-')
+        .trim();
+    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+
     let wcPos=0,wcNeg=0,c45Pos=0,c45Neg=0,saPos=0,saNeg=0,fbPos=0,fbNeg=0,dbPos=0,dbNeg=0,cfPos=0,cfNeg=0,rdPos=0,rdNeg=0;
     for (let row of rows) {
         const cell = row.getElementsByTagName('td')[colIndex];
         if (!cell) continue;
-        const v = cell.textContent.trim();
-        if (v.includes('+ve Relocation: Weak Corner')) wcPos++;
-        if (v.includes('-ve Relocation: Weak Corner')) wcNeg++;
-        if (v.includes('+ve 45 Cut')) c45Pos++;
-        if (v.includes('-ve Relocation: 45 Cut')) c45Neg++;
-        if (v.includes('+ve Relocation: Slide Away')) saPos++;
-        if (v.includes('-ve Relocation: Slide Away')) saNeg++;
-        if (v.includes('+ve Relocation: Fill Behind')) fbPos++;
-        if (v.includes('-ve Relocation: Fill Behind')) fbNeg++;
-        if (v.includes('+ve Relocation: Dunker-Baseline')) dbPos++;
-        if (v.includes('-ve Relocation: Dunker-Baseline')) dbNeg++;
-        if (v.includes('+ve Relocation: Corner Fill')) cfPos++;
-        if (v.includes('-ve Relocation: Corner Fill')) cfNeg++;
-        if (v.includes('+ve Relocation: Reverse Direction')) rdPos++;
-        if (v.includes('-ve Relocation: Reverse Direction')) rdNeg++;
+        const v = normalize(cell.textContent);
+        // Weak Corner
+        if (hasAny(v, ['+ve relocation: weak corner','relocation: weak corner (+)','weak corner (+)'])) wcPos++;
+        if (hasAny(v, ['-ve relocation: weak corner','relocation: weak corner (-)','weak corner (-)'])) wcNeg++;
+        // 45 Cut
+        if (hasAny(v, ['+ve relocation: 45 cut','relocation: 45 cut (+)','45 cut (+)','+ve 45 cut'])) c45Pos++;
+        if (hasAny(v, ['-ve relocation: 45 cut','relocation: 45 cut (-)','45 cut (-)'])) c45Neg++;
+        // Slide Away
+        if (hasAny(v, ['+ve relocation: slide away','relocation: slide away (+)','slide away (+)'])) saPos++;
+        if (hasAny(v, ['-ve relocation: slide away','relocation: slide away (-)','slide away (-)'])) saNeg++;
+        // Fill Behind
+        if (hasAny(v, ['+ve relocation: fill behind','relocation: fill behind (+)','fill behind (+)'])) fbPos++;
+        if (hasAny(v, ['-ve relocation: fill behind','relocation: fill behind (-)','fill behind (-)'])) fbNeg++;
+        // Dunker-Baseline
+        if (hasAny(v, ['+ve relocation: dunker-baseline','relocation: dunker-baseline (+)','dunker-baseline (+)','dunker baseline (+)'])) dbPos++;
+        if (hasAny(v, ['-ve relocation: dunker-baseline','relocation: dunker-baseline (-)','dunker-baseline (-)','dunker baseline (-)'])) dbNeg++;
+        // Corner Fill
+        if (hasAny(v, ['+ve relocation: corner fill','relocation: corner fill (+)','corner fill (+)'])) cfPos++;
+        if (hasAny(v, ['-ve relocation: corner fill','relocation: corner fill (-)','corner fill (-)'])) cfNeg++;
+        // Reverse Direction
+        if (hasAny(v, ['+ve relocation: reverse direction','relocation: reverse direction (+)','reverse direction (+)'])) rdPos++;
+        if (hasAny(v, ['-ve relocation: reverse direction','relocation: reverse direction (-)','reverse direction (-)'])) rdNeg++;
     }
     document.getElementById('relocation_weak_corner_positive').value = wcPos;
     document.getElementById('relocation_weak_corner_negative').value = wcNeg;
@@ -2468,7 +2536,15 @@ function autofillRelocation() {
     document.getElementById('relocation_corner_fill_negative').value = cfNeg;
     document.getElementById('relocation_reverse_direction_positive').value = rdPos;
     document.getElementById('relocation_reverse_direction_negative').value = rdNeg;
-    alert('Autofill Relocation completed!');
+    const summaryRel = `Autofill Relocation completed!\n`+
+        `Weak Corner (+): ${wcPos} (-): ${wcNeg}\n`+
+        `45 Cut (+): ${c45Pos} (-): ${c45Neg}\n`+
+        `Slide Away (+): ${saPos} (-): ${saNeg}\n`+
+        `Fill Behind (+): ${fbPos} (-): ${fbNeg}\n`+
+        `Dunker-Baseline (+): ${dbPos} (-): ${dbNeg}\n`+
+        `Corner Fill (+): ${cfPos} (-): ${cfNeg}\n`+
+        `Reverse Direction (+): ${rdPos} (-): ${rdNeg}`;
+    alert(summaryRel);
 }
 
 </script>
