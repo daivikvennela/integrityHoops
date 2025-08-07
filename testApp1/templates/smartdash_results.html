@@ -2322,17 +2322,24 @@ function autofillOffBallTransition() {
     const rows = tbody ? tbody.getElementsByTagName('tr') : [];
     const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
 
-    // 1) Try to identify the column by header text
+    // 1) Prefer exact column number match (Col 62) from header small text
     let colIndex = -1;
     for (let i = 0; i < headers.length; i++) {
-        const text = (headers[i].innerText || headers[i].textContent || '').trim().toLowerCase();
-        if (text.includes('transition')) { colIndex = i; break; }
+        const raw = headers[i].innerText || headers[i].textContent || '';
+        if(/(\(\s*Col\s*62\s*\))/i.test(raw)) { colIndex = i; break; }
     }
-    // 2) If not found, fallback to column 62 (index 61)
+    // 2) If not found, try to identify the column by header text
+    if (colIndex === -1) {
+        for (let i = 0; i < headers.length; i++) {
+            const text = (headers[i].innerText || headers[i].textContent || '').trim().toLowerCase();
+            if (text.includes('transition')) { colIndex = i; break; }
+        }
+    }
+    // 3) If not found, fallback to column 62 (index 61)
     if (colIndex === -1 && headers.length > 61) {
         colIndex = 61;
     }
-    // 3) If still not confident, scan all columns and pick the best match for transition content
+    // 4) If still not confident, scan all columns and pick the best match for transition content
     if (colIndex === -1) {
         let bestIdx = -1, bestScore = -1;
         for (let i = 0; i < headers.length; i++) {
