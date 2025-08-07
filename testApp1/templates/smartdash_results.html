@@ -2491,36 +2491,31 @@ function autofillRelocation() {
 
     const normalize = (s) => s.toLowerCase()
         .replace(/\s+/g, ' ')
-        .replace(/-/g, '-')
+        .replace(/\s*-\s*/g, '-')
         .trim();
-    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+    const hasAll = (s, keywords) => keywords.every(k => s.includes(k));
+    const extractCounts = (s) => {
+        // Matches forms like (+8/1-) with flexible spaces
+        const m = s.match(/\(\+\s*(\d+)\s*\/\s*(\d+)\s*-\s*\)/);
+        if (m) return [parseInt(m[1],10)||0, parseInt(m[2],10)||0];
+        return [0,0];
+    };
 
     let wcPos=0,wcNeg=0,c45Pos=0,c45Neg=0,saPos=0,saNeg=0,fbPos=0,fbNeg=0,dbPos=0,dbNeg=0,cfPos=0,cfNeg=0,rdPos=0,rdNeg=0;
     for (let row of rows) {
         const cell = row.getElementsByTagName('td')[colIndex];
         if (!cell) continue;
         const v = normalize(cell.textContent);
-        // Weak Corner
-        if (hasAny(v, ['+ve relocation: weak corner','relocation: weak corner (+)','weak corner (+)'])) wcPos++;
-        if (hasAny(v, ['-ve relocation: weak corner','relocation: weak corner (-)','weak corner (-)'])) wcNeg++;
-        // 45 Cut
-        if (hasAny(v, ['+ve relocation: 45 cut','relocation: 45 cut (+)','45 cut (+)','+ve 45 cut'])) c45Pos++;
-        if (hasAny(v, ['-ve relocation: 45 cut','relocation: 45 cut (-)','45 cut (-)'])) c45Neg++;
-        // Slide Away
-        if (hasAny(v, ['+ve relocation: slide away','relocation: slide away (+)','slide away (+)'])) saPos++;
-        if (hasAny(v, ['-ve relocation: slide away','relocation: slide away (-)','slide away (-)'])) saNeg++;
-        // Fill Behind
-        if (hasAny(v, ['+ve relocation: fill behind','relocation: fill behind (+)','fill behind (+)'])) fbPos++;
-        if (hasAny(v, ['-ve relocation: fill behind','relocation: fill behind (-)','fill behind (-)'])) fbNeg++;
-        // Dunker-Baseline
-        if (hasAny(v, ['+ve relocation: dunker-baseline','relocation: dunker-baseline (+)','dunker-baseline (+)','dunker baseline (+)'])) dbPos++;
-        if (hasAny(v, ['-ve relocation: dunker-baseline','relocation: dunker-baseline (-)','dunker-baseline (-)','dunker baseline (-)'])) dbNeg++;
-        // Corner Fill
-        if (hasAny(v, ['+ve relocation: corner fill','relocation: corner fill (+)','corner fill (+)'])) cfPos++;
-        if (hasAny(v, ['-ve relocation: corner fill','relocation: corner fill (-)','corner fill (-)'])) cfNeg++;
-        // Reverse Direction
-        if (hasAny(v, ['+ve relocation: reverse direction','relocation: reverse direction (+)','reverse direction (+)'])) rdPos++;
-        if (hasAny(v, ['-ve relocation: reverse direction','relocation: reverse direction (-)','reverse direction (-)'])) rdNeg++;
+        const [pos, neg] = extractCounts(v);
+        if (pos === 0 && neg === 0) continue;
+
+        if (hasAll(v, ['weak','corner'])) { wcPos += pos; wcNeg += neg; continue; }
+        if (hasAll(v, ['45','cut'])) { c45Pos += pos; c45Neg += neg; continue; }
+        if (hasAll(v, ['slide','away'])) { saPos += pos; saNeg += neg; continue; }
+        if (hasAll(v, ['fill','behind'])) { fbPos += pos; fbNeg += neg; continue; }
+        if (hasAll(v, ['dunker','baseline'])) { dbPos += pos; dbNeg += neg; continue; }
+        if (hasAll(v, ['corner','fill'])) { cfPos += pos; cfNeg += neg; continue; }
+        if (hasAll(v, ['reverse','direction'])) { rdPos += pos; rdNeg += neg; continue; }
     }
     document.getElementById('relocation_weak_corner_positive').value = wcPos;
     document.getElementById('relocation_weak_corner_negative').value = wcNeg;
