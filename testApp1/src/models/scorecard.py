@@ -15,6 +15,13 @@ class Scorecard:
                  dm_catch_swing_positive: int = 0, dm_catch_swing_negative: int = 0,
                  dm_catch_drive_pass_positive: int = 0, dm_catch_drive_pass_negative: int = 0,
                  dm_catch_drive_swing_skip_pass_positive: int = 0, dm_catch_drive_swing_skip_pass_negative: int = 0,
+                 qb12_strong_side_positive: int = 0, qb12_strong_side_negative: int = 0,
+                 qb12_baseline_positive: int = 0, qb12_baseline_negative: int = 0,
+                 qb12_fill_behind_positive: int = 0, qb12_fill_behind_negative: int = 0,
+                 qb12_weak_side_positive: int = 0, qb12_weak_side_negative: int = 0,
+                 qb12_roller_positive: int = 0, qb12_roller_negative: int = 0,
+                 qb12_skip_pass_positive: int = 0, qb12_skip_pass_negative: int = 0,
+                 qb12_cutter_positive: int = 0, qb12_cutter_negative: int = 0,
                  driving_paint_touch_positive: int = 0, driving_paint_touch_negative: int = 0,
                  driving_physicality_positive: int = 0, driving_physicality_negative: int = 0):
         """
@@ -38,6 +45,20 @@ class Scorecard:
             dm_catch_drive_pass_negative (int): Count of negative DM Catch: Drive Pass actions
             dm_catch_drive_swing_skip_pass_positive (int): Count of positive DM Catch: Drive a Swing/Skip Pass actions
             dm_catch_drive_swing_skip_pass_negative (int): Count of negative DM Catch: Drive a Swing/Skip Pass actions
+            qb12_strong_side_positive (int): Count of +ve QB12: Strong Side
+            qb12_strong_side_negative (int): Count of -ve QB12: Strong Side
+            qb12_baseline_positive (int): Count of +ve QB12: Baseline
+            qb12_baseline_negative (int): Count of -ve QB12: Baseline
+            qb12_fill_behind_positive (int): Count of +ve QB12: Fill Behind
+            qb12_fill_behind_negative (int): Count of -ve QB12: Fill Behind
+            qb12_weak_side_positive (int): Count of +ve QB12: Weak Side
+            qb12_weak_side_negative (int): Count of -ve QB12: Weak Side
+            qb12_roller_positive (int): Count of +ve QB12: Roller
+            qb12_roller_negative (int): Count of -ve QB12: Roller
+            qb12_skip_pass_positive (int): Count of +ve QB12: Skip Pass
+            qb12_skip_pass_negative (int): Count of -ve QB12: Skip Pass
+            qb12_cutter_positive (int): Count of +ve QB12: Cutter
+            qb12_cutter_negative (int): Count of -ve QB12: Cutter
             driving_paint_touch_positive (int): Count of positive driving paint touch actions
             driving_paint_touch_negative (int): Count of negative driving paint touch actions
             driving_physicality_positive (int): Count of positive driving physicality actions
@@ -59,6 +80,20 @@ class Scorecard:
         self.dm_catch_drive_pass_negative = dm_catch_drive_pass_negative
         self.dm_catch_drive_swing_skip_pass_positive = dm_catch_drive_swing_skip_pass_positive
         self.dm_catch_drive_swing_skip_pass_negative = dm_catch_drive_swing_skip_pass_negative
+        self.qb12_strong_side_positive = qb12_strong_side_positive
+        self.qb12_strong_side_negative = qb12_strong_side_negative
+        self.qb12_baseline_positive = qb12_baseline_positive
+        self.qb12_baseline_negative = qb12_baseline_negative
+        self.qb12_fill_behind_positive = qb12_fill_behind_positive
+        self.qb12_fill_behind_negative = qb12_fill_behind_negative
+        self.qb12_weak_side_positive = qb12_weak_side_positive
+        self.qb12_weak_side_negative = qb12_weak_side_negative
+        self.qb12_roller_positive = qb12_roller_positive
+        self.qb12_roller_negative = qb12_roller_negative
+        self.qb12_skip_pass_positive = qb12_skip_pass_positive
+        self.qb12_skip_pass_negative = qb12_skip_pass_negative
+        self.qb12_cutter_positive = qb12_cutter_positive
+        self.qb12_cutter_negative = qb12_cutter_negative
         self.driving_paint_touch_positive = driving_paint_touch_positive
         self.driving_paint_touch_negative = driving_paint_touch_negative
         self.driving_physicality_positive = driving_physicality_positive
@@ -88,6 +123,20 @@ class Scorecard:
             'dm_catch_drive_pass_negative': self.dm_catch_drive_pass_negative,
             'dm_catch_drive_swing_skip_pass_positive': self.dm_catch_drive_swing_skip_pass_positive,
             'dm_catch_drive_swing_skip_pass_negative': self.dm_catch_drive_swing_skip_pass_negative,
+            'qb12_strong_side_positive': self.qb12_strong_side_positive,
+            'qb12_strong_side_negative': self.qb12_strong_side_negative,
+            'qb12_baseline_positive': self.qb12_baseline_positive,
+            'qb12_baseline_negative': self.qb12_baseline_negative,
+            'qb12_fill_behind_positive': self.qb12_fill_behind_positive,
+            'qb12_fill_behind_negative': self.qb12_fill_behind_negative,
+            'qb12_weak_side_positive': self.qb12_weak_side_positive,
+            'qb12_weak_side_negative': self.qb12_weak_side_negative,
+            'qb12_roller_positive': self.qb12_roller_positive,
+            'qb12_roller_negative': self.qb12_roller_negative,
+            'qb12_skip_pass_positive': self.qb12_skip_pass_positive,
+            'qb12_skip_pass_negative': self.qb12_skip_pass_negative,
+            'qb12_cutter_positive': self.qb12_cutter_positive,
+            'qb12_cutter_negative': self.qb12_cutter_negative,
             'driving_paint_touch_positive': self.driving_paint_touch_positive,
             'driving_paint_touch_negative': self.driving_paint_touch_negative,
             'driving_physicality_positive': self.driving_physicality_positive,
@@ -122,6 +171,20 @@ class Scorecard:
             data.get('dm_catch_drive_pass_negative', 0),
             data.get('dm_catch_drive_swing_skip_pass_positive', 0),
             data.get('dm_catch_drive_swing_skip_pass_negative', 0),
+            data.get('qb12_strong_side_positive', 0),
+            data.get('qb12_strong_side_negative', 0),
+            data.get('qb12_baseline_positive', 0),
+            data.get('qb12_baseline_negative', 0),
+            data.get('qb12_fill_behind_positive', 0),
+            data.get('qb12_fill_behind_negative', 0),
+            data.get('qb12_weak_side_positive', 0),
+            data.get('qb12_weak_side_negative', 0),
+            data.get('qb12_roller_positive', 0),
+            data.get('qb12_roller_negative', 0),
+            data.get('qb12_skip_pass_positive', 0),
+            data.get('qb12_skip_pass_negative', 0),
+            data.get('qb12_cutter_positive', 0),
+            data.get('qb12_cutter_negative', 0),
             data.get('driving_paint_touch_positive', 0),
             data.get('driving_paint_touch_negative', 0),
             data.get('driving_physicality_positive', 0),
@@ -130,11 +193,11 @@ class Scorecard:
     
     def __str__(self) -> str:
         """String representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, qb12_strong_side_positive={self.qb12_strong_side_positive}, qb12_strong_side_negative={self.qb12_strong_side_negative}, qb12_baseline_positive={self.qb12_baseline_positive}, qb12_baseline_negative={self.qb12_baseline_negative}, qb12_fill_behind_positive={self.qb12_fill_behind_positive}, qb12_fill_behind_negative={self.qb12_fill_behind_negative}, qb12_weak_side_positive={self.qb12_weak_side_positive}, qb12_weak_side_negative={self.qb12_weak_side_negative}, qb12_roller_positive={self.qb12_roller_positive}, qb12_roller_negative={self.qb12_roller_negative}, qb12_skip_pass_positive={self.qb12_skip_pass_positive}, qb12_skip_pass_negative={self.qb12_skip_pass_negative}, qb12_cutter_positive={self.qb12_cutter_positive}, qb12_cutter_negative={self.qb12_cutter_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
     
     def __repr__(self) -> str:
         """Detailed string representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, qb12_strong_side_positive={self.qb12_strong_side_positive}, qb12_strong_side_negative={self.qb12_strong_side_negative}, qb12_baseline_positive={self.qb12_baseline_positive}, qb12_baseline_negative={self.qb12_baseline_negative}, qb12_fill_behind_positive={self.qb12_fill_behind_positive}, qb12_fill_behind_negative={self.qb12_fill_behind_negative}, qb12_weak_side_positive={self.qb12_weak_side_positive}, qb12_weak_side_negative={self.qb12_weak_side_negative}, qb12_roller_positive={self.qb12_roller_positive}, qb12_roller_negative={self.qb12_roller_negative}, qb12_skip_pass_positive={self.qb12_skip_pass_positive}, qb12_skip_pass_negative={self.qb12_skip_pass_negative}, qb12_cutter_positive={self.qb12_cutter_positive}, qb12_cutter_negative={self.qb12_cutter_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
     
     def __eq__(self, other) -> bool:
         """Check if two scorecards are equal."""
@@ -156,6 +219,20 @@ class Scorecard:
                 self.dm_catch_drive_pass_negative == other.dm_catch_drive_pass_negative and
                 self.dm_catch_drive_swing_skip_pass_positive == other.dm_catch_drive_swing_skip_pass_positive and
                 self.dm_catch_drive_swing_skip_pass_negative == other.dm_catch_drive_swing_skip_pass_negative and
+                self.qb12_strong_side_positive == other.qb12_strong_side_positive and
+                self.qb12_strong_side_negative == other.qb12_strong_side_negative and
+                self.qb12_baseline_positive == other.qb12_baseline_positive and
+                self.qb12_baseline_negative == other.qb12_baseline_negative and
+                self.qb12_fill_behind_positive == other.qb12_fill_behind_positive and
+                self.qb12_fill_behind_negative == other.qb12_fill_behind_negative and
+                self.qb12_weak_side_positive == other.qb12_weak_side_positive and
+                self.qb12_weak_side_negative == other.qb12_weak_side_negative and
+                self.qb12_roller_positive == other.qb12_roller_positive and
+                self.qb12_roller_negative == other.qb12_roller_negative and
+                self.qb12_skip_pass_positive == other.qb12_skip_pass_positive and
+                self.qb12_skip_pass_negative == other.qb12_skip_pass_negative and
+                self.qb12_cutter_positive == other.qb12_cutter_positive and
+                self.qb12_cutter_negative == other.qb12_cutter_negative and
                 self.driving_paint_touch_positive == other.driving_paint_touch_positive and
                 self.driving_paint_touch_negative == other.driving_paint_touch_negative and
                 self.driving_physicality_positive == other.driving_physicality_positive and
@@ -163,4 +240,4 @@ class Scorecard:
     
     def __hash__(self) -> int:
         """Hash the scorecard for use in sets and as dictionary keys."""
-        return hash((self.player_name, self.date_created, self.space_read_live_dribble, self.space_read_catch, self.space_read_live_dribble_negative, self.space_read_catch_negative, self.dm_catch_back_to_back_positive, self.dm_catch_back_to_back_negative, self.dm_catch_uncontested_shot_positive, self.dm_catch_uncontested_shot_negative, self.dm_catch_swing_positive, self.dm_catch_swing_negative, self.dm_catch_drive_pass_positive, self.dm_catch_drive_pass_negative, self.dm_catch_drive_swing_skip_pass_positive, self.dm_catch_drive_swing_skip_pass_negative, self.driving_paint_touch_positive, self.driving_paint_touch_negative, self.driving_physicality_positive, self.driving_physicality_negative)) 
+        return hash((self.player_name, self.date_created, self.space_read_live_dribble, self.space_read_catch, self.space_read_live_dribble_negative, self.space_read_catch_negative, self.dm_catch_back_to_back_positive, self.dm_catch_back_to_back_negative, self.dm_catch_uncontested_shot_positive, self.dm_catch_uncontested_shot_negative, self.dm_catch_swing_positive, self.dm_catch_swing_negative, self.dm_catch_drive_pass_positive, self.dm_catch_drive_pass_negative, self.dm_catch_drive_swing_skip_pass_positive, self.dm_catch_drive_swing_skip_pass_negative, self.qb12_strong_side_positive, self.qb12_strong_side_negative, self.qb12_baseline_positive, self.qb12_baseline_negative, self.qb12_fill_behind_positive, self.qb12_fill_behind_negative, self.qb12_weak_side_positive, self.qb12_weak_side_negative, self.qb12_roller_positive, self.qb12_roller_negative, self.qb12_skip_pass_positive, self.qb12_skip_pass_negative, self.qb12_cutter_positive, self.qb12_cutter_negative, self.driving_paint_touch_positive, self.driving_paint_touch_negative, self.driving_physicality_positive, self.driving_physicality_negative)) 

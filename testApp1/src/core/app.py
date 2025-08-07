@@ -525,6 +525,20 @@ def create_scorecard():
         dm_catch_drive_pass_negative = int(request.form.get('dm_catch_drive_pass_negative', 0))
         dm_catch_drive_swing_skip_pass_positive = int(request.form.get('dm_catch_drive_swing_skip_pass_positive', 0))
         dm_catch_drive_swing_skip_pass_negative = int(request.form.get('dm_catch_drive_swing_skip_pass_negative', 0))
+        qb12_strong_side_positive = int(request.form.get('qb12_strong_side_positive', 0))
+        qb12_strong_side_negative = int(request.form.get('qb12_strong_side_negative', 0))
+        qb12_baseline_positive = int(request.form.get('qb12_baseline_positive', 0))
+        qb12_baseline_negative = int(request.form.get('qb12_baseline_negative', 0))
+        qb12_fill_behind_positive = int(request.form.get('qb12_fill_behind_positive', 0))
+        qb12_fill_behind_negative = int(request.form.get('qb12_fill_behind_negative', 0))
+        qb12_weak_side_positive = int(request.form.get('qb12_weak_side_positive', 0))
+        qb12_weak_side_negative = int(request.form.get('qb12_weak_side_negative', 0))
+        qb12_roller_positive = int(request.form.get('qb12_roller_positive', 0))
+        qb12_roller_negative = int(request.form.get('qb12_roller_negative', 0))
+        qb12_skip_pass_positive = int(request.form.get('qb12_skip_pass_positive', 0))
+        qb12_skip_pass_negative = int(request.form.get('qb12_skip_pass_negative', 0))
+        qb12_cutter_positive = int(request.form.get('qb12_cutter_positive', 0))
+        qb12_cutter_negative = int(request.form.get('qb12_cutter_negative', 0))
         driving_paint_touch_positive = int(request.form.get('driving_paint_touch_positive', 0))
         driving_paint_touch_negative = int(request.form.get('driving_paint_touch_negative', 0))
         driving_physicality_positive = int(request.form.get('driving_physicality_positive', 0))
@@ -552,6 +566,20 @@ def create_scorecard():
             dm_catch_drive_pass_negative=dm_catch_drive_pass_negative,
             dm_catch_drive_swing_skip_pass_positive=dm_catch_drive_swing_skip_pass_positive,
             dm_catch_drive_swing_skip_pass_negative=dm_catch_drive_swing_skip_pass_negative,
+            qb12_strong_side_positive=qb12_strong_side_positive,
+            qb12_strong_side_negative=qb12_strong_side_negative,
+            qb12_baseline_positive=qb12_baseline_positive,
+            qb12_baseline_negative=qb12_baseline_negative,
+            qb12_fill_behind_positive=qb12_fill_behind_positive,
+            qb12_fill_behind_negative=qb12_fill_behind_negative,
+            qb12_weak_side_positive=qb12_weak_side_positive,
+            qb12_weak_side_negative=qb12_weak_side_negative,
+            qb12_roller_positive=qb12_roller_positive,
+            qb12_roller_negative=qb12_roller_negative,
+            qb12_skip_pass_positive=qb12_skip_pass_positive,
+            qb12_skip_pass_negative=qb12_skip_pass_negative,
+            qb12_cutter_positive=qb12_cutter_positive,
+            qb12_cutter_negative=qb12_cutter_negative,
             driving_paint_touch_positive=driving_paint_touch_positive,
             driving_paint_touch_negative=driving_paint_touch_negative,
             driving_physicality_positive=driving_physicality_positive,
@@ -627,6 +655,50 @@ def create_scorecard():
                 if "dm_catch_drive_swing_skip_pass_negative" not in columns:
                     cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_drive_swing_skip_pass_negative INTEGER DEFAULT 0")
                     print("Added dm_catch_drive_swing_skip_pass_negative column")
+
+                # Add QB12 columns if missing
+                if "qb12_strong_side_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_strong_side_positive INTEGER DEFAULT 0")
+                    print("Added qb12_strong_side_positive column")
+                if "qb12_strong_side_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_strong_side_negative INTEGER DEFAULT 0")
+                    print("Added qb12_strong_side_negative column")
+                if "qb12_baseline_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_baseline_positive INTEGER DEFAULT 0")
+                    print("Added qb12_baseline_positive column")
+                if "qb12_baseline_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_baseline_negative INTEGER DEFAULT 0")
+                    print("Added qb12_baseline_negative column")
+                if "qb12_fill_behind_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_fill_behind_positive INTEGER DEFAULT 0")
+                    print("Added qb12_fill_behind_positive column")
+                if "qb12_fill_behind_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_fill_behind_negative INTEGER DEFAULT 0")
+                    print("Added qb12_fill_behind_negative column")
+                if "qb12_weak_side_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_weak_side_positive INTEGER DEFAULT 0")
+                    print("Added qb12_weak_side_positive column")
+                if "qb12_weak_side_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_weak_side_negative INTEGER DEFAULT 0")
+                    print("Added qb12_weak_side_negative column")
+                if "qb12_roller_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_roller_positive INTEGER DEFAULT 0")
+                    print("Added qb12_roller_positive column")
+                if "qb12_roller_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_roller_negative INTEGER DEFAULT 0")
+                    print("Added qb12_roller_negative column")
+                if "qb12_skip_pass_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_skip_pass_positive INTEGER DEFAULT 0")
+                    print("Added qb12_skip_pass_positive column")
+                if "qb12_skip_pass_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_skip_pass_negative INTEGER DEFAULT 0")
+                    print("Added qb12_skip_pass_negative column")
+                if "qb12_cutter_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_cutter_positive INTEGER DEFAULT 0")
+                    print("Added qb12_cutter_positive column")
+                if "qb12_cutter_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN qb12_cutter_negative INTEGER DEFAULT 0")
+                    print("Added qb12_cutter_negative column")
                 
                 # Add driving_paint_touch_positive if missing
                 if "driving_paint_touch_positive" not in columns:

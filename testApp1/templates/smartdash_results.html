@@ -846,6 +846,219 @@
                                 </div>
                             </div>
                             
+                            <!-- QB12 Decision Making Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-chess-knight me-2"></i>
+                                                QB12 Decision Making
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Strong Side Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_strong_side_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Strong Side (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_strong_side_positive" name="qb12_strong_side_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Strong Side" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_strong_side_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Strong Side (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_strong_side_negative" name="qb12_strong_side_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Strong Side" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Baseline Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_baseline_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Baseline (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_baseline_positive" name="qb12_baseline_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Baseline" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_baseline_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Baseline (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_baseline_negative" name="qb12_baseline_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Baseline" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fill Behind / Weak Side Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_fill_behind_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Fill Behind (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_fill_behind_positive" name="qb12_fill_behind_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Fill Behind" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_weak_side_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Weak Side (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_weak_side_positive" name="qb12_weak_side_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Weak Side" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Weak Side (-) / Roller Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_weak_side_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Weak Side (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_weak_side_negative" name="qb12_weak_side_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Weak Side" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_roller_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Roller (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_roller_positive" name="qb12_roller_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Roller" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+        
+                                            <!-- Roller (-) / Skip Pass Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_roller_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Roller (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_roller_negative" name="qb12_roller_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Roller" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_skip_pass_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Skip Pass (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_skip_pass_positive" name="qb12_skip_pass_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Skip Pass (-) / Cutter (+) Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_skip_pass_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Skip Pass (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_skip_pass_negative" name="qb12_skip_pass_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_cutter_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Cutter (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_cutter_positive" name="qb12_cutter_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Cutter" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Cutter (-) Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_cutter_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Cutter (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_cutter_negative" name="qb12_cutter_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Cutter" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <div class="card border-primary">
@@ -1438,6 +1651,78 @@ function autofillDMCatch() {
     
     // Show success message
     const message = `Autofill completed!\nBack-to-Back (+): ${backToBackPositiveCount}\nBack-to-Back (-): ${backToBackNegativeCount}\nUncontested Shot (+): ${uncontestedShotPositiveCount}\nUncontested Shot (-): ${uncontestedShotNegativeCount}\nSwing (+): ${swingPositiveCount}\nSwing (-): ${swingNegativeCount}\nDrive Pass (+): ${drivePassPositiveCount}\nDrive Pass (-): ${drivePassNegativeCount}\nDrive a Swing/Skip Pass (+): ${driveSwingSkipPassPositiveCount}\nDrive a Swing/Skip Pass (-): ${driveSwingSkipPassNegativeCount}`;
+    alert(message);
+}
+
+// Autofill QB12 Decision Making function
+function autofillQB12() {
+    const table = document.getElementById('dataTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    let qb12ColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('QB12Dm') || headerText.toLowerCase().includes('qb12')) {
+            qb12ColumnIndex = i;
+            break;
+        }
+    }
+
+    if (qb12ColumnIndex === -1) {
+        // Fallback to column 47 (index 46)
+        qb12ColumnIndex = 46;
+        const sampleRow = rows.length > 0 ? rows[0] : null;
+        if (!sampleRow || sampleRow.getElementsByTagName('td').length <= qb12ColumnIndex) {
+            alert('QB12Dm column not found (expected col 47). Ensure the data contains a QB12Dm column.');
+            return;
+        }
+    }
+
+    let strongSidePos = 0, strongSideNeg = 0;
+    let baselinePos = 0, baselineNeg = 0;
+    let fillBehindPos = 0;
+    let weakSidePos = 0, weakSideNeg = 0;
+    let rollerPos = 0, rollerNeg = 0;
+    let skipPassPos = 0, skipPassNeg = 0;
+    let cutterPos = 0, cutterNeg = 0;
+
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > qb12ColumnIndex) {
+            const cellValue = cells[qb12ColumnIndex].textContent.trim();
+            if (cellValue.includes('+ve QB12: Strong Side')) strongSidePos++;
+            if (cellValue.includes('-ve QB12: Strong Side')) strongSideNeg++;
+            if (cellValue.includes('+ve QB12: Baseline')) baselinePos++;
+            if (cellValue.includes('-ve QB12: Baseline')) baselineNeg++;
+            if (cellValue.includes('+ve QB12: Fill Behind')) fillBehindPos++;
+            if (cellValue.includes('+ve QB12: Weak Side')) weakSidePos++;
+            if (cellValue.includes('-ve QB12: Weak Side')) weakSideNeg++;
+            if (cellValue.includes('+ve QB12: Roller')) rollerPos++;
+            if (cellValue.includes('-ve QB12: Roller')) rollerNeg++;
+            if (cellValue.includes('+ve QB12: Skip Pass')) skipPassPos++;
+            if (cellValue.includes('-ve QB12: Skip Pass')) skipPassNeg++;
+            if (cellValue.includes('+ve QB12: Cutter')) cutterPos++;
+            if (cellValue.includes('-ve QB12: Cutter')) cutterNeg++;
+        }
+    }
+
+    document.getElementById('qb12_strong_side_positive').value = strongSidePos;
+    document.getElementById('qb12_strong_side_negative').value = strongSideNeg;
+    document.getElementById('qb12_baseline_positive').value = baselinePos;
+    document.getElementById('qb12_baseline_negative').value = baselineNeg;
+    document.getElementById('qb12_fill_behind_positive').value = fillBehindPos;
+    document.getElementById('qb12_weak_side_positive').value = weakSidePos;
+    document.getElementById('qb12_weak_side_negative').value = weakSideNeg;
+    document.getElementById('qb12_roller_positive').value = rollerPos;
+    document.getElementById('qb12_roller_negative').value = rollerNeg;
+    document.getElementById('qb12_skip_pass_positive').value = skipPassPos;
+    document.getElementById('qb12_skip_pass_negative').value = skipPassNeg;
+    document.getElementById('qb12_cutter_positive').value = cutterPos;
+    document.getElementById('qb12_cutter_negative').value = cutterNeg;
+
+    const message = `Autofill QB12 completed!\nStrong Side (+): ${strongSidePos} (-): ${strongSideNeg}\nBaseline (+): ${baselinePos} (-): ${baselineNeg}\nFill Behind (+): ${fillBehindPos}\nWeak Side (+): ${weakSidePos} (-): ${weakSideNeg}\nRoller (+): ${rollerPos} (-): ${rollerNeg}\nSkip Pass (+): ${skipPassPos} (-): ${skipPassNeg}\nCutter (+): ${cutterPos} (-): ${cutterNeg}`;
     alert(message);
 }
 
