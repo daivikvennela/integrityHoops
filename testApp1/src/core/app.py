@@ -515,6 +515,16 @@ def create_scorecard():
         space_read_catch = int(request.form.get('space_read_catch', 0))
         space_read_live_dribble_negative = int(request.form.get('space_read_live_dribble_negative', 0))
         space_read_catch_negative = int(request.form.get('space_read_catch_negative', 0))
+        dm_catch_back_to_back_positive = int(request.form.get('dm_catch_back_to_back_positive', 0))
+        dm_catch_back_to_back_negative = int(request.form.get('dm_catch_back_to_back_negative', 0))
+        dm_catch_uncontested_shot_positive = int(request.form.get('dm_catch_uncontested_shot_positive', 0))
+        dm_catch_uncontested_shot_negative = int(request.form.get('dm_catch_uncontested_shot_negative', 0))
+        dm_catch_swing_positive = int(request.form.get('dm_catch_swing_positive', 0))
+        dm_catch_swing_negative = int(request.form.get('dm_catch_swing_negative', 0))
+        dm_catch_drive_pass_positive = int(request.form.get('dm_catch_drive_pass_positive', 0))
+        dm_catch_drive_pass_negative = int(request.form.get('dm_catch_drive_pass_negative', 0))
+        dm_catch_drive_swing_skip_pass_positive = int(request.form.get('dm_catch_drive_swing_skip_pass_positive', 0))
+        dm_catch_drive_swing_skip_pass_negative = int(request.form.get('dm_catch_drive_swing_skip_pass_negative', 0))
         driving_paint_touch_positive = int(request.form.get('driving_paint_touch_positive', 0))
         driving_paint_touch_negative = int(request.form.get('driving_paint_touch_negative', 0))
         driving_physicality_positive = int(request.form.get('driving_physicality_positive', 0))
@@ -532,6 +542,16 @@ def create_scorecard():
             space_read_catch=space_read_catch,
             space_read_live_dribble_negative=space_read_live_dribble_negative,
             space_read_catch_negative=space_read_catch_negative,
+            dm_catch_back_to_back_positive=dm_catch_back_to_back_positive,
+            dm_catch_back_to_back_negative=dm_catch_back_to_back_negative,
+            dm_catch_uncontested_shot_positive=dm_catch_uncontested_shot_positive,
+            dm_catch_uncontested_shot_negative=dm_catch_uncontested_shot_negative,
+            dm_catch_swing_positive=dm_catch_swing_positive,
+            dm_catch_swing_negative=dm_catch_swing_negative,
+            dm_catch_drive_pass_positive=dm_catch_drive_pass_positive,
+            dm_catch_drive_pass_negative=dm_catch_drive_pass_negative,
+            dm_catch_drive_swing_skip_pass_positive=dm_catch_drive_swing_skip_pass_positive,
+            dm_catch_drive_swing_skip_pass_negative=dm_catch_drive_swing_skip_pass_negative,
             driving_paint_touch_positive=driving_paint_touch_positive,
             driving_paint_touch_negative=driving_paint_touch_negative,
             driving_physicality_positive=driving_physicality_positive,
@@ -566,6 +586,47 @@ def create_scorecard():
                 if "space_read_catch_negative" not in columns:
                     cursor.execute("ALTER TABLE scorecards ADD COLUMN space_read_catch_negative INTEGER DEFAULT 0")
                     print("Added space_read_catch_negative column")
+                
+                # Add DM Catch columns if missing
+                if "dm_catch_back_to_back_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_back_to_back_positive INTEGER DEFAULT 0")
+                    print("Added dm_catch_back_to_back_positive column")
+                
+                if "dm_catch_back_to_back_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_back_to_back_negative INTEGER DEFAULT 0")
+                    print("Added dm_catch_back_to_back_negative column")
+                
+                if "dm_catch_uncontested_shot_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_uncontested_shot_positive INTEGER DEFAULT 0")
+                    print("Added dm_catch_uncontested_shot_positive column")
+                
+                if "dm_catch_uncontested_shot_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_uncontested_shot_negative INTEGER DEFAULT 0")
+                    print("Added dm_catch_uncontested_shot_negative column")
+                
+                if "dm_catch_swing_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_swing_positive INTEGER DEFAULT 0")
+                    print("Added dm_catch_swing_positive column")
+                
+                if "dm_catch_swing_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_swing_negative INTEGER DEFAULT 0")
+                    print("Added dm_catch_swing_negative column")
+                
+                if "dm_catch_drive_pass_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_drive_pass_positive INTEGER DEFAULT 0")
+                    print("Added dm_catch_drive_pass_positive column")
+                
+                if "dm_catch_drive_pass_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_drive_pass_negative INTEGER DEFAULT 0")
+                    print("Added dm_catch_drive_pass_negative column")
+                
+                if "dm_catch_drive_swing_skip_pass_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_drive_swing_skip_pass_positive INTEGER DEFAULT 0")
+                    print("Added dm_catch_drive_swing_skip_pass_positive column")
+                
+                if "dm_catch_drive_swing_skip_pass_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN dm_catch_drive_swing_skip_pass_negative INTEGER DEFAULT 0")
+                    print("Added dm_catch_drive_swing_skip_pass_negative column")
                 
                 # Add driving_paint_touch_positive if missing
                 if "driving_paint_touch_positive" not in columns:

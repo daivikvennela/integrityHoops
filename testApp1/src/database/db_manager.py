@@ -56,6 +56,16 @@ class DatabaseManager:
                     space_read_catch INTEGER DEFAULT 0,
                     space_read_live_dribble_negative INTEGER DEFAULT 0,
                     space_read_catch_negative INTEGER DEFAULT 0,
+                    dm_catch_back_to_back_positive INTEGER DEFAULT 0,
+                    dm_catch_back_to_back_negative INTEGER DEFAULT 0,
+                    dm_catch_uncontested_shot_positive INTEGER DEFAULT 0,
+                    dm_catch_uncontested_shot_negative INTEGER DEFAULT 0,
+                    dm_catch_swing_positive INTEGER DEFAULT 0,
+                    dm_catch_swing_negative INTEGER DEFAULT 0,
+                    dm_catch_drive_pass_positive INTEGER DEFAULT 0,
+                    dm_catch_drive_pass_negative INTEGER DEFAULT 0,
+                    dm_catch_drive_swing_skip_pass_positive INTEGER DEFAULT 0,
+                    dm_catch_drive_swing_skip_pass_negative INTEGER DEFAULT 0,
                     driving_paint_touch_positive INTEGER DEFAULT 0,
                     driving_paint_touch_negative INTEGER DEFAULT 0,
                     driving_physicality_positive INTEGER DEFAULT 0,
@@ -205,8 +215,8 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'INSERT INTO scorecards (player_name, date_created, space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (scorecard.player_name, scorecard.date_created, scorecard.space_read_live_dribble, scorecard.space_read_catch, scorecard.space_read_live_dribble_negative, scorecard.space_read_catch_negative, scorecard.driving_paint_touch_positive, scorecard.driving_paint_touch_negative, scorecard.driving_physicality_positive, scorecard.driving_physicality_negative)
+                    'INSERT INTO scorecards (player_name, date_created, space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative, dm_catch_back_to_back_positive, dm_catch_back_to_back_negative, dm_catch_uncontested_shot_positive, dm_catch_uncontested_shot_negative, dm_catch_swing_positive, dm_catch_swing_negative, dm_catch_drive_pass_positive, dm_catch_drive_pass_negative, dm_catch_drive_swing_skip_pass_positive, dm_catch_drive_swing_skip_pass_negative, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (scorecard.player_name, scorecard.date_created, scorecard.space_read_live_dribble, scorecard.space_read_catch, scorecard.space_read_live_dribble_negative, scorecard.space_read_catch_negative, scorecard.dm_catch_back_to_back_positive, scorecard.dm_catch_back_to_back_negative, scorecard.dm_catch_uncontested_shot_positive, scorecard.dm_catch_uncontested_shot_negative, scorecard.dm_catch_swing_positive, scorecard.dm_catch_swing_negative, scorecard.dm_catch_drive_pass_positive, scorecard.dm_catch_drive_pass_negative, scorecard.dm_catch_drive_swing_skip_pass_positive, scorecard.dm_catch_drive_swing_skip_pass_negative, scorecard.driving_paint_touch_positive, scorecard.driving_paint_touch_negative, scorecard.driving_physicality_positive, scorecard.driving_physicality_negative)
                 )
                 conn.commit()
                 return True
@@ -228,14 +238,14 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    'SELECT player_name, date_created, space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative FROM scorecards WHERE player_name = ? ORDER BY date_created DESC',
+                    'SELECT player_name, date_created, space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative, dm_catch_back_to_back_positive, dm_catch_back_to_back_negative, dm_catch_uncontested_shot_positive, dm_catch_uncontested_shot_negative, dm_catch_swing_positive, dm_catch_swing_negative, dm_catch_drive_pass_positive, dm_catch_drive_pass_negative, dm_catch_drive_swing_skip_pass_positive, dm_catch_drive_swing_skip_pass_negative, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative FROM scorecards WHERE player_name = ? ORDER BY date_created DESC',
                     (player_name,)
                 )
                 rows = cursor.fetchall()
                 
                 scorecards = []
                 for row in rows:
-                    scorecard = Scorecard(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9])
+                    scorecard = Scorecard(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16], row[17], row[18], row[19])
                     scorecards.append(scorecard)
                 
                 return scorecards
