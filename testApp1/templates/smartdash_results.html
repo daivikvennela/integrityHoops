@@ -2325,7 +2325,7 @@ function autofillOffBallTransition() {
     // 1) Try to identify the column by header text
     let colIndex = -1;
     for (let i = 0; i < headers.length; i++) {
-        const text = headers[i].textContent.trim().toLowerCase();
+        const text = (headers[i].innerText || headers[i].textContent || '').trim().toLowerCase();
         if (text.includes('transition')) { colIndex = i; break; }
     }
     // 2) If not found, fallback to column 62 (index 61)
@@ -2340,7 +2340,7 @@ function autofillOffBallTransition() {
             for (let row of rows) {
                 const cell = row.getElementsByTagName('td')[i];
                 if (!cell) continue;
-                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                const norm = (cell.textContent || '').toLowerCase().replace(/\s+/g, ' ');
                 if (norm.includes('transition')) score++;
             }
             if (score > bestScore) { bestScore = score; bestIdx = i; }
@@ -2348,14 +2348,29 @@ function autofillOffBallTransition() {
         colIndex = bestIdx !== -1 ? bestIdx : 0;
     }
 
-    const normalize = (s) => s.toLowerCase().replace(/\s+/g, ' ').replace(/&/g, 'and').trim();
+    const normalize = (s) => (s || '').toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/&/g, 'and')
+        .replace(/[–—]/g, '-')
+        .trim();
     const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+    const extractCounts = (s) => {
+        // If Transition column ever uses compact (+X/Y-) form
+        const m = s.match(/\(\+\s*(\d+)\s*\/\s*(\d+)\s*\-\s*\)/);
+        if (m) return [parseInt(m[1],10)||0, parseInt(m[2],10)||0];
+        return [0,0];
+    };
 
     let effortPacePos = 0, effortPaceNeg = 0;
     for (let row of rows) {
         const cell = row.getElementsByTagName('td')[colIndex];
         if (!cell) continue;
         const v = normalize(cell.textContent);
+        const [pos, neg] = extractCounts(v);
+        if (pos > 0 || neg > 0) {
+            // If compact counter is present but Transition values are aggregated per row, count once
+            // Otherwise, if it’s specific to Effort and Pace, keep as-is
+        }
         // Support both prefix +ve/-ve and suffix (+)/(-), and '&' vs 'and'
         if (hasAny(v, [
             '+ve transition: effort and pace',
@@ -2370,7 +2385,7 @@ function autofillOffBallTransition() {
     }
     document.getElementById('transition_effort_pace_positive').value = effortPacePos;
     document.getElementById('transition_effort_pace_negative').value = effortPaceNeg;
-    alert(`Autofill Transition completed!\nEffort and Pace (+): ${effortPacePos} (-): ${effortPaceNeg}`);
+    alert(`Autofill Transition completed (using column #${colIndex+1}).\nEffort and Pace (+): ${effortPacePos} (-): ${effortPaceNeg}`);
 }
 
 // Autofill Cutting & Screening (robust detection + column resolution)
