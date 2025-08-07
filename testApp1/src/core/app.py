@@ -232,10 +232,14 @@ def scorecard_plus_with_data(filename):
         # Get the original CSV filename for display
         original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
         
-        return render_template('scorecard_plus.html', 
+        # Build player stats for neon dashboard
+        player_stats = processor.build_player_stats(df)
+
+        return render_template('neon_dashboard.html', 
                              filename=filename,
                              original_filename=original_filename,
                              scorecard_metrics=scorecard_metrics,
+                             player_stats=player_stats,
                              df=df)
         
     except Exception as e:

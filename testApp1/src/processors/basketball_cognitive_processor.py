@@ -393,6 +393,52 @@ class BasketballCognitiveProcessor:
         
         return metrics
     
+    def build_player_stats(self, df):
+        """Build a compact playerStats structure for neon dashboard using existing metrics."""
+        metrics = self.calculate_scorecard_plus_metrics(df)
+
+        def avg(values):
+            cleaned = [v for v in values if isinstance(v, (int, float, np.floating, np.integer))]
+            return round(float(sum(cleaned)) / len(cleaned), 1) if cleaned else 0.0
+
+        player_stats = {
+            'player': metrics.get('player'),
+            'opponent': metrics.get('opponent'),
+            'date': metrics.get('date'),
+            'mainMetrics': {
+                'overallCognition': metrics.get('overall_cognition', 0),
+                'onBallCognition': metrics.get('on_ball_cognition', 0),
+                'offBallCognition': metrics.get('off_ball_cognition', 0),
+                'technicalBreakdown': avg([
+                    metrics.get('footwork_percentage'),
+                    metrics.get('finishing_percentage'),
+                    metrics.get('passing_percentage'),
+                ]),
+                'sharedCognition': avg([
+                    metrics.get('advantage_awareness_percentage'),
+                    metrics.get('teammate_on_move_percentage'),
+                ]),
+            },
+            'detailedStats': {
+                'shotDistribution': {
+                    'shotPct': metrics.get('shooting_percentage', 0),
+                    'made': metrics.get('made_shots', 0),
+                    'attempts': metrics.get('total_shots', 0),
+                    'fouled': metrics.get('fouled_shots', 0),
+                    'threes': metrics.get('three_pointers', 0),
+                    'deep2': metrics.get('deep_twos', 0),
+                    'short2': metrics.get('short_twos', 0),
+                },
+                'gameSummary': {
+                    'points': metrics.get('points_scored', 0),
+                    'turnovers': metrics.get('negative_turnovers', 0),
+                    'totalEvents': metrics.get('total_events', 0),
+                },
+            },
+        }
+
+        return player_stats
+    
     def calculate_on_ball_cognition(self, df):
         """Calculate On Ball Cognition metrics"""
         metrics = {}
