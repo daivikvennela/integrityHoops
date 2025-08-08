@@ -1608,7 +1608,7 @@
                                     <i class="fas fa-plus me-2"></i>
                                     Create Scorecard
                                 </button>
-                                <a href="{{ url_for('scorecard_plus_with_data', filename=filename) }}" class="btn btn-outline-warning btn-lg ms-2" id="openNeonDashboardBtn">
+                                <a href="{{ url_for('scorecard_plus_with_data', filename=(output_path|default(filename, true)|replace('\\','/')|split('/')|last)) }}" class="btn btn-outline-warning btn-lg ms-2" id="openNeonDashboardBtn">
                                     <i class="fas fa-bolt me-2"></i>
                                     Open Neon Dashboard
                                 </a>
