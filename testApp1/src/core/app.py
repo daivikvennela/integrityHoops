@@ -11,6 +11,7 @@ from src.processors.custom_etl_processor import StatisticalDataProcessor
 from src.processors.basketball_cognitive_processor import BasketballCognitiveProcessor
 from src.api.player_api import player_api
 from src.api.player_management_dashboard import player_dashboard
+from src.core.dashboard import dashboard_bp
 from src.database.db_manager import DatabaseManager
 
 # Configure logging
@@ -23,6 +24,7 @@ app.secret_key = 'your-secret-key-here'
 # Register blueprints
 app.register_blueprint(player_api)
 app.register_blueprint(player_dashboard)
+app.register_blueprint(dashboard_bp)
 
 # Configuration
 UPLOAD_FOLDER = 'data/uploads'
@@ -215,36 +217,8 @@ def scorecard_plus():
 
 @app.route('/scorecard-plus/<filename>')
 def scorecard_plus_with_data(filename):
-    """ScoreCard Plus dashboard with specific data file"""
-    try:
-        file_path = os.path.join(PROCESSED_FOLDER, filename)
-        if not os.path.exists(file_path):
-            flash('File not found')
-            return redirect(url_for('scorecard_plus'))
-        
-        # Load the processed data
-        df = pd.read_csv(file_path)
-        
-        # Extract comprehensive performance data using the new calculation functions
-        processor = BasketballCognitiveProcessor()
-        scorecard_metrics = processor.calculate_scorecard_plus_metrics(df)
-        
-        # Get the original CSV filename for display
-        original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
-        
-        # Build player stats for neon dashboard
-        player_stats = processor.build_player_stats(df)
-
-        return render_template('neon_dashboard.html', 
-                             filename=filename,
-                             original_filename=original_filename,
-                             scorecard_metrics=scorecard_metrics,
-                             player_stats=player_stats,
-                             df=df)
-        
-    except Exception as e:
-        flash(f'Error loading data: {str(e)}')
-        return redirect(url_for('scorecard_plus'))
+    """Proxy route delegating to dashboard blueprint for backward compatibility"""
+    return redirect(url_for('dashboard_bp.scorecard_plus_with_data', filename=filename))
 
 @app.route('/scorecard-plus/<filename>/refresh')
 def scorecard_plus_refresh(filename):
@@ -513,7 +487,8 @@ def create_scorecard():
         from src.models.scorecard import Scorecard
         
         # Get form data
-        player_name = request.form.get('player_name') or request.form.get('player_dropdown')
+        # Accept either the select field (preferred) or legacy 'player_name'
+        player_name = request.form.get('player_name') or request.form.get('player_dropdown') or request.form.get('player_name_display')
         date_created = int(datetime.now().timestamp())
         space_read_live_dribble = int(request.form.get('space_read_live_dribble', 0))
         space_read_catch = int(request.form.get('space_read_catch', 0))
