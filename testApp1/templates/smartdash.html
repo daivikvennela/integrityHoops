@@ -5,29 +5,31 @@
 {% block extra_css %}
 <style>
     .smartdash-container {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #111827 0%, #0b0f19 100%);
         min-height: 100vh;
         padding: 20px 0;
     }
     
     .dashboard-card {
-        background: rgba(255, 255, 255, 0.95);
+        background: rgba(17, 24, 39, 0.9);
         border-radius: 15px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(168, 85, 247, 0.3);
         margin-bottom: 35px;
         overflow: hidden;
+        color: #e5e7eb;
     }
     
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #6d28d9 0%, #a855f7 100%);
+        color: #ffffff;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 25px;
         text-align: center;
         transition: transform 0.3s ease;
+        box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
     }
     
     .metric-card:hover {
@@ -46,11 +48,12 @@
     }
     
     .insight-card {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
         color: white;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 25px;
+        box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
     }
     
     .trend-indicator {
@@ -77,23 +80,25 @@
     }
     
     .performance-chart {
-        background: white;
+        background: #0f172a;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 30px;
+        color: #e5e7eb;
     }
     
     .category-breakdown {
-        background: white;
+        background: #0f172a;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 30px;
+        color: #e5e7eb;
     }
     
     .progress-bar-custom {
         height: 8px;
         border-radius: 4px;
-        background: #e5e7eb;
+        background: #1f2937;
         overflow: hidden;
     }
     
@@ -104,49 +109,54 @@
     }
     
     .progress-excellent {
-        background: linear-gradient(90deg, #10b981, #059669);
+        background: linear-gradient(90deg, #8b5cf6, #7c3aed);
     }
     
     .progress-good {
-        background: linear-gradient(90deg, #f59e0b, #d97706);
+        background: linear-gradient(90deg, #a78bfa, #8b5cf6);
     }
     
     .progress-needs-improvement {
-        background: linear-gradient(90deg, #ef4444, #dc2626);
+        background: linear-gradient(90deg, #f472b6, #ec4899);
     }
     
     .file-selector {
-        background: white;
+        background: #0f172a;
         border-radius: 12px;
         padding: 25px;
         margin-bottom: 30px;
         text-align: center;
+        color: #e5e7eb;
+        border: 1px solid rgba(168, 85, 247, 0.3);
     }
     
     .file-selector select {
         width: 100%;
         max-width: 400px;
         padding: 10px;
-        border: 2px solid #e5e7eb;
+        border: 2px solid #374151;
         border-radius: 8px;
         font-size: 1rem;
+        background: #111827;
+        color: #e5e7eb;
     }
     
     .upload-area {
-        border: 2px dashed #cbd5e1;
+        border: 2px dashed #4c1d95;
         border-radius: 12px;
         padding: 40px;
         text-align: center;
-        background: #f8fafc;
+        background: #0f172a;
         transition: all 0.3s ease;
         cursor: pointer;
+        color: #e5e7eb;
     }
     
     .upload-area:hover {
-        border-color: #3b82f6;
-        background: #eff6ff;
+        border-color: #a855f7;
+        background: #111827;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
     }
     
     .upload-area input[type="file"] {
@@ -154,16 +164,17 @@
     }
     
     .processing-options {
-        background: #f8fafc;
+        background: #0f172a;
         border-radius: 12px;
         padding: 20px;
-        border: 1px solid #e5e7eb;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+        color: #e5e7eb;
     }
     
     .no-data-message {
         text-align: center;
         padding: 60px 20px;
-        color: #6b7280;
+        color: #9ca3af;
     }
     
     .no-data-message i {
@@ -173,19 +184,19 @@
     }
     
     .btn-custom {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #6d28d9 0%, #a855f7 100%);
         color: white;
         border: none;
         border-radius: 8px;
         padding: 12px 24px;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
     }
     
     .btn-custom:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 6px 16px rgba(168, 85, 247, 0.45);
         color: white;
     }
     
@@ -295,29 +306,7 @@
             </div>
         </div>
 
-        <!-- File Selector -->
-        {% if latest_file %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="file-selector">
-                    <h5 class="mb-3">
-                        <i class="fas fa-file-csv me-2"></i>
-                        Select Existing Data File
-                    </h5>
-                    <form method="GET" action="{{ url_for('smartdash') }}" class="d-inline">
-                        <select name="file" onchange="this.form.submit()" class="form-select">
-                            <option value="">Choose a file...</option>
-                            {% for file in processed_files %}
-                            <option value="{{ file }}" {% if filename == file %}selected{% endif %}>
-                                {{ file.replace('processed_cognitive_', '').replace('.csv', '') }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </form>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        {# Removed 'Select Existing Data File' section per request #}
 
 
 
@@ -607,6 +596,7 @@
         const smartdashSubmitBtn = document.getElementById('smartdashSubmitBtn');
         const smartdashLoading = document.getElementById('smartdashLoading');
         const fileInfo = document.querySelector('.file-info');
+        const uploadArea = document.querySelector('.upload-area');
 
         // File input change handler
         smartdashFile.addEventListener('change', function(e) {
@@ -637,6 +627,38 @@
 
         // Initially disable submit button
         smartdashSubmitBtn.disabled = true;
+
+        // Drag and drop support
+        ;['dragenter','dragover','dragleave','drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ;['dragenter','dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('highlight');
+            }, false);
+        });
+
+        ;['dragleave','drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('highlight');
+            }, false);
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                smartdashFile.files = files;
+                const file = files[0];
+                fileInfo.innerHTML = `<i class="fas fa-file me-2"></i>Selected: ${file.name}`;
+                fileInfo.style.display = 'block';
+                smartdashSubmitBtn.disabled = false;
+            }
+        });
     });
 </script>
 {% endblock %} 

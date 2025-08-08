@@ -59,6 +59,13 @@ def load_csv_file(file_path):
         logger.error(f"Error loading file: {e}")
         raise
 
+from werkzeug.exceptions import RequestEntityTooLarge
+
+@app.errorhandler(RequestEntityTooLarge)
+def file_too_large(e):
+    flash('File too large (max 16MB). Please upload a smaller file.')
+    return redirect(url_for('smartdash'))
+
 def scrape_company_data(company_name):
     """Scrape additional data for a company (example function)"""
     try:
@@ -86,7 +93,9 @@ def process_data_etl(df, processing_options):
         cognitive_processor = BasketballCognitiveProcessor()
         
         # Check if this is basketball cognitive performance data
-        if cognitive_processor.detect_cognitive_data(df):
+        detected = cognitive_processor.detect_cognitive_data(df)
+        logger.info(f"detected_cognitive={detected} rows={len(df)} cols={list(df.columns)}")
+        if detected:
             logger.info("Detected basketball cognitive performance data - using specialized processor")
             
             # Process with cognitive processor
@@ -385,7 +394,18 @@ def smartdash_upload():
             file.save(file_path)
             
             # Load the file
-            df = load_csv_file(file_path)
+            try:
+                df = load_csv_file(file_path)
+            except Exception as ex:
+                if file_path.lower().endswith('.csv'):
+                    try:
+                        df = pd.read_csv(file_path, encoding='latin-1')
+                    except Exception as ex2:
+                        flash(f'Failed to read CSV: {ex2}')
+                        return redirect(url_for('smartdash'))
+                else:
+                    flash(f'Failed to read file: {ex}')
+                    return redirect(url_for('smartdash'))
             
             # Get processing options
             processing_options = {
@@ -474,6 +494,7 @@ def smartdash_upload():
                                  players=players)
     
         except Exception as e:
+            logger.exception("Error processing SmartDash upload")
             flash(f'Error processing file: {str(e)}')
             return redirect(url_for('smartdash'))
     

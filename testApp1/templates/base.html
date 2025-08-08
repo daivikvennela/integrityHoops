@@ -12,21 +12,23 @@
     
     <style>
         :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #3b82f6;
-            --accent-color: #f59e0b;
+            --primary-color: #0b0f19; /* near-black */
+            --secondary-color: #6d28d9; /* neon purple base */
+            --accent-color: #a855f7; /* neon purple accent */
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
+            --dark-color: #111827;
+            --light-color: #e5e7eb;
         }
         
         .navigation-bar {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color) 0%, #111827 100%);
             color: white;
             padding: 8px 0;
             margin-bottom: 20px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
         
         .nav-link {
@@ -43,13 +45,15 @@
         }
         
         .nav-link.active {
-            border-bottom: 2px solid white;
+            border-bottom: 2px solid var(--accent-color);
             font-weight: 600;
         }
         
         /* Increase font sizes by 10% from current size */
         body {
             font-size: 0.77em;
+            background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
+            color: var(--light-color);
         }
         
         .container-fluid {
@@ -135,6 +139,18 @@
     </div>
 
     <div class="container-fluid">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </div>
 
