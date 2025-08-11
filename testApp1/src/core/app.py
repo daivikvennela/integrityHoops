@@ -375,6 +375,26 @@ def smartdash_with_data(filename):
         flash(f'Error loading data: {str(e)}')
         return redirect(url_for('smartdash'))
 
+@app.route('/player-bars/<filename>')
+def player_bars(filename):
+    """Player All-in-One Bars dashboard for a processed file"""
+    try:
+        file_path = os.path.join(PROCESSED_FOLDER, filename)
+        if not os.path.exists(file_path):
+            flash('File not found')
+            return redirect(url_for('smartdash'))
+
+        df = pd.read_csv(file_path)
+        processor = BasketballCognitiveProcessor()
+        stat_bars = processor.build_stat_bars(df)
+
+        return render_template('player_bar_dashboard.html',
+                               filename=filename,
+                               stat_bars=stat_bars)
+    except Exception as e:
+        flash(f'Error loading player bars: {str(e)}')
+        return redirect(url_for('smartdash'))
+
 @app.route('/smartdash-upload', methods=['POST'])
 def smartdash_upload():
     """Handle file upload specifically for SmartDash with results table"""

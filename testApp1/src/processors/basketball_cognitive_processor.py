@@ -438,6 +438,85 @@ class BasketballCognitiveProcessor:
         }
 
         return player_stats
+
+    def build_stat_bars(self, df):
+        """Build per-category +/- bar data structure for UI visualization.
+
+        Returns a dict:
+        {
+          'player': str,
+          'opponent': str,
+          'date': str,
+          'items': [
+            {
+              'key': str,
+              'label': str,
+              'positive': int,
+              'negative': int,
+              'neutral': int,
+              'positivePct': float,
+              'negativePct': float,
+              'neutralPct': float,
+            }, ...
+          ]
+        }
+        """
+        metrics = self.calculate_scorecard_plus_metrics(df)
+        header = {
+            'player': metrics.get('player'),
+            'opponent': metrics.get('opponent'),
+            'date': metrics.get('date'),
+        }
+
+        categories = [
+            ('Space Read', 'space_read'),
+            ('DM Catch', 'dm_catch'),
+            ('Driving', 'driving'),
+            ('QB12 Decision Making', 'qb12_dm'),
+            ('Finishing', 'finishing'),
+            ('Footwork', 'footwork'),
+            ('Passing', 'passing'),
+            ('Positioning', 'positioning'),
+            ('Relocation', 'relocation'),
+            ('Cutting & Screening', 'cutting_screening'),
+            ('Transition', 'transition'),
+        ]
+
+        items = []
+
+        # Prefer Row/BREAKDOWN counting where possible
+        has_row = 'Row' in df.columns
+        has_breakdown = 'BREAKDOWN' in df.columns
+
+        for display, key in categories:
+            if has_row and has_breakdown:
+                subset = df[df['Row'] == display]
+                values = subset['BREAKDOWN'].dropna().astype(str) if 'BREAKDOWN' in subset.columns or 'BREAKDOWN' in df.columns else pd.Series(dtype='object')
+            else:
+                values = df[display].dropna().astype(str) if display in df.columns else pd.Series(dtype='object')
+
+            positive_count = int(values.str.contains(r"\+ve", regex=True, na=False).sum())
+            negative_count = int(values.str.contains(r"\-ve", regex=True, na=False).sum())
+            total_count = int(len(values))
+            neutral_count = max(total_count - positive_count - negative_count, 0)
+
+            denom = max(total_count, 1)
+            positive_pct = round(100.0 * positive_count / denom, 1)
+            negative_pct = round(100.0 * negative_count / denom, 1)
+            neutral_pct = max(0.0, round(100.0 - positive_pct - negative_pct, 1))
+
+            items.append({
+                'key': key,
+                'label': display,
+                'positive': positive_count,
+                'negative': negative_count,
+                'neutral': neutral_count,
+                'positivePct': positive_pct,
+                'negativePct': negative_pct,
+                'neutralPct': neutral_pct,
+            })
+
+        return {**header, 'items': items}
     
     def calculate_on_ball_cognition(self, df):
         """Calculate On Ball Cognition metrics"""

@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
+from dataclasses import dataclass
 
 
 class Scorecard:
@@ -98,6 +99,7 @@ class Scorecard:
         self.driving_paint_touch_negative = driving_paint_touch_negative
         self.driving_physicality_positive = driving_physicality_positive
         self.driving_physicality_negative = driving_physicality_negative
+        # Note: player bars are derived from the atomic counts above; not persisted
     
     def to_dict(self) -> dict:
         """
@@ -142,6 +144,109 @@ class Scorecard:
             'driving_physicality_positive': self.driving_physicality_positive,
             'driving_physicality_negative': self.driving_physicality_negative
         }
+
+    # --------------------- Player Bar Model & Builder ---------------------
+    @dataclass
+    class PlayerBar:
+        """Represents a single stat bar with +/- counts and computed percentages."""
+        key: str
+        label: str
+        positive: int
+        negative: int
+        neutral: int = 0
+
+        @property
+        def total(self) -> int:
+            return max(int(self.positive) + int(self.negative) + int(self.neutral), 0)
+
+        @property
+        def positive_pct(self) -> float:
+            denom = self.total or 1
+            return round(100.0 * (self.positive / denom), 1)
+
+        @property
+        def negative_pct(self) -> float:
+            denom = self.total or 1
+            return round(100.0 * (self.negative / denom), 1)
+
+        @property
+        def neutral_pct(self) -> float:
+            val = round(100.0 - self.positive_pct - self.negative_pct, 1)
+            return max(0.0, val)
+
+        def to_dict(self) -> dict:
+            return {
+                'key': self.key,
+                'label': self.label,
+                'positive': int(self.positive),
+                'negative': int(self.negative),
+                'neutral': int(self.neutral),
+                'positivePct': self.positive_pct,
+                'negativePct': self.negative_pct,
+                'neutralPct': self.neutral_pct,
+            }
+
+    def get_player_bars(self) -> List['Scorecard.PlayerBar']:
+        """Build player bars (derived) for this scorecard.
+
+        Currently derives bars for the categories represented in the Scorecard fields:
+        - Space Read
+        - DM Catch
+        - Driving
+        - QB12 Decision Making
+        """
+        # Space Read
+        space_read_positive = int(self.space_read_live_dribble) + int(self.space_read_catch)
+        space_read_negative = int(self.space_read_live_dribble_negative) + int(self.space_read_catch_negative)
+
+        # DM Catch (aggregate multiple sub-metrics)
+        dm_catch_positive = (
+            int(self.dm_catch_back_to_back_positive)
+            + int(self.dm_catch_uncontested_shot_positive)
+            + int(self.dm_catch_swing_positive)
+            + int(self.dm_catch_drive_pass_positive)
+            + int(self.dm_catch_drive_swing_skip_pass_positive)
+        )
+        dm_catch_negative = (
+            int(self.dm_catch_back_to_back_negative)
+            + int(self.dm_catch_uncontested_shot_negative)
+            + int(self.dm_catch_swing_negative)
+            + int(self.dm_catch_drive_pass_negative)
+            + int(self.dm_catch_drive_swing_skip_pass_negative)
+        )
+
+        # Driving
+        driving_positive = int(self.driving_paint_touch_positive) + int(self.driving_physicality_positive)
+        driving_negative = int(self.driving_paint_touch_negative) + int(self.driving_physicality_negative)
+
+        # QB12 Decision Making
+        qb12_positive = (
+            int(self.qb12_strong_side_positive)
+            + int(self.qb12_baseline_positive)
+            + int(self.qb12_fill_behind_positive)
+            + int(self.qb12_weak_side_positive)
+            + int(self.qb12_roller_positive)
+            + int(self.qb12_skip_pass_positive)
+            + int(self.qb12_cutter_positive)
+        )
+        qb12_negative = (
+            int(self.qb12_strong_side_negative)
+            + int(self.qb12_baseline_negative)
+            + int(self.qb12_fill_behind_negative)
+            + int(self.qb12_weak_side_negative)
+            + int(self.qb12_roller_negative)
+            + int(self.qb12_skip_pass_negative)
+            + int(self.qb12_cutter_negative)
+        )
+
+        bars: List[Scorecard.PlayerBar] = [
+            Scorecard.PlayerBar(key='space_read', label='Space Read', positive=space_read_positive, negative=space_read_negative),
+            Scorecard.PlayerBar(key='dm_catch', label='DM Catch', positive=dm_catch_positive, negative=dm_catch_negative),
+            Scorecard.PlayerBar(key='driving', label='Driving', positive=driving_positive, negative=driving_negative),
+            Scorecard.PlayerBar(key='qb12_dm', label='QB12 Decision Making', positive=qb12_positive, negative=qb12_negative),
+        ]
+
+        return bars
     
     @classmethod
     def from_dict(cls, data: dict) -> 'Scorecard':
