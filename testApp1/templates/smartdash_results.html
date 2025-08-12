@@ -1616,6 +1616,13 @@
                                     <i class="fas fa-plus me-2"></i>
                                     Create Scorecard
                                 </button>
+                                 <button type="button"
+                                         class="btn btn-outline-primary btn-lg ms-2"
+                                         id="autofillAllBtn"
+                                         onclick="autofillAll()">
+                                   <i class="fas fa-wand-magic-sparkles me-2"></i>
+                                   Autofill All
+                                 </button>
                                 {# Jinja lacks split filter; use rsplit to get the last path segment #}
                                 {% set _path = output_path|default(filename, true)|replace('\\','/') %}
                                 {% set last_segment = _path.rsplit('/', 1)[-1] %}
@@ -1640,6 +1647,16 @@
 
 {% block extra_js %}
 <script>
+// Suppress all window.alert popups on this page (log to console instead)
+window.SMARTDASH_SILENT = true;
+(function () {
+  const origAlert = window.alert;
+  window.alert = function (...args) {
+    if (!window.SMARTDASH_SILENT) return origAlert.apply(window, args);
+    try { console.info('[alert suppressed]', args[0] || ''); } catch (_) {}
+  };
+})();
+
 // Global variables for filtering
 let currentRowFilter = '';
 let originalRows = [];
@@ -1678,6 +1695,99 @@ document.addEventListener('DOMContentLoaded', function() {
             playerNameDisplay.value = this.value || '';
         });
     }
+
+// Provide a canonical hidden player_name field and ensure both display and hidden are synced
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('createScorecardForm');
+  const playerSelect = document.getElementById('player_dropdown');
+  const playerNameDisplay = document.getElementById('player_name');
+  let hidden = document.getElementById('player_name_hidden');
+  if (form && !hidden) {
+    hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'player_name';
+    hidden.id = 'player_name_hidden';
+    form.appendChild(hidden);
+  }
+  function syncNames() {
+    const val = (playerSelect && playerSelect.value) ? playerSelect.value : '';
+    if (playerNameDisplay) playerNameDisplay.value = val;
+    if (hidden) hidden.value = val;
+  }
+  if (playerSelect) {
+    playerSelect.addEventListener('change', syncNames);
+    // initialize on load
+    syncNames();
+  }
+});
+
+// Helper to call existing autofill functions safely
+function callIfExists(fn) {
+  try {
+    if (typeof window[fn] === 'function') {
+      window[fn]();
+      return true;
+    }
+  } catch (e) {
+    console.warn('Autofill call failed:', fn, e);
+  }
+  return false;
+}
+
+// Runs all autofill routines to populate the Create Scorecard inputs
+async function autofillAll() {
+  const btn = document.getElementById('autofillAllBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Autofilling...';
+  }
+
+  const calls = [
+    'autofillSpaceRead',
+    'autofillDMCatch',
+    'autofillQB12',
+    'autofillDrivingMetrics',
+    'autofillOffBallPositioning',
+    'autofillOffBallTransition',
+    'autofillCuttingScreening',
+    'autofillRelocation'
+  ];
+
+  let ran = 0;
+  for (const fn of calls) {
+    if (callIfExists(fn)) ran++;
+    // brief delay to keep UI responsive
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise(r => setTimeout(r, 20));
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Autofill All';
+  }
+
+  // Replace popup with console log
+  try { console.log('Autofill All completed. Ran ' + ran + ' modules.'); } catch (e) {}
+}
+
+// Log all POSTed values when Create Scorecard is submitted
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('createScorecardForm');
+  if (form) {
+    form.addEventListener('submit', function() {
+      try {
+        console.group('CreateScorecard POST payload');
+        const fd = new FormData(form);
+        for (const [k, v] of fd.entries()) {
+          console.log(k, v);
+        }
+        console.groupEnd();
+      } catch (e) {
+        console.warn('Form logging failed', e);
+      }
+    });
+  }
+});
 
 // Row filter functionality
 document.getElementById('rowFilterInput').addEventListener('keyup', function() {

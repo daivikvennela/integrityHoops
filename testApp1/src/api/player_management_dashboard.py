@@ -9,7 +9,7 @@ Features:
 - State-of-the-art visualization libraries
 """
 
-from flask import Blueprint, render_template, request, jsonify, session
+from flask import Blueprint, render_template, request, jsonify, session, current_app
 from src.models import Player, Scorecard
 from src.database import DatabaseManager
 from datetime import datetime, timedelta
@@ -25,8 +25,12 @@ logger = logging.getLogger(__name__)
 # Create Blueprint for advanced player management
 player_dashboard = Blueprint('player_dashboard', __name__)
 
-# Initialize database manager
-db_manager = DatabaseManager("data/basketball.db")
+# Initialize database manager using app-configured absolute path when available
+try:
+    _db_path = current_app.config.get('DB_PATH')  # type: ignore[attr-defined]
+except Exception:
+    _db_path = None
+db_manager = DatabaseManager(_db_path or "data/basketball.db")
 
 # Global API call log for terminal monitoring
 api_call_log = []

@@ -230,20 +230,29 @@ class DatabaseManager:
         Returns:
             bool: True if successful, False otherwise
         """
+        print(f"🔧 DB DEBUG: Starting database scorecard creation for {scorecard.player_name}")
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 # Ensure player exists; create if missing to keep pipeline robust
                 cursor.execute('SELECT 1 FROM players WHERE name = ?', (scorecard.player_name,))
                 if cursor.fetchone() is None:
+                    print(f"🔧 DB DEBUG: Player {scorecard.player_name} doesn't exist, creating...")
                     cursor.execute('INSERT INTO players (name, date_created) VALUES (?, ?)', (scorecard.player_name, scorecard.date_created))
+                    print(f"🔧 DB DEBUG: Player {scorecard.player_name} created successfully")
+                else:
+                    print(f"🔧 DB DEBUG: Player {scorecard.player_name} already exists")
+                
+                print(f"🔧 DB DEBUG: Inserting scorecard record...")
                 cursor.execute(
                     'INSERT INTO scorecards (player_name, date_created, space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative, dm_catch_back_to_back_positive, dm_catch_back_to_back_negative, dm_catch_uncontested_shot_positive, dm_catch_uncontested_shot_negative, dm_catch_swing_positive, dm_catch_swing_negative, dm_catch_drive_pass_positive, dm_catch_drive_pass_negative, dm_catch_drive_swing_skip_pass_positive, dm_catch_drive_swing_skip_pass_negative, qb12_strong_side_positive, qb12_strong_side_negative, qb12_baseline_positive, qb12_baseline_negative, qb12_fill_behind_positive, qb12_fill_behind_negative, qb12_weak_side_positive, qb12_weak_side_negative, qb12_roller_positive, qb12_roller_negative, qb12_skip_pass_positive, qb12_skip_pass_negative, qb12_cutter_positive, qb12_cutter_negative, driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (scorecard.player_name, scorecard.date_created, scorecard.space_read_live_dribble, scorecard.space_read_catch, scorecard.space_read_live_dribble_negative, scorecard.space_read_catch_negative, scorecard.dm_catch_back_to_back_positive, scorecard.dm_catch_back_to_back_negative, scorecard.dm_catch_uncontested_shot_positive, scorecard.dm_catch_uncontested_shot_negative, scorecard.dm_catch_swing_positive, scorecard.dm_catch_swing_negative, scorecard.dm_catch_drive_pass_positive, scorecard.dm_catch_drive_pass_negative, scorecard.dm_catch_drive_swing_skip_pass_positive, scorecard.dm_catch_drive_swing_skip_pass_negative, scorecard.qb12_strong_side_positive, scorecard.qb12_strong_side_negative, scorecard.qb12_baseline_positive, scorecard.qb12_baseline_negative, scorecard.qb12_fill_behind_positive, scorecard.qb12_fill_behind_negative, scorecard.qb12_weak_side_positive, scorecard.qb12_weak_side_negative, scorecard.qb12_roller_positive, scorecard.qb12_roller_negative, scorecard.qb12_skip_pass_positive, scorecard.qb12_skip_pass_negative, scorecard.qb12_cutter_positive, scorecard.qb12_cutter_negative, scorecard.driving_paint_touch_positive, scorecard.driving_paint_touch_negative, scorecard.driving_physicality_positive, scorecard.driving_physicality_negative)
                 )
                 conn.commit()
+                print(f"✅ DB DEBUG: Scorecard successfully inserted for {scorecard.player_name}")
                 return True
         except Exception as e:
+            print(f"🚨 DB DEBUG: Error creating scorecard for {scorecard.player_name}: {e}")
             print(f"Error creating scorecard: {e}")
             return False
     

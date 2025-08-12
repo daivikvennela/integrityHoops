@@ -26,17 +26,21 @@ app.register_blueprint(player_api)
 app.register_blueprint(player_dashboard)
 app.register_blueprint(dashboard_bp)
 
-# Configuration
-UPLOAD_FOLDER = 'data/uploads'
-PROCESSED_FOLDER = 'data/processed'
+# Configuration (use absolute paths based on app.root_path)
+DATA_ROOT = os.path.join(app.root_path, 'data')
+UPLOAD_FOLDER = os.path.join(DATA_ROOT, 'uploads')
+PROCESSED_FOLDER = os.path.join(DATA_ROOT, 'processed')
+DB_PATH = os.path.join(DATA_ROOT, 'basketball.db')
 ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
 
-# Create directories if they don't exist
+# Create data directories if they don't exist
+os.makedirs(DATA_ROOT, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
+app.config['DB_PATH'] = DB_PATH
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 
@@ -313,7 +317,7 @@ def smartdash():
         return redirect(url_for('smartdash_with_data', filename=requested_file))
     
     # Get all players for the dropdown
-    db_manager = DatabaseManager("data/basketball.db")
+    db_manager = DatabaseManager(app.config['DB_PATH'])
     # Ensure database has required columns
     try:
         with db_manager.get_connection() as conn:
@@ -524,13 +528,18 @@ def smartdash_upload():
 @app.route('/create-scorecard', methods=['POST'])
 def create_scorecard():
     """Create a new scorecard for a selected player"""
+    print("🔧 DEBUG: Starting scorecard creation...")
     try:
         from src.models.scorecard import Scorecard
         
         # Get form data
         # Accept either the select field (preferred) or legacy 'player_name'
         player_name = request.form.get('player_name') or request.form.get('player_dropdown') or request.form.get('player_name_display')
+        print(f"🔧 DEBUG: Form data received - player_name: '{player_name}'")
+        print(f"🔧 DEBUG: All form keys: {list(request.form.keys())}")
+        
         date_created = int(datetime.now().timestamp())
+        print(f"🔧 DEBUG: Date created: {date_created}")
         space_read_live_dribble = int(request.form.get('space_read_live_dribble', 0))
         space_read_catch = int(request.form.get('space_read_catch', 0))
         space_read_live_dribble_negative = int(request.form.get('space_read_live_dribble_negative', 0))
@@ -565,8 +574,12 @@ def create_scorecard():
         driving_physicality_negative = int(request.form.get('driving_physicality_negative', 0))
         
         if not player_name:
+            print("🚨 DEBUG: No player name provided!")
             flash('Please select a player')
             return redirect(url_for('smartdash'))
+        
+        print(f"🔧 DEBUG: Creating scorecard for player: {player_name}")
+        print(f"🔧 DEBUG: Sample metrics - space_read_live_dribble: {space_read_live_dribble}, dm_catch_back_to_back_positive: {dm_catch_back_to_back_positive}")
         
         # Create scorecard with new attributes
         scorecard = Scorecard(
@@ -606,8 +619,17 @@ def create_scorecard():
             driving_physicality_negative=driving_physicality_negative
         )
         
-        # Save to database
-        db_manager = DatabaseManager("data/basketball.db")
+        print("🔧 DEBUG: Scorecard object created successfully")
+        
+        # Save to database (use absolute path to avoid env-dependent issues)
+        db_path = app.config['DB_PATH']
+        print(f"🔧 DEBUG: Using database path: {db_path}")
+        # Ensure data directory exists before connecting
+        try:
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        except Exception as e:
+            print(f"🚨 DEBUG: Failed to ensure DB directory exists: {e}")
+        db_manager = DatabaseManager(db_path)
         # Ensure database has required columns
         try:
             with db_manager.get_connection() as conn:
@@ -741,19 +763,26 @@ def create_scorecard():
                     print("Added driving_physicality_negative column")
                 
                 conn.commit()
-                print("Database migration completed successfully")
+                print("🔧 DEBUG: Database migration completed successfully")
         except Exception as e:
-            print(f"Error during database migration: {e}")
+            print(f"🚨 DEBUG: Error during database migration: {e}")
+        
+        print("🔧 DEBUG: Starting scorecard creation in database...")
         success = db_manager.create_scorecard(scorecard)
+        print(f"🔧 DEBUG: Scorecard creation result: {success}")
         
         if success:
+            print(f"✅ DEBUG: Success! Scorecard created for {player_name}")
             flash(f'Scorecard created successfully for {player_name}!')
         else:
+            print(f"❌ DEBUG: Failed to create scorecard for {player_name}")
             flash(f'Failed to create scorecard for {player_name}')
-            
+        
+        print("🔧 DEBUG: Redirecting to smartdash...")
         return redirect(url_for('smartdash'))
         
     except Exception as e:
+        print(f"🚨 DEBUG: Exception caught in create_scorecard: {e}")
         logger.error(f"Error creating scorecard: {e}")
         flash(f'Error creating scorecard: {str(e)}')
         return redirect(url_for('smartdash'))

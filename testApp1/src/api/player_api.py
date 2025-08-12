@@ -3,7 +3,7 @@
 Flask API routes for Player and Scorecard CRUD operations.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from src.models import Player, Scorecard
 from src.database import DatabaseManager
 from datetime import datetime
@@ -12,8 +12,17 @@ import json
 # Create Blueprint for player API
 player_api = Blueprint('player_api', __name__)
 
-# Initialize database manager
-db_manager = DatabaseManager("data/basketball.db")
+# Initialize database manager using app-configured absolute path when available
+try:
+    from flask import current_app as _ca
+    _db_path = None
+    try:
+        _db_path = _ca.config.get('DB_PATH')
+    except Exception:
+        _db_path = None
+    db_manager = DatabaseManager(_db_path or "data/basketball.db")
+except Exception:
+    db_manager = DatabaseManager("data/basketball.db")
 
 
 @player_api.route('/api/players', methods=['GET'])
