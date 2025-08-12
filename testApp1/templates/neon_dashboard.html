@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Neon Dashboard{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="mb-3">
+    <div class="h4">{{ player_stats.player }} vs {{ player_stats.opponent }} • {{ player_stats.date }} • QB12 Decision Making</div>
+  </div>
+
+  <div class="row g-4">
+    {% set main = player_stats.mainMetrics %}
+    {% for label, key in [
+      ('Overall Cognition','overallCognition'),
+      ('On Ball Cognition','onBallCognition'),
+      ('Off Ball Cognition','offBallCognition'),
+      ('Technical Breakdown','technicalBreakdown'),
+      ('Shared Cognition','sharedCognition')
+    ] %}
+    <div class="col-12 col-sm-6 col-lg-2">
+      <div class="ring-wrap text-center">
+        <svg width="140" height="140">
+          <defs>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#8b5cf6"/>
+              <stop offset="50%" stop-color="#a855f7"/>
+              <stop offset="100%" stop-color="#c084fc"/>
+            </linearGradient>
+          </defs>
+          <circle cx="70" cy="70" r="60" stroke="#3a3a3a" stroke-width="14" fill="none"></circle>
+          <circle class="progress-ring neon" data-value="{{ main[key] }}" cx="70" cy="70" r="60" stroke-width="14" fill="none" stroke-linecap="round"></circle>
+          <text x="70" y="75" text-anchor="middle" fill="#f8fafc" font-size="22" font-weight="700">{{ main[key] }}%</text>
+        </svg>
+        <div class="ring-label">{{ label }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: linear-gradient(180deg,#2a2a2a,#1a1a1a); color:#f8fafc; }
+  .ring-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .ring-label { font-size:0.9rem; color:#cbd5e1; }
+  .neon { stroke:url(#grad); }
+  .neon-glow { filter: drop-shadow(0 0 8px #8b5cf6) drop-shadow(0 0 14px #a855f7) drop-shadow(0 0 20px #c084fc); }
+  .progress-ring { transform: rotate(-90deg); }
+  .container a, .container button, .container input, .container select { color: inherit; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const playerStats = {{ player_stats|tojson }};
+  const rings = document.querySelectorAll('.progress-ring');
+  rings.forEach((ring, i) => {
+    const r = +ring.getAttribute('r') || 60;
+    const c = 2 * Math.PI * r;
+    const val = Math.max(0, Math.min(100, parseFloat(ring.dataset.value || '0')));
+    const dash = (val / 100) * c;
+    ring.style.strokeDasharray = `0 ${c}`;
+    ring.style.strokeDashoffset = 0;
+    setTimeout(() => {
+      ring.style.transition = 'stroke-dasharray 2.2s ease-out';
+      ring.style.strokeDasharray = `${dash} ${c}`;
+      ring.classList.add('neon-glow');
+    }, 200 + i * 90);
+  });
+</script>
+{% endblock %}

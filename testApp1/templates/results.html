@@ -111,22 +111,32 @@
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
                     <i class="fas fa-brain me-2"></i>
-                    Player Performance Summary
+                    Basketball Cognitive Performance Analysis
                 </h5>
             </div>
             <div class="card-body">
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle me-2"></i>
-                    <strong>Performance Summary Generated!</strong> 
-                    A detailed player performance summary has been created with cognitive scores, 
-                    category breakdowns, and shooting analysis. Download the summary file below.
+                    <strong>Basketball Cognitive Data Detected!</strong> 
+                    Your data has been processed and is ready for advanced analytics.
                 </div>
-                {% if performance_summary_path %}
-                <a href="{{ url_for('download_file', filename=performance_summary_path.split('/')[-1]) }}" class="btn btn-success">
-                    <i class="fas fa-download me-2"></i>
-                    Download Performance Summary
-                </a>
-                {% endif %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if performance_summary_path %}
+                        <a href="{{ url_for('download_file', filename=performance_summary_path.split('/')[-1]) }}" class="btn btn-success me-2">
+                            <i class="fas fa-download me-2"></i>
+                            Download Performance Summary
+                        </a>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('smartdash_with_data', filename=output_path.split('/')[-1]) }}" class="btn btn-info">
+                            <i class="fas fa-chart-line me-2"></i>
+                            View SmartDash Analytics
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}

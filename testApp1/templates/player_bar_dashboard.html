@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Player Dashboard — All-in-One Bars{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: linear-gradient(135deg, #111827, #0b0f19); color:#e5e7eb; }
+  .wrap { max-width: 1100px; margin: 24px auto; padding: 0 12px; }
+  .card { background: rgba(17,24,39,0.9); border:1px solid rgba(168,85,247,0.25); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.45); }
+  .hdr { display:flex; align-items:center; gap:16px; padding:20px; }
+  .avatar {
+    width:64px; height:64px; border-radius:50%; background: #1f2937; display:grid; place-items:center;
+    border: 1px solid rgba(168,85,247,0.3); color:#9ca3af; font-size:24px;
+  }
+  .title { font-weight:700; font-size:1.2rem; }
+  .subtitle { color:#9ca3af; font-size:0.9rem; }
+  .grid { display:grid; grid-template-columns: 1fr; gap:14px; padding: 18px; }
+  @media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .row { background:#0f172a; border-radius:10px; padding:14px; border:1px solid rgba(168,85,247,0.15); }
+  .row-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:10px; }
+  .row-label { font-weight:600; }
+  .row-val { color:#cbd5e1; font-size:0.9rem; }
+  .track {
+    position:relative; width:100%; height:12px; background:#1f2937; border-radius:8px; overflow:hidden;
+  }
+  .seg { position:absolute; top:0; height:100%; transform-origin:left center; width:0; }
+  .seg.pos { left:0; background: linear-gradient(90deg, #10b981, #34d399); }
+  .seg.neu { left:0; background:#4b5563; }
+  .seg.neg { right:0; left:auto; background: linear-gradient(90deg, #ef4444, #f87171); transform-origin:right center; }
+  .legend { display:flex; gap:12px; margin-top:8px; color:#9ca3af; font-size:0.85rem; }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .dot.pos { background:#10b981; }
+  .dot.neu { background:#6b7280; }
+  .dot.neg { background:#ef4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="card">
+    <div class="hdr">
+      <div class="avatar"><i class="fas fa-user"></i></div>
+      <div>
+        <div class="title">{{ stat_bars.player }} vs {{ stat_bars.opponent }}</div>
+        <div class="subtitle">{{ stat_bars.date }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="grid">
+      {% for item in stat_bars.items %}
+      <div class="row">
+        <div class="row-head">
+          <div class="row-label">{{ item.label }}</div>
+          <div class="row-val">+{{ item.positive }} / -{{ item.negative }} ({{ item.positivePct }}% +)</div>
+        </div>
+        <div class="track"
+             data-pos="{{ item.positivePct }}"
+             data-neu="{{ item.neutralPct }}"
+             data-neg="{{ item.negativePct }}">
+          <div class="seg pos"></div>
+          <div class="seg neu"></div>
+          <div class="seg neg"></div>
+        </div>
+        <div class="legend">
+          <span><span class="dot pos"></span>Positive</span>
+          <span><span class="dot neu"></span>Neutral</span>
+          <span><span class="dot neg"></span>Negative</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.track').forEach((el, i) => {
+    const pos = Math.max(0, Math.min(100, parseFloat(el.dataset.pos || '0')));
+    const neu = Math.max(0, Math.min(100, parseFloat(el.dataset.neu || '0')));
+    const neg = Math.max(0, Math.min(100, parseFloat(el.dataset.neg || '0')));
+
+    const segPos = el.querySelector('.seg.pos');
+    const segNeu = el.querySelector('.seg.neu');
+    const segNeg = el.querySelector('.seg.neg');
+
+    const animate = (seg, widthPct, delay) => {
+      const total = el.clientWidth || el.getBoundingClientRect().width || 0;
+      const px = (widthPct / 100) * total;
+      seg.style.transition = 'width 900ms ease';
+      setTimeout(() => { seg.style.width = px + 'px'; }, delay);
+    };
+
+    setTimeout(() => {
+      const total = el.clientWidth || el.getBoundingClientRect().width || 0;
+      const posPx = (pos / 100) * total;
+      segNeu.style.left = posPx + 'px';
+    }, 0);
+
+    animate(segPos, pos, 80 + i*30);
+    animate(segNeu, neu, 140 + i*30);
+    animate(segNeg, neg, 220 + i*30);
+  });
+});
+</script>
+{% endblock %}
+

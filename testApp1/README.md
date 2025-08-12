@@ -1,247 +1,221 @@
-# CSV ETL Processor Web Application
+# 🏀 Basketball Cognitive Performance Dashboard
 
-A modern web application for processing CSV files with ETL (Extract, Transform, Load) capabilities and data scraping functionality. Built with Flask, Pandas, and BeautifulSoup.
+A comprehensive web application for managing basketball players, scorecards, and cognitive performance data with advanced analytics and real-time monitoring.
 
-## Features
+## 📁 Project Structure
 
-### 🚀 Core Features
-- **File Upload**: Drag-and-drop CSV/Excel file upload with validation
-- **ETL Processing**: Comprehensive data transformation capabilities
-- **Data Scraping**: Web scraping functionality for enriching data
-- **Interactive Table**: Modern, responsive data table with search and sort
-- **Export Options**: Download processed data in CSV or JSON format
+```
+testApp1/
+├── 📁 src/                          # Source code
+│   ├── 📁 core/                     # Core application files
+│   │   ├── app.py                   # Main Flask application
+│   │   └── run.py                   # Application startup script
+│   ├── 📁 api/                      # API endpoints
+│   │   ├── player_api.py            # Basic player CRUD operations
+│   │   └── player_management_dashboard.py  # Advanced dashboard API
+│   ├── 📁 models/                   # Data models
+│   │   ├── player.py                # Player model
+│   │   ├── scorecard.py             # Scorecard model
+│   │   └── __init__.py              # Model package initialization
+│   ├── 📁 database/                 # Database management
+│   │   ├── db_manager.py            # Database operations
+│   │   └── __init__.py              # Database package initialization
+│   ├── 📁 processors/               # Data processing modules
+│   │   ├── basketball_cognitive_processor.py  # Cognitive data processing
+│   │   ├── custom_etl_processor.py  # ETL processing
+│   │   └── etl_scripts.py           # ETL utilities
+│   └── 📁 utils/                    # Utility functions
+├── 📁 templates/                    # HTML templates
+│   ├── base.html                    # Base template
+│   ├── index.html                   # Upload page
+│   ├── players.html                 # Basic player management
+│   ├── player_management_dashboard.html  # Advanced dashboard
+│   ├── scorecard.html               # Scorecard view
+│   ├── scorecard_plus.html          # Enhanced scorecard
+│   ├── smartdash.html               # Smart dashboard
+│   └── results.html                 # Results display
+├── 📁 static/                       # Static assets
+│   ├── 📁 css/                      # Stylesheets
+│   ├── 📁 js/                       # JavaScript files
+│   └── 📁 images/                   # Images and icons
+├── 📁 data/                         # Data storage
+│   ├── 📁 uploads/                  # Uploaded files
+│   ├── 📁 processed/                # Processed data files
+│   ├── 📁 exports/                  # Exported data
+│   ├── basketball.db                # Main database
+│   └── test_basketball.db           # Test database
+├── 📁 docs/                         # Documentation
+│   ├── 📁 guides/                   # User and developer guides
+│   ├── �� api/                      # API documentation
+│   └── 📁 deployment/               # Deployment guides
+├── 📁 tests/                        # Test files
+│   └── test_models.py               # Model testing
+├── 📁 config/                       # Configuration files
+│   └── requirements.txt             # Python dependencies
+├── main.py                          # Application entry point
+└── README.md                        # This file
+```
 
-### 🔧 Processing Options
-- **Remove Duplicates**: Eliminate duplicate rows from the dataset
-- **Fill Missing Values**: Replace null/empty values with 'N/A'
-- **Add Timestamp**: Include processing timestamp for data tracking
-- **Scrape Additional Data**: Enrich data with web-scraped information
-
-### 📊 Data Visualization
-- **Real-time Search**: Filter table data on-the-fly
-- **Column Sorting**: Click headers to sort data
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Data Summary**: Processing statistics and quality metrics
-
-## Installation
+## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8 or higher
-- pip (Python package installer)
+- Python 3.12+ (recommended)
+- pip3
 
-### Setup Instructions
-
-1. **Clone or download the project**
+### Installation
+1. **Clone the repository**
    ```bash
    cd testApp1
    ```
 
-2. **Install dependencies**
+2. **Create virtual environment**
    ```bash
-   pip install -r requirements.txt
+   python3.12 -m venv venv312
+   source venv312/bin/activate
    ```
 
-3. **Run the application**
+3. **Install dependencies**
    ```bash
-   python app.py
+   pip3 install -r config/requirements.txt
    ```
 
-4. **Access the application**
-   Open your browser and go to: `http://localhost:5000`
+4. **Run the application**
+   ```bash
+   python3 main.py
+   ```
 
-## Usage Guide
+5. **Access the application**
+   - Main Dashboard: http://localhost:5001
+   - Player Management: http://localhost:5001/player-management
+   - Basic Players: http://localhost:5001/players
 
-### 1. Upload Your File
-- Drag and drop your CSV or Excel file onto the upload area
-- Or click to browse and select a file
-- Supported formats: `.csv`, `.xlsx`, `.xls`
+## 🎯 Features
 
-### 2. Configure Processing Options
-- **Remove Duplicates**: Check to eliminate duplicate rows
-- **Fill Missing Values**: Check to replace empty cells with 'N/A'
-- **Add Timestamp**: Check to add processing timestamp
-- **Scrape Additional Data**: Check to enrich data with web information
+### 📊 **Advanced Player Management Dashboard**
+- Real-time statistics and analytics
+- Interactive charts and visualizations
+- Custom scorecard creation system
+- API monitoring terminal
+- Bulk operations and data export
 
-### 3. Process Data
-- Click "Process Data" to start the ETL pipeline
-- Wait for processing to complete
-- View results in the interactive table
+### 🔧 **Core Functionality**
+- File upload and processing (CSV, Excel)
+- ETL data transformation
+- Basketball cognitive performance analysis
+- Player and scorecard management
+- Smart dashboard with metrics
 
-### 4. Export Results
-- Use the search box to filter data
-- Click column headers to sort
-- Download processed data as CSV or JSON
+### 🎨 **Modern UI**
+- Responsive Bootstrap 5 design
+- Real-time updates and notifications
+- Interactive data tables
+- Modal dialogs and forms
+- Chart.js visualizations
 
-## Sample Data
+## 📚 Documentation
 
-The application includes a sample CSV file generator. To create a sample file:
+### **User Guides**
+- `docs/guides/README.md` - Main application guide
+- `docs/guides/PLAYER_MANAGEMENT_GUIDE.md` - Player management system
+- `docs/guides/ADVANCED_PLAYER_MANAGEMENT_GUIDE.md` - Advanced dashboard guide
+- `docs/guides/UPLOAD_GUIDE.md` - File upload instructions
+- `docs/guides/BASKETBALL_COGNITIVE_GUIDE.md` - Cognitive processing guide
 
-```python
-python etl_scripts.py
-```
+### **API Documentation**
+- REST API endpoints for player management
+- Custom scorecard creation
+- Bulk operations
+- Data export functionality
 
-This will create `sample_companies.csv` with test data for demonstration.
+## 🧪 Testing
 
-## API Endpoints
-
-### POST /upload
-Upload and process a CSV file
-- **Content-Type**: `multipart/form-data`
-- **Parameters**:
-  - `file`: CSV/Excel file
-  - `remove_duplicates`: boolean
-  - `fill_missing`: boolean
-  - `add_timestamp`: boolean
-  - `scrape_additional_data`: boolean
-
-### POST /api/process
-Process CSV data via API
-- **Content-Type**: `application/json`
-- **Body**:
-  ```json
-  {
-    "csv_data": "csv_content_as_string",
-    "processing_options": {
-      "remove_duplicates": true,
-      "fill_missing": true,
-      "add_timestamp": true,
-      "scrape_additional_data": true
-    }
-  }
-  ```
-
-### GET /download/<filename>
-Download processed file
-- Returns the processed CSV file as attachment
-
-## Project Structure
-
-```
-testApp1/
-├── app.py                 # Main Flask application
-├── etl_scripts.py         # ETL processing functions
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-├── templates/            # HTML templates
-│   ├── base.html         # Base template with styling
-│   ├── index.html        # Upload page
-│   └── results.html      # Results display page
-├── uploads/              # Uploaded files (auto-created)
-└── processed/            # Processed files (auto-created)
-```
-
-## ETL Processing Features
-
-### Data Cleaning
-- Remove leading/trailing whitespace
-- Standardize date formats
-- Convert empty strings to NaN
-- Data type validation
-
-### Data Enrichment
-- Company information scraping
-- Website data extraction
-- Industry classification
-- Contact information validation
-
-### Data Transformation
-- Column renaming
-- Data filtering
-- Aggregation operations
-- Pivot table creation
-
-### Quality Validation
-- Missing value detection
-- Duplicate row identification
-- Data completeness metrics
-- Format validation (email, phone)
-
-## Customization
-
-### Adding New Processing Options
-1. Modify `app.py` in the `process_data_etl` function
-2. Add new checkbox in `templates/index.html`
-3. Update the processing logic as needed
-
-### Custom Scraping Functions
-1. Extend the `DataProcessor` class in `etl_scripts.py`
-2. Add new scraping methods
-3. Integrate with the main processing pipeline
-
-### Styling Changes
-- Modify CSS in `templates/base.html`
-- Update Bootstrap classes in templates
-- Customize color scheme and layout
-
-## Error Handling
-
-The application includes comprehensive error handling for:
-- Invalid file formats
-- Processing errors
-- Network timeouts during scraping
-- Data validation failures
-- File upload issues
-
-## Security Considerations
-
-- File upload validation
-- Secure filename handling
-- Request size limits
-- Input sanitization
-- Error message filtering
-
-## Performance Optimization
-
-- Efficient pandas operations
-- Lazy loading for large datasets
-- Optimized database queries
-- Caching for repeated operations
-
-## Troubleshooting
-
-### Common Issues
-
-1. **File upload fails**
-   - Check file format (CSV, XLSX, XLS only)
-   - Ensure file size is under 16MB
-   - Verify file is not corrupted
-
-2. **Processing takes too long**
-   - Large files may take time to process
-   - Disable scraping for faster processing
-   - Check system resources
-
-3. **Scraping doesn't work**
-   - Network connectivity issues
-   - Website blocking requests
-   - Rate limiting from target sites
-
-### Debug Mode
-Run with debug enabled for detailed error messages:
+Run the test suite:
 ```bash
-export FLASK_ENV=development
-python app.py
+python3 tests/test_models.py
 ```
 
-## Contributing
+## 🔧 Development
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+### **Project Structure Benefits**
+- **Modular Design**: Clear separation of concerns
+- **Scalability**: Easy to add new features
+- **Maintainability**: Organized code structure
+- **Testing**: Dedicated test directory
+- **Documentation**: Comprehensive guides
 
-## License
+### **Key Components**
+- **Core**: Main application logic and routing
+- **API**: REST endpoints and API management
+- **Models**: Data models and business logic
+- **Database**: Database operations and management
+- **Processors**: Data processing and ETL operations
+- **Templates**: HTML templates and UI components
+
+## 📊 Data Management
+
+### **Database**
+- SQLite database (`data/basketball.db`)
+- Player and scorecard tables
+- Foreign key relationships
+- Automatic table creation
+
+### **File Processing**
+- Upload directory: `data/uploads/`
+- Processed files: `data/processed/`
+- Export directory: `data/exports/`
+
+## 🚀 Deployment
+
+### **Development**
+```bash
+python3 main.py
+```
+
+### **Production**
+```bash
+gunicorn -w 4 -b 0.0.0.0:5001 src.core.app:app
+```
+
+## 🔧 Configuration
+
+### **Environment Variables**
+- `FLASK_ENV`: Development/production mode
+- `FLASK_DEBUG`: Debug mode (1/0)
+- `UPLOAD_FOLDER`: Upload directory path
+- `PROCESSED_FOLDER`: Processed files directory
+
+### **Database Configuration**
+- Database path: `data/basketball.db`
+- Test database: `data/test_basketball.db`
+- Auto-creation of tables and directories
+
+## 📈 Performance
+
+### **Optimizations**
+- Database indexing for fast queries
+- Lazy loading of data
+- Client-side caching
+- Efficient ETL processing
+- Real-time API monitoring
+
+### **Monitoring**
+- API call logging and monitoring
+- Performance metrics tracking
+- Error handling and reporting
+- Real-time dashboard updates
+
+## 🤝 Contributing
+
+1. Follow the established project structure
+2. Add tests for new features
+3. Update documentation
+4. Follow Python coding standards
+5. Use meaningful commit messages
+
+## 📄 License
 
 This project is open source and available under the MIT License.
 
-## Support
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review error logs
-3. Create an issue with detailed information
-
 ---
 
-**Built with ❤️ using Flask, Pandas, and Bootstrap** 
+**Built with ❤️ using Flask, Bootstrap, Chart.js, and modern web technologies**

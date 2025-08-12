@@ -1,0 +1,889 @@
+{% extends "base.html" %}
+
+{% block title %}Advanced Player Management Dashboard{% endblock %}
+
+{% block extra_css %}
+<!-- Chart.js for data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Custom styles for dashboard -->
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+    }
+    
+    .terminal-container {
+        background: #1e1e1e;
+        color: #00ff00;
+        font-family: 'Courier New', monospace;
+        border-radius: 10px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .terminal-line {
+        padding: 2px 10px;
+        border-bottom: 1px solid #333;
+    }
+    
+    .terminal-success { color: #00ff00; }
+    .terminal-error { color: #ff4444; }
+    .terminal-info { color: #00aaff; }
+    .terminal-warning { color: #ffaa00; }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 20px 0;
+    }
+    
+    .bulk-actions {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .custom-scorecard-form {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .player-card {
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+    }
+    
+    .player-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+    
+    .loading-spinner {
+        display: none;
+    }
+    
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="fas fa-tachometer-alt me-2"></i>
+                        Advanced Player Management Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Real-time analytics, custom scorecards, and API monitoring</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('player_dashboard.player_data_overview') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-database me-2"></i>
+                        View Comprehensive Data
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dashboard-card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h3 id="total-players">-</h3>
+                    <p class="mb-0">Total Players</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <h3 id="total-scorecards">-</h3>
+                    <p class="mb-0">Total Scorecards</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h3 id="recent-players">-</h3>
+                    <p class="mb-0">Recent Players (30d)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card stats-card">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                    <h3 id="recent-scorecards">-</h3>
+                    <p class="mb-0">Recent Scorecards (7d)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Player Activity Over Time
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="playerActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Scorecard Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="scorecardDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="row">
+        <!-- Players Management Section -->
+        <div class="col-md-8">
+            <div class="card dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Players Management
+                    </h5>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="showBulkActions()">
+                            <i class="fas fa-plus me-1"></i>
+                            Bulk Actions
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="showCustomScorecard()">
+                            <i class="fas fa-plus me-1"></i>
+                            Custom Scorecard
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="exportData()">
+                            <i class="fas fa-download me-1"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Search and Filters -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="player-search" 
+                                   placeholder="Search players...">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" id="sort-filter">
+                                <option value="name">Sort by Name</option>
+                                <option value="date">Sort by Date</option>
+                                <option value="scorecards">Sort by Scorecards</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100" onclick="refreshPlayers()">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Players Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="players-table">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Player Name</th>
+                                    <th>Created</th>
+                                    <th>Scorecards</th>
+                                    <th>Last Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="players-tbody">
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Terminal Section -->
+        <div class="col-md-4">
+            <div class="card dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-terminal me-2"></i>
+                        API Terminal
+                    </h5>
+                    <div>
+                        <button class="btn btn-outline-danger btn-sm" onclick="clearTerminal()">
+                            <i class="fas fa-trash me-1"></i>
+                            Clear
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="toggleTerminal()">
+                            <i class="fas fa-expand me-1"></i>
+                            Toggle
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="terminal-container" id="api-terminal">
+                        <div class="terminal-line terminal-info">
+                            <strong>[INFO]</strong> API Terminal initialized
+                        </div>
+                        <div class="terminal-line terminal-success">
+                            <strong>[SUCCESS]</strong> Dashboard loaded successfully
+                        </div>
+                        <div class="terminal-line terminal-info">
+                            <strong>[INFO]</strong> Monitoring API calls...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions Modal -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tasks me-2"></i>
+                    Bulk Operations
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Bulk Create Players</h6>
+                        <textarea class="form-control" id="bulk-players" rows="5" 
+                                  placeholder="Enter player names (one per line)&#10;LeBron James&#10;Stephen Curry&#10;Kevin Durant"></textarea>
+                        <button class="btn btn-primary mt-2" onclick="bulkCreatePlayers()">
+                            <i class="fas fa-plus me-1"></i>
+                            Create Players
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Bulk Create Scorecards</h6>
+                        <select class="form-control mb-2" id="bulk-scorecard-player">
+                            <option value="">Select Player</option>
+                        </select>
+                        <input type="number" class="form-control mb-2" id="bulk-scorecard-count" 
+                               placeholder="Number of scorecards" value="1">
+                        <button class="btn btn-success" onclick="bulkCreateScorecards()">
+                            <i class="fas fa-plus me-1"></i>
+                            Create Scorecards
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Scorecard Modal -->
+<div class="modal fade" id="customScorecardModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Create Custom Scorecard
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Template Selection</h6>
+                        <select class="form-control mb-3" id="scorecard-template">
+                            <option value="performance">Performance Scorecard</option>
+                            <option value="cognitive">Cognitive Scorecard</option>
+                            <option value="skills">Skills Scorecard</option>
+                            <option value="custom">Custom Template</option>
+                        </select>
+                        
+                        <h6>Player Assignment</h6>
+                        <select class="form-control mb-3" id="scorecard-player" multiple>
+                            <!-- Players will be loaded here -->
+                        </select>
+                        
+                        <h6>Custom Fields</h6>
+                        <div id="custom-fields">
+                            <div class="mb-2">
+                                <input type="text" class="form-control" placeholder="Field name" id="field-name-1">
+                                <input type="text" class="form-control mt-1" placeholder="Field value" id="field-value-1">
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="addCustomField()">
+                            <i class="fas fa-plus me-1"></i>
+                            Add Field
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Metrics</h6>
+                        <div class="mb-2">
+                            <label>Shooting Accuracy (%)</label>
+                            <input type="range" class="form-range" id="shooting-accuracy" min="0" max="100" value="50">
+                            <span id="shooting-value">50%</span>
+                        </div>
+                        <div class="mb-2">
+                            <label>Defensive Rating</label>
+                            <input type="range" class="form-range" id="defensive-rating" min="0" max="100" value="50">
+                            <span id="defensive-value">50</span>
+                        </div>
+                        <div class="mb-2">
+                            <label>Teamwork Score</label>
+                            <input type="range" class="form-range" id="teamwork-score" min="0" max="100" value="50">
+                            <span id="teamwork-value">50</span>
+                        </div>
+                        
+                        <h6>Notes</h6>
+                        <textarea class="form-control" id="scorecard-notes" rows="3" 
+                                  placeholder="Additional notes about this scorecard..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createCustomScorecard()">
+                    <i class="fas fa-save me-1"></i>
+                    Create Scorecard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let playerActivityChart = null;
+let scorecardDistributionChart = null;
+let currentPlayers = [];
+let terminalVisible = true;
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadPlayers();
+    initializeCharts();
+    startAPIMonitoring();
+});
+
+// Load dashboard statistics
+function loadDashboardStats() {
+    fetch('/api/dashboard/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatsCards(data.player_statistics);
+                updateCharts(data);
+            }
+        })
+        .catch(error => {
+            logToTerminal('Error loading dashboard stats: ' + error.message, 'error');
+        });
+}
+
+// Update statistics cards
+function updateStatsCards(stats) {
+    document.getElementById('total-players').textContent = stats.total_players;
+    document.getElementById('total-scorecards').textContent = stats.total_scorecards;
+    document.getElementById('recent-players').textContent = stats.recent_players;
+    document.getElementById('recent-scorecards').textContent = stats.recent_scorecards;
+}
+
+// Load players data
+function loadPlayers() {
+    fetch('/api/players/advanced')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentPlayers = data.players;
+                displayPlayers(data.players);
+                updatePlayerSelects(data.players);
+            }
+        })
+        .catch(error => {
+            logToTerminal('Error loading players: ' + error.message, 'error');
+        });
+}
+
+// Display players in table
+function displayPlayers(players) {
+    const tbody = document.getElementById('players-tbody');
+    tbody.innerHTML = '';
+    
+    if (players.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No players found</td></tr>';
+        return;
+    }
+    
+    players.forEach(player => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${player.name}</strong></td>
+            <td>${player.date_created_readable}</td>
+            <td><span class="badge bg-info">${player.scorecard_count}</span></td>
+            <td>${player.last_scorecard || 'No activity'}</td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm" onclick="viewPlayer('${player.name}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-success btn-sm" onclick="addScorecard('${player.name}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deletePlayer('${player.name}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Update player select dropdowns
+function updatePlayerSelects(players) {
+    const selects = ['bulk-scorecard-player', 'scorecard-player'];
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = '<option value="">Select Player</option>';
+            players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.name;
+                option.textContent = player.name;
+                select.appendChild(option);
+            });
+        }
+    });
+}
+
+// Initialize charts
+function initializeCharts() {
+    // Player Activity Chart
+    const playerCtx = document.getElementById('playerActivityChart').getContext('2d');
+    playerActivityChart = new Chart(playerCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Players Created',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    });
+
+    // Scorecard Distribution Chart
+    const scorecardCtx = document.getElementById('scorecardDistributionChart').getContext('2d');
+    scorecardDistributionChart = new Chart(scorecardCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['With Scorecards', 'Without Scorecards'],
+            datasets: [{
+                data: [0, 0],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 99, 132, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+// Update charts with data
+function updateCharts(data) {
+    if (data.scorecard_analytics && data.scorecard_analytics.daily_scorecards) {
+        const chartData = data.scorecard_analytics.daily_scorecards;
+        playerActivityChart.data.labels = chartData.map(item => item.date);
+        playerActivityChart.data.datasets[0].data = chartData.map(item => item.count);
+        playerActivityChart.update();
+    }
+
+    if (data.player_statistics) {
+        const stats = data.player_statistics;
+        scorecardDistributionChart.data.datasets[0].data = [
+            stats.players_with_scorecards,
+            stats.players_without_scorecards
+        ];
+        scorecardDistributionChart.update();
+    }
+}
+
+// Terminal functions
+function logToTerminal(message, type = 'info') {
+    const terminal = document.getElementById('api-terminal');
+    const line = document.createElement('div');
+    line.className = `terminal-line terminal-${type}`;
+    line.innerHTML = `<strong>[${type.toUpperCase()}]</strong> ${message}`;
+    terminal.appendChild(line);
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+function clearTerminal() {
+    document.getElementById('api-terminal').innerHTML = '';
+    logToTerminal('Terminal cleared', 'info');
+}
+
+function toggleTerminal() {
+    const terminal = document.getElementById('api-terminal');
+    terminal.style.display = terminalVisible ? 'none' : 'block';
+    terminalVisible = !terminalVisible;
+}
+
+// API monitoring
+function startAPIMonitoring() {
+    setInterval(() => {
+        fetch('/api/monitor/calls')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.calls.length > 0) {
+                    const latestCall = data.calls[data.calls.length - 1];
+                    logToTerminal(`${latestCall.method} ${latestCall.endpoint} - ${latestCall.status}`, 
+                                latestCall.status >= 400 ? 'error' : 'success');
+                }
+            })
+            .catch(error => {
+                logToTerminal('API monitoring error: ' + error.message, 'error');
+            });
+    }, 5000); // Check every 5 seconds
+}
+
+// Bulk operations
+function showBulkActions() {
+    new bootstrap.Modal(document.getElementById('bulkActionsModal')).show();
+}
+
+function bulkCreatePlayers() {
+    const playersText = document.getElementById('bulk-players').value;
+    const players = playersText.split('\n').filter(name => name.trim());
+    
+    if (players.length === 0) {
+        showToast('Please enter player names', 'warning');
+        return;
+    }
+    
+    const playersData = players.map(name => ({ name: name.trim() }));
+    
+    fetch('/api/players/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ players: playersData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Created ${data.total_created} players`, 'success');
+            loadPlayers();
+            loadDashboardStats();
+        } else {
+            showToast('Error creating players', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error: ' + error.message, 'error');
+    });
+}
+
+function bulkCreateScorecards() {
+    const playerName = document.getElementById('bulk-scorecard-player').value;
+    const count = parseInt(document.getElementById('bulk-scorecard-count').value);
+    
+    if (!playerName || count <= 0) {
+        showToast('Please select player and enter count', 'warning');
+        return;
+    }
+    
+    const scorecards = Array(count).fill().map(() => ({}));
+    
+    fetch(`/api/players/${encodeURIComponent(playerName)}/scorecards/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scorecards: scorecards })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Created ${data.total_created} scorecards`, 'success');
+            loadPlayers();
+            loadDashboardStats();
+        } else {
+            showToast('Error creating scorecards', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error: ' + error.message, 'error');
+    });
+}
+
+// Custom scorecard functions
+function showCustomScorecard() {
+    new bootstrap.Modal(document.getElementById('customScorecardModal')).show();
+}
+
+function addCustomField() {
+    const container = document.getElementById('custom-fields');
+    const fieldCount = container.children.length + 1;
+    
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'mb-2';
+    fieldDiv.innerHTML = `
+        <input type="text" class="form-control" placeholder="Field name" id="field-name-${fieldCount}">
+        <input type="text" class="form-control mt-1" placeholder="Field value" id="field-value-${fieldCount}">
+    `;
+    container.appendChild(fieldDiv);
+}
+
+function createCustomScorecard() {
+    const template = document.getElementById('scorecard-template').value;
+    const selectedPlayers = Array.from(document.getElementById('scorecard-player').selectedOptions).map(opt => opt.value);
+    const notes = document.getElementById('scorecard-notes').value;
+    
+    if (selectedPlayers.length === 0) {
+        showToast('Please select at least one player', 'warning');
+        return;
+    }
+    
+    // Collect custom fields
+    const customFields = {};
+    const fieldInputs = document.querySelectorAll('[id^="field-name-"]');
+    fieldInputs.forEach((input, index) => {
+        const name = input.value.trim();
+        const value = document.getElementById(`field-value-${index + 1}`).value.trim();
+        if (name && value) {
+            customFields[name] = value;
+        }
+    });
+    
+    // Collect performance metrics
+    const performanceMetrics = {
+        shooting_accuracy: document.getElementById('shooting-accuracy').value,
+        defensive_rating: document.getElementById('defensive-rating').value,
+        teamwork_score: document.getElementById('teamwork-score').value
+    };
+    
+    const scorecardData = {
+        template_type: template,
+        custom_fields: customFields,
+        performance_metrics: performanceMetrics,
+        notes: notes
+    };
+    
+    // Create scorecards for each selected player
+    let createdCount = 0;
+    let totalCount = selectedPlayers.length;
+    
+    selectedPlayers.forEach(playerName => {
+        fetch(`/api/players/${encodeURIComponent(playerName)}/custom-scorecard`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(scorecardData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            createdCount++;
+            if (data.success) {
+                if (createdCount === totalCount) {
+                    showToast(`Created ${totalCount} custom scorecards`, 'success');
+                    loadPlayers();
+                    loadDashboardStats();
+                    bootstrap.Modal.getInstance(document.getElementById('customScorecardModal')).hide();
+                }
+            } else {
+                showToast(`Error creating scorecard for ${playerName}`, 'error');
+            }
+        })
+        .catch(error => {
+            showToast(`Error: ${error.message}`, 'error');
+        });
+    });
+}
+
+// Utility functions
+function refreshPlayers() {
+    loadPlayers();
+    loadDashboardStats();
+    showToast('Data refreshed', 'success');
+}
+
+function exportData() {
+    fetch('/api/players/export')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.open('/api/players/export/download', '_blank');
+                showToast('Export completed', 'success');
+            } else {
+                showToast('Export failed', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Export error: ' + error.message, 'error');
+        });
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast show bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} text-white`;
+    toast.innerHTML = `
+        <div class="toast-body">
+            ${message}
+        </div>
+    `;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Player action functions
+function viewPlayer(playerName) {
+    showToast(`Viewing player: ${playerName}`, 'info');
+    // Implement player detail view
+}
+
+function addScorecard(playerName) {
+    showToast(`Adding scorecard for: ${playerName}`, 'info');
+    // Implement add scorecard functionality
+}
+
+function deletePlayer(playerName) {
+    if (confirm(`Are you sure you want to delete player "${playerName}"?`)) {
+        fetch(`/api/players/${encodeURIComponent(playerName)}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(`Player "${playerName}" deleted`, 'success');
+                loadPlayers();
+                loadDashboardStats();
+            } else {
+                showToast('Error deleting player', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Error: ' + error.message, 'error');
+        });
+    }
+}
+
+// Search and filter functionality
+document.getElementById('player-search').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const filteredPlayers = currentPlayers.filter(player => 
+        player.name.toLowerCase().includes(searchTerm)
+    );
+    displayPlayers(filteredPlayers);
+});
+
+document.getElementById('sort-filter').addEventListener('change', function() {
+    const sortBy = this.value;
+    const sortedPlayers = [...currentPlayers].sort((a, b) => {
+        switch(sortBy) {
+            case 'name':
+                return a.name.localeCompare(b.name);
+            case 'date':
+                return new Date(b.date_created_readable) - new Date(a.date_created_readable);
+            case 'scorecards':
+                return b.scorecard_count - a.scorecard_count;
+            default:
+                return 0;
+        }
+    });
+    displayPlayers(sortedPlayers);
+});
+
+// Range input updates
+document.getElementById('shooting-accuracy').addEventListener('input', function() {
+    document.getElementById('shooting-value').textContent = this.value + '%';
+});
+
+document.getElementById('defensive-rating').addEventListener('input', function() {
+    document.getElementById('defensive-value').textContent = this.value;
+});
+
+document.getElementById('teamwork-score').addEventListener('input', function() {
+    document.getElementById('teamwork-value').textContent = this.value;
+});
+</script>
+{% endblock %}

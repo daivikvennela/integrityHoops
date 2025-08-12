@@ -1,0 +1,2740 @@
+{% extends "base.html" %}
+
+{% block title %}SmartDash Results - Basketball Cognitive Performance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .smartdash-results-container {
+        background: linear-gradient(135deg, #111827 0%, #0b0f19 100%);
+        min-height: 100vh;
+        padding: 20px 0;
+        color: #e5e7eb;
+    }
+    
+    .results-card {
+        background: rgba(17, 24, 39, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        margin-bottom: 30px;
+        overflow: hidden;
+        color: #e5e7eb;
+    }
+    
+    .metric-summary {
+        background: linear-gradient(135deg, #6d28d9 0%, #a855f7 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        text-align: center;
+        box-shadow: 0 8px 24px rgba(168, 85, 247, 0.35);
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        /* Increase size by 20% */
+        transform: scale(1.2);
+        transform-origin: top left;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .table-container h5 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 15px;
+    }
+    
+    .table-responsive {
+        border-radius: 8px;
+        overflow: auto;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    }
+    
+    .table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        font-size: 0.9rem;
+        padding: 12px 8px;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .table tbody td {
+        font-size: 0.85rem;
+        padding: 10px 8px;
+        vertical-align: middle;
+    }
+    
+    /* Row number column styling */
+    .table thead th:first-child {
+        width: 60px;
+        min-width: 60px;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+    
+    .table tbody td:first-child {
+        width: 60px;
+        min-width: 60px;
+        text-align: center;
+        font-weight: bold;
+        background-color: #f8f9fa;
+        border-right: 2px solid #dee2e6;
+        font-size: 0.8rem;
+        color: #495057;
+    }
+    
+    /* Column number styling in headers */
+    .table thead th small {
+        font-size: 0.7rem;
+        opacity: 0.8;
+        font-weight: 400;
+        display: block;
+        margin-top: 2px;
+    }
+    
+    /* Decrease width of first data row */
+    .table tbody tr:first-child td:not(:first-child) {
+        width: 70%;
+        max-width: 70%;
+    }
+    
+    .table tbody tr:first-child td:nth-child(2) {
+        width: 60%;
+        max-width: 60%;
+    }
+    
+    .action-buttons {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .row-filter-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .input-group .btn {
+        border-radius: 0 6px 6px 0;
+        font-size: 0.85rem;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+    
+    .input-group .form-control {
+        border-radius: 6px 0 0 6px;
+        font-size: 0.85rem;
+    }
+    
+    .row-filter-card h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .row-filter-card small {
+        font-size: 0.75rem;
+    }
+    
+    .table-info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-info-card h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .table-stats small {
+        font-size: 0.75rem;
+        margin-bottom: 5px;
+    }
+    
+    /* Make cards more compact on smaller screens */
+    @media (max-width: 768px) {
+        .search-filter-card,
+        .row-filter-card,
+        .export-card,
+        .table-info-card {
+            margin-bottom: 15px;
+            padding: 15px;
+        }
+    }
+    
+    .btn-smartdash {
+        background: linear-gradient(135deg, #6d28d9 0%, #a855f7 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(168, 85, 247, 0.35);
+    }
+    
+    .btn-smartdash:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .row-filter-card {
+        background: #0f172a;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        color: #e5e7eb;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    
+    .table-info-card {
+        background: #0f172a;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        color: #e5e7eb;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    
+    .search-filter-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .export-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+    }
+    
+    .btn-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .btn-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-custom:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="smartdash-results-container">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="results-card">
+                    <div class="p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-1">
+                                    <i class="fas fa-brain me-2"></i>
+                                    SmartDash Processing Results
+                                </h3>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-file me-2"></i>
+                                    Original file: {{ filename }}
+                                </p>
+                            </div>
+                            <div>
+                                <a href="{{ url_for('smartdash') }}" class="btn btn-outline-primary btn-sm me-2">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to SmartDash
+                                </a>
+                                {% if output_path %}
+                                <a href="{{ url_for('download_file', filename=output_path.split('/')[-1]) }}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Processed File
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Summary -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <div class="metric-summary">
+                    <div class="metric-value">{{ data|length }}</div>
+                    <div class="metric-label">Total Rows</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-summary">
+                    <div class="metric-value">{{ columns|length }}</div>
+                    <div class="metric-label">Total Columns</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-summary">
+                    <div class="metric-value">{{ data|length * columns|length }}</div>
+                    <div class="metric-label">Data Points</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-summary">
+                    <div class="metric-value">{{ data_type|default('Cognitive')|title }}</div>
+                    <div class="metric-label">Data Type</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Basketball Cognitive Data Alert -->
+        {% if data_type == 'basketball_cognitive_performance' %}
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="results-card">
+                    <div class="p-4">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Basketball Cognitive Data Detected!</strong> 
+                            Your data has been processed and is ready for SmartDash analytics.
+                        </div>
+                        
+                        <div class="action-buttons mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {% if performance_summary_path %}
+                                    <a href="{{ url_for('download_file', filename=performance_summary_path.split('/')[-1]) }}" class="btn btn-success me-2">
+                                        <i class="fas fa-download me-2"></i>
+                                        Download Performance Summary
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <a href="{{ url_for('smartdash_with_data', filename=output_path.split('/')[-1]) }}" class="btn btn-smartdash">
+                                        <i class="fas fa-chart-line me-2"></i>
+                                        View SmartDash Analytics
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Data Table -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="table-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-table me-2"></i>
+                        Processed Data Table (5 Rows Visible)
+                    </h5>
+                    <div class="table-responsive" style="max-height: 300px; overflow: auto;">
+                        <table class="table table-hover" id="dataTable">
+                            <thead style="position: sticky; top: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; z-index: 1;">
+                                <tr>
+                                    <th style="width: 50px; min-width: 50px; text-align: center;">#</th>
+                                    {% for column in columns %}
+                                    <th>{{ column }} <small class="d-block">(Col {{ loop.index }})</small></th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data %}
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa; border-right: 2px solid #dee2e6;">{{ loop.index }}</td>
+                                    {% for column in columns %}
+                                    <td>
+                                        {% if row[column] is string and row[column].startswith('http') %}
+                                            <a href="{{ row[column] }}" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-external-link-alt me-1"></i>
+                                                {{ row[column] }}
+                                            </a>
+                                        {% else %}
+                                            {{ row[column] if row[column] is not none else 'N/A' }}
+                                        {% endif %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if data|length > 5 %}
+                    <div class="mt-4 text-center">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Showing 5 rows at a time. Scroll to view all {{ data|length }} rows in the dataset.
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Search, Filter and Export -->
+        <div class="row mb-5">
+            <div class="col-lg-3 col-md-4">
+                <div class="search-filter-card">
+                    <h6 class="mb-3">
+                        <i class="fas fa-search me-2"></i>
+                        Search & Filter
+                    </h6>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search in full dataset...">
+                    <small class="text-muted mt-2 d-block" id="searchInfo">Showing 5 rows at a time of full dataset</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4">
+                <div class="row-filter-card">
+                    <h6 class="mb-3">
+                        <i class="fas fa-filter me-2"></i>
+                        Row Filter
+                    </h6>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="rowFilterInput" placeholder="Filter by Row column (e.g., KP)">
+                        <button class="btn btn-outline-info" type="button" onclick="applyRowFilter()">
+                            <i class="fas fa-filter me-1"></i>
+                            Filter
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearRowFilter()">
+                            <i class="fas fa-times me-1"></i>
+                            Clear
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block" id="filterInfo">Filter by values in Row column (Column 4)</small>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-4">
+                <div class="export-card">
+                    <h6 class="mb-3">
+                        <i class="fas fa-download me-2"></i>
+                        Export Options
+                    </h6>
+                    <button class="btn btn-outline-primary btn-sm me-2" onclick="exportToCSV()">
+                        <i class="fas fa-file-csv me-1"></i>
+                        Export CSV
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="exportToJSON()">
+                        <i class="fas fa-file-code me-1"></i>
+                        Export JSON
+                    </button>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-12">
+                <div class="table-info-card">
+                    <h6 class="mb-3">
+
+                        
+                        <i class="fas fa-info-circle me-2"></i>
+                        Table Info
+                    </h6>
+                    <div class="table-stats">
+                        <small class="text-muted d-block mb-2">Rows: <span id="rowCount">-</span></small>
+                        <small class="text-muted d-block mb-2">Columns: <span id="columnCount">-</span></small>
+                        <small class="text-muted d-block mb-2">Visible: <span id="visibleCount">-</span></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Scorecard Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="results-card">
+                    <div class="p-4">
+                        <h5 class="mb-3">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Create New Scorecard
+                        </h5>
+                        <form method="POST" action="{{ url_for('create_scorecard') }}" id="createScorecardForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="player_dropdown" class="form-label">
+                                            <i class="fas fa-user me-2"></i>
+                                            Select Player
+                                        </label>
+                                        <select class="form-select" id="player_dropdown" name="player_name" required>
+                                            <option value="">Choose a player...</option>
+                                            {% for player in players %}
+                                            <option value="{{ player.name }}">{{ player.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="player_name" class="form-label">
+                                            <i class="fas fa-id-card me-2"></i>
+                                            Player Name
+                                        </label>
+                                        <input type="text" class="form-control" id="player_name" name="player_name_display" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="date_created" class="form-label">
+                                            <i class="fas fa-calendar me-2"></i>
+                                            Date Created
+                                        </label>
+                                        <input type="text" class="form-control" id="date_created" value="Current timestamp" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="scorecard_id" class="form-label">
+                                            <i class="fas fa-hashtag me-2"></i>
+                                            Scorecard ID
+                                        </label>
+                                        <input type="text" class="form-control" id="scorecard_id" value="Auto-generated" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Space Read Section -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-basketball-ball me-2"></i>
+                                        On Ball - Space Read Metrics
+                                    </h6>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_live_dribble" class="form-label">
+                                            <i class="fas fa-running me-2"></i>
+                                            Space Read: Live Dribble
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_live_dribble" 
+                                                   name="space_read_live_dribble" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "+ve Space Read: Live Dribble" actions</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_catch" class="form-label">
+                                            <i class="fas fa-hands me-2"></i>
+                                            Space Read: Catch
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_catch" 
+                                                   name="space_read_catch" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "+ve Space Read: Catchs" actions</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- New Space Read Negative Fields -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_live_dribble_negative" class="form-label">
+                                            <i class="fas fa-minus-circle me-2"></i>
+                                            Space Read: Live Dribble (-)
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_live_dribble_negative" 
+                                                   name="space_read_live_dribble_negative" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "-ve Space Read: Live Dribble" actions</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="space_read_catch_negative" class="form-label">
+                                            <i class="fas fa-minus-circle me-2"></i>
+                                            Space Read: Catch (-)
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="space_read_catch_negative" 
+                                                   name="space_read_catch_negative" value="0" min="0">
+                                            <button type="button" class="btn btn-outline-info" onclick="autofillSpaceRead()">
+                                                <i class="fas fa-magic me-1"></i>
+                                                Autofill
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Count of "-ve Space Read: Catch" actions</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- DM Catch Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-basketball-ball me-2"></i>
+                                                DM Catch Metrics
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Back-to-Back Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_back_to_back_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            DM Catch: Back-to-Back (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_back_to_back_positive" 
+                                                                   name="dm_catch_back_to_back_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve DM Catch: Back-to-Back" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_back_to_back_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            DM Catch: Back-to-Back (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_back_to_back_negative" 
+                                                                   name="dm_catch_back_to_back_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve DM Catch: Back-to-Back" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Uncontested Shot Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_uncontested_shot_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            DM Catch: Uncontested Shot (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_uncontested_shot_positive" 
+                                                                   name="dm_catch_uncontested_shot_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve DM Catch: Uncontested Shot" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_uncontested_shot_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            DM Catch: Uncontested Shot (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_uncontested_shot_negative" 
+                                                                   name="dm_catch_uncontested_shot_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve DM Catch: Uncontested Shot" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Swing Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_swing_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            DM Catch: Swing (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_swing_positive" 
+                                                                   name="dm_catch_swing_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve DM Catch: Swing" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_swing_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            DM Catch: Swing (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_swing_negative" 
+                                                                   name="dm_catch_swing_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve DM Catch: Swing" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Drive Pass Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_drive_pass_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            DM Catch: Drive Pass (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_drive_pass_positive" 
+                                                                   name="dm_catch_drive_pass_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve DM Catch: Drive Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_drive_pass_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            DM Catch: Drive Pass (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_drive_pass_negative" 
+                                                                   name="dm_catch_drive_pass_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve DM Catch: Drive Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Drive a Swing/Skip Pass Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_drive_swing_skip_pass_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            DM Catch: Drive a Swing/Skip Pass (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_drive_swing_skip_pass_positive" 
+                                                                   name="dm_catch_drive_swing_skip_pass_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve DM Catch: Drive a Swing/Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="dm_catch_drive_swing_skip_pass_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            DM Catch: Drive a Swing/Skip Pass (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="dm_catch_drive_swing_skip_pass_negative" 
+                                                                   name="dm_catch_drive_swing_skip_pass_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDMCatch()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve DM Catch: Drive a Swing/Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- QB12 Decision Making Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-chess-knight me-2"></i>
+                                                QB12 Decision Making
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Strong Side Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_strong_side_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Strong Side (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_strong_side_positive" name="qb12_strong_side_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Strong Side" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_strong_side_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Strong Side (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_strong_side_negative" name="qb12_strong_side_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Strong Side" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Baseline Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_baseline_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Baseline (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_baseline_positive" name="qb12_baseline_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Baseline" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_baseline_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Baseline (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_baseline_negative" name="qb12_baseline_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Baseline" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fill Behind / Weak Side Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_fill_behind_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Fill Behind (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_fill_behind_positive" name="qb12_fill_behind_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Fill Behind" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_weak_side_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Weak Side (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_weak_side_positive" name="qb12_weak_side_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Weak Side" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fill Behind (-) Row aligned under Baseline (-) on the right -->
+                                            <div class="row">
+                                                <div class="col-md-6 offset-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_fill_behind_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Fill Behind (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_fill_behind_negative" name="qb12_fill_behind_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Fill Behind" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Weak Side (-) / Roller Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_weak_side_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Weak Side (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_weak_side_negative" name="qb12_weak_side_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Weak Side" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_roller_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Roller (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_roller_positive" name="qb12_roller_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Roller" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+        
+                                            <!-- Roller (-) / Skip Pass Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_roller_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Roller (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_roller_negative" name="qb12_roller_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Roller" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_skip_pass_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Skip Pass (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_skip_pass_positive" name="qb12_skip_pass_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Skip Pass (-) / Cutter (+) Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_skip_pass_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Skip Pass (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_skip_pass_negative" name="qb12_skip_pass_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Skip Pass" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_cutter_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            QB12: Cutter (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_cutter_positive" name="qb12_cutter_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve QB12: Cutter" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Cutter (-) Row -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="qb12_cutter_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            QB12: Cutter (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="qb12_cutter_negative" name="qb12_cutter_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillQB12()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve QB12: Cutter" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-car me-2"></i>
+                                                On Ball - Driving Metrics
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving: Paint Touch (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_positive" 
+                                                                   name="driving_paint_touch_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_paint_touch_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving: Paint Touch (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_paint_touch_negative" 
+                                                                   name="driving_paint_touch_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Paint Touch" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Driving Physicality (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_positive" 
+                                                                   name="driving_physicality_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="driving_physicality_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Driving Physicality (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="driving_physicality_negative" 
+                                                                   name="driving_physicality_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillDrivingMetrics()">
+                                                                <i class="fas fa-magic me-1"></i>
+                                                                Autofill
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Driving: Physicality" actions</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Off Ball Section: Positioning (col 46) and Transition (col 62) side-by-side -->
+                            <div class="row mb-4">
+                                <!-- Positioning -->
+                                <div class="col-md-6">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-shapes me-2"></i>
+                                                Off Ball - Positioning (Col 46)
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="offball_positioning_create_shape_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Off Ball: Positioning Create Shape (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="offball_positioning_create_shape_positive" name="offball_positioning_create_shape_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillOffBallPositioning()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Positioning - Create Shape"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="offball_positioning_create_shape_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Off Ball: Positioning Create Shape (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="offball_positioning_create_shape_negative" name="offball_positioning_create_shape_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillOffBallPositioning()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Positioning - Create Shape"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="offball_positioning_adv_awareness_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Off Ball: Positioning Advantage Awareness (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="offball_positioning_adv_awareness_positive" name="offball_positioning_adv_awareness_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillOffBallPositioning()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Positioning - Advantage Awareness"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="offball_positioning_adv_awareness_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Off Ball: Positioning Advantage Awareness (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="offball_positioning_adv_awareness_negative" name="offball_positioning_adv_awareness_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillOffBallPositioning()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Positioning - Advantage Awareness"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Transition -->
+                                <div class="col-md-6">
+                                    <div class="card border-secondary">
+                                        <div class="card-header bg-secondary text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-random me-2"></i>
+                                                Off Ball - Transition (Col 62)
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="transition_effort_pace_positive" class="form-label">
+                                                            <i class="fas fa-plus-circle me-2"></i>
+                                                            Transition: Effort and Pace (+)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="transition_effort_pace_positive" name="transition_effort_pace_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-secondary" onclick="autofillOffBallTransition()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Transition: Effort and Pace"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="transition_effort_pace_negative" class="form-label">
+                                                            <i class="fas fa-minus-circle me-2"></i>
+                                                            Transition: Effort and Pace (-)
+                                                        </label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="transition_effort_pace_negative" name="transition_effort_pace_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-secondary" onclick="autofillOffBallTransition()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Transition: Effort and Pace"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cutting & Screening Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-danger">
+                                        <div class="card-header bg-danger text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-cut me-2"></i>
+                                                Cutting & Screening
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Denial -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_denial_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Denial (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_denial_positive" name="cs_denial_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Denial"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_denial_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Denial (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_denial_negative" name="cs_denial_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Denial"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Movement -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_movement_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Movement (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_movement_positive" name="cs_movement_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Movement"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_movement_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Movement (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_movement_negative" name="cs_movement_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Movement"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Body to Body -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_body_to_body_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Body to Body (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_body_to_body_positive" name="cs_body_to_body_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Body to Body"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_body_to_body_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Body to Body (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_body_to_body_negative" name="cs_body_to_body_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Body to Body"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Screen Principle -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_screen_principle_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Screen Principle (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_screen_principle_positive" name="cs_screen_principle_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Screen Principle"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_screen_principle_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Screen Principle (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_screen_principle_negative" name="cs_screen_principle_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Screen Principle"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Cut Fill -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_cut_fill_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Cutting & Screening: Cut Fill (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_cut_fill_positive" name="cs_cut_fill_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "+ve Cutting & Screening: Cut Fill"</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="cs_cut_fill_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Cutting & Screening: Cut Fill (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="cs_cut_fill_negative" name="cs_cut_fill_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-danger" onclick="autofillCuttingScreening()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of "-ve Cutting & Screening: Cut Fill"</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Relocation Section -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <div class="card border-info">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-location-arrow me-2"></i>
+                                                Relocation
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Weak Corner -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_weak_corner_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Weak Corner (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_weak_corner_positive" name="relocation_weak_corner_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Weak Corner</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_weak_corner_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Weak Corner (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_weak_corner_negative" name="relocation_weak_corner_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Weak Corner</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 45 Cut -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_45_cut_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: 45 Cut (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_45_cut_positive" name="relocation_45_cut_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: 45 Cut</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_45_cut_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: 45 Cut (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_45_cut_negative" name="relocation_45_cut_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: 45 Cut</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Slide Away -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_slide_away_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Slide Away (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_slide_away_positive" name="relocation_slide_away_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Slide Away</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_slide_away_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Slide Away (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_slide_away_negative" name="relocation_slide_away_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Slide Away</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fill Behind -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_fill_behind_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Fill Behind (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_fill_behind_positive" name="relocation_fill_behind_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Fill Behind</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_fill_behind_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Fill Behind (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_fill_behind_negative" name="relocation_fill_behind_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Fill Behind</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Dunker-Baseline -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_dunker_baseline_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Dunker-Baseline (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_dunker_baseline_positive" name="relocation_dunker_baseline_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Dunker-Baseline</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_dunker_baseline_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Dunker-Baseline (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_dunker_baseline_negative" name="relocation_dunker_baseline_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Dunker-Baseline</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Corner Fill -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_corner_fill_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Corner Fill (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_corner_fill_positive" name="relocation_corner_fill_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Corner Fill</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_corner_fill_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Corner Fill (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_corner_fill_negative" name="relocation_corner_fill_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Corner Fill</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Reverse Direction -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_reverse_direction_positive" class="form-label"><i class="fas fa-plus-circle me-2"></i>Relocation: Reverse Direction (+)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_reverse_direction_positive" name="relocation_reverse_direction_positive" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: +ve Relocate: Reverse Direction</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label for="relocation_reverse_direction_negative" class="form-label"><i class="fas fa-minus-circle me-2"></i>Relocation: Reverse Direction (-)</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="relocation_reverse_direction_negative" name="relocation_reverse_direction_negative" value="0" min="0">
+                                                            <button type="button" class="btn btn-outline-info" onclick="autofillRelocation()"><i class="fas fa-magic me-1"></i>Autofill</button>
+                                                        </div>
+                                                        <small class="text-muted">Count of: -ve Relocate: Reverse Direction</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Scorecard Creation:</strong> This will create a new scorecard for the selected player with current timestamp, Space Read metrics, and Driving metrics.
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-custom btn-lg" id="createScorecardBtn">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Create Scorecard
+                                </button>
+                                 <button type="button"
+                                         class="btn btn-outline-primary btn-lg ms-2"
+                                         id="autofillAllBtn"
+                                         onclick="autofillAll()">
+                                   <i class="fas fa-wand-magic-sparkles me-2"></i>
+                                   Autofill All
+                                 </button>
+                                {# Jinja lacks split filter; use rsplit to get the last path segment #}
+                                {% set _path = output_path|default(filename, true)|replace('\\','/') %}
+                                {% set last_segment = _path.rsplit('/', 1)[-1] %}
+                                <a href="{{ url_for('scorecard_plus_with_data', filename=last_segment) }}" class="btn btn-outline-warning btn-lg ms-2" id="openNeonDashboardBtn">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Open Neon Dashboard
+                                </a>
+                                  <a href="{{ url_for('player_bars', filename=last_segment) }}" class="btn btn-outline-info btn-lg ms-2">
+                                      <i class="fas fa-chart-bar me-2"></i>
+                                      Open Player Bars
+                                  </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+                            
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Suppress all window.alert popups on this page (log to console instead)
+window.SMARTDASH_SILENT = true;
+(function () {
+  const origAlert = window.alert;
+  window.alert = function (...args) {
+    if (!window.SMARTDASH_SILENT) return origAlert.apply(window, args);
+    try { console.info('[alert suppressed]', args[0] || ''); } catch (_) {}
+  };
+})();
+
+// Global variables for filtering
+let currentRowFilter = '';
+let originalRows = [];
+
+// Initialize original rows on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    originalRows = Array.from(rows);
+    
+    // Debug: Log table structure
+    console.log('Table initialized with', rows.length, 'rows');
+    if (rows.length > 0) {
+        const firstRow = rows[0];
+        const cells = firstRow.getElementsByTagName('td');
+        console.log('First row has', cells.length, 'cells');
+        for (let i = 0; i < cells.length; i++) {
+            console.log(`Cell ${i}: "${cells[i].textContent.trim()}"`);
+        }
+    }
+    
+    // Initialize table stats
+    updateTableStats();
+});
+
+// Search functionality
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+    applySearch();
+});
+
+    // Keep readonly player_name_display in sync with dropdown so POST has player_name from select
+    const playerSelect = document.getElementById('player_dropdown');
+    const playerNameDisplay = document.getElementById('player_name');
+    if (playerSelect && playerNameDisplay) {
+        playerSelect.addEventListener('change', function() {
+            playerNameDisplay.value = this.value || '';
+        });
+    }
+
+// Provide a canonical hidden player_name field and ensure both display and hidden are synced
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('createScorecardForm');
+  const playerSelect = document.getElementById('player_dropdown');
+  const playerNameDisplay = document.getElementById('player_name');
+  let hidden = document.getElementById('player_name_hidden');
+  if (form && !hidden) {
+    hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'player_name';
+    hidden.id = 'player_name_hidden';
+    form.appendChild(hidden);
+  }
+  function syncNames() {
+    const val = (playerSelect && playerSelect.value) ? playerSelect.value : '';
+    if (playerNameDisplay) playerNameDisplay.value = val;
+    if (hidden) hidden.value = val;
+  }
+  if (playerSelect) {
+    playerSelect.addEventListener('change', syncNames);
+    // initialize on load
+    syncNames();
+  }
+});
+
+// Helper to call existing autofill functions safely
+function callIfExists(fn) {
+  try {
+    if (typeof window[fn] === 'function') {
+      window[fn]();
+      return true;
+    }
+  } catch (e) {
+    console.warn('Autofill call failed:', fn, e);
+  }
+  return false;
+}
+
+// Runs all autofill routines to populate the Create Scorecard inputs
+async function autofillAll() {
+  const btn = document.getElementById('autofillAllBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Autofilling...';
+  }
+
+  const calls = [
+    'autofillSpaceRead',
+    'autofillDMCatch',
+    'autofillQB12',
+    'autofillDrivingMetrics',
+    'autofillOffBallPositioning',
+    'autofillOffBallTransition',
+    'autofillCuttingScreening',
+    'autofillRelocation'
+  ];
+
+  let ran = 0;
+  for (const fn of calls) {
+    if (callIfExists(fn)) ran++;
+    // brief delay to keep UI responsive
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise(r => setTimeout(r, 20));
+  }
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Autofill All';
+  }
+
+  // Replace popup with console log
+  try { console.log('Autofill All completed. Ran ' + ran + ' modules.'); } catch (e) {}
+}
+
+// Log all POSTed values when Create Scorecard is submitted
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('createScorecardForm');
+  if (form) {
+    form.addEventListener('submit', function() {
+      try {
+        console.group('CreateScorecard POST payload');
+        const fd = new FormData(form);
+        for (const [k, v] of fd.entries()) {
+          console.log(k, v);
+        }
+        console.groupEnd();
+      } catch (e) {
+        console.warn('Form logging failed', e);
+      }
+    });
+  }
+});
+
+// Row filter functionality
+document.getElementById('rowFilterInput').addEventListener('keyup', function() {
+    if (this.value === '') {
+        clearRowFilter();
+    } else {
+        applyRowFilter();
+    }
+});
+
+function applySearch() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        let found = false;
+        
+        // Skip the first cell (row number) when searching
+        for (let i = 1; i < cells.length; i++) {
+            if (cells[i].textContent.toLowerCase().includes(searchTerm)) {
+                found = true;
+                break;
+            }
+        }
+        
+        row.style.display = found ? '' : 'none';
+    }
+    
+    updateRowNumbers();
+    updateSearchInfo();
+}
+
+function applyRowFilter() {
+    const filterValue = document.getElementById('rowFilterInput').value.toLowerCase();
+    currentRowFilter = filterValue;
+    
+    if (filterValue === '') {
+        clearRowFilter();
+        return;
+    }
+    
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    let matchCount = 0;
+    
+    // Debug: Log the first few rows to see the structure
+    console.log('Filtering for:', filterValue);
+    console.log('Total rows:', rows.length);
+    
+    // Only debug first 3 rows to avoid console spam
+    let debugCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        
+        if (debugCount < 3) {
+            console.log('Row cells count:', cells.length);
+            // Check all columns to see what data we have
+            for (let i = 0; i < cells.length; i++) {
+                const cellValue = cells[i].textContent.trim();
+                console.log(`Column ${i}: "${cellValue}"`);
+            }
+            debugCount++;
+        }
+        
+        // Check column 4 (index 3) for the filter value - CASE INSENSITIVE
+        if (cells.length > 3) {
+            const rowColumnValue = cells[3].textContent.toLowerCase().trim();
+            if (debugCount <= 3) {
+                console.log('Column 4 value (lowercase):', rowColumnValue);
+                console.log('Looking for:', filterValue);
+                console.log('Match?', rowColumnValue.includes(filterValue));
+            }
+            const matchesFilter = rowColumnValue.includes(filterValue);
+            row.style.display = matchesFilter ? '' : 'none';
+            if (matchesFilter) matchCount++;
+        }
+    }
+    
+    console.log('Total matches found:', matchCount);
+    updateRowNumbers();
+    updateFilterInfo();
+}
+
+function clearRowFilter() {
+    document.getElementById('rowFilterInput').value = '';
+    currentRowFilter = '';
+    
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    // Show all rows
+    for (let row of rows) {
+        row.style.display = '';
+    }
+    
+    updateRowNumbers();
+    updateFilterInfo();
+}
+
+function updateRowNumbers() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    let visibleCount = 0;
+    
+    for (let row of rows) {
+        if (row.style.display !== 'none') {
+            visibleCount++;
+            const rowNumberCell = row.getElementsByTagName('td')[0];
+            rowNumberCell.textContent = visibleCount;
+        }
+    }
+}
+
+function updateSearchInfo() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    const searchInfo = document.getElementById('searchInfo');
+    
+    if (searchInfo) {
+        if (searchTerm === '') {
+            searchInfo.textContent = `Showing ${visibleRows.length} rows at a time of ${rows.length} total rows`;
+        } else {
+            searchInfo.textContent = `Found ${visibleRows.length} matching rows in dataset`;
+        }
+    }
+}
+
+function updateFilterInfo() {
+    const filterValue = document.getElementById('rowFilterInput').value;
+    const filterValueLower = filterValue.toLowerCase();
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    const filterInfo = document.getElementById('filterInfo');
+    
+    if (filterInfo) {
+        if (filterValueLower === '') {
+            filterInfo.textContent = 'Filter by values in Row column (Column 4)';
+        } else {
+            filterInfo.textContent = `Filtered: ${visibleRows.length} of ${rows.length} rows contain "${filterValue}" (case-insensitive)`;
+        }
+    }
+    
+    // Update table stats
+    updateTableStats();
+}
+
+function updateTableStats() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    document.getElementById('rowCount').textContent = rows.length;
+    document.getElementById('columnCount').textContent = headers.length - 1; // Subtract row number column
+    document.getElementById('visibleCount').textContent = visibleRows.length;
+}
+
+// Export to CSV
+function exportToCSV() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tr');
+    let csv = [];
+    
+    // Export header row (skip row number column)
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('th');
+        const rowData = [];
+        
+        // Skip the first header cell (row number column)
+        for (let i = 1; i < cells.length; i++) {
+            rowData.push('"' + cells[i].textContent.replace(/"/g, '""') + '"');
+        }
+        
+        if (rowData.length > 0) {
+            csv.push(rowData.join(','));
+        }
+    }
+    
+    // Export data rows (skip row number column)
+    for (let i = 1; i < rows.length; i++) {
+        const cells = rows[i].getElementsByTagName('td');
+        const rowData = [];
+        
+        // Skip the first cell (row number)
+        for (let i = 1; i < cells.length; i++) {
+            rowData.push('"' + cells[i].textContent.replace(/"/g, '""') + '"');
+        }
+        
+        if (rowData.length > 0) {
+            csv.push(rowData.join(','));
+        }
+    }
+    
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'smartdash_processed_data.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Export to JSON
+function exportToJSON() {
+    const table = document.getElementById('dataTable');
+    const headers = [];
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    // Get headers
+    const headerRow = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    for (let header of headerRow) {
+        headers.push(header.textContent);
+    }
+    
+    // Get data
+    const data = [];
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        const rowData = {};
+        
+        for (let i = 0; i < cells.length; i++) {
+            rowData[headers[i]] = cells[i].textContent.trim();
+        }
+        
+        data.push(rowData);
+    }
+    
+    const jsonContent = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'smartdash_processed_data.json');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Add sorting functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('dataTable');
+    const headers = table.getElementsByTagName('th');
+    
+    for (let header of headers) {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+            sortTable(table, Array.from(headers).indexOf(this));
+        });
+        
+        // Add sort indicator
+        header.innerHTML += ' <i class="fas fa-sort text-muted"></i>';
+    }
+    
+    // Create Scorecard functionality
+    const playerDropdown = document.getElementById('player_dropdown');
+    const playerNameInput = document.getElementById('player_name');
+    const createScorecardBtn = document.getElementById('createScorecardBtn');
+    
+    // Handle player dropdown change
+    if (playerDropdown) {
+        playerDropdown.addEventListener('change', function() {
+            const selectedPlayer = this.value;
+            if (selectedPlayer) {
+                playerNameInput.value = selectedPlayer;
+                createScorecardBtn.disabled = false;
+            } else {
+                playerNameInput.value = '';
+                createScorecardBtn.disabled = true;
+            }
+        });
+    }
+    
+    // Initially disable create scorecard button
+    if (createScorecardBtn) {
+        createScorecardBtn.disabled = true;
+    }
+});
+
+// Autofill Space Read metrics function
+function autofillSpaceRead() {
+    // Get the current data from the table
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    // Find the Space Read column
+    let spaceReadColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('Space Read') || headerText.toLowerCase().includes('space read')) {
+            spaceReadColumnIndex = i;
+            break;
+        }
+    }
+    
+    if (spaceReadColumnIndex === -1) {
+        alert('Space Read column not found in the data. Please ensure the data contains a "Space Read" column.');
+        return;
+    }
+    
+    // Count the metrics
+    let liveDribbleCount = 0;
+    let catchCount = 0;
+    let liveDribbleNegativeCount = 0;
+    let catchNegativeCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > spaceReadColumnIndex) {
+            const cellValue = cells[spaceReadColumnIndex].textContent.trim();
+            
+            if (cellValue.includes('+ve Space Read: Live Dribble')) {
+                liveDribbleCount++;
+            }
+            
+            if (cellValue.includes('+ve Space Read: Catch')) {
+                catchCount++;
+            }
+            
+            if (cellValue.includes('-ve Space Read: Live Dribble')) {
+                liveDribbleNegativeCount++;
+            }
+            
+            if (cellValue.includes('-ve Space Read: Catch')) {
+                catchNegativeCount++;
+            }
+        }
+    }
+    
+    // Update the form fields
+    document.getElementById('space_read_live_dribble').value = liveDribbleCount;
+    document.getElementById('space_read_catch').value = catchCount;
+    document.getElementById('space_read_live_dribble_negative').value = liveDribbleNegativeCount;
+    document.getElementById('space_read_catch_negative').value = catchNegativeCount;
+    
+    // Show success message
+    const message = `Autofill completed!\nLive Dribble (+): ${liveDribbleCount}\nCatch (+): ${catchCount}\nLive Dribble (-): ${liveDribbleNegativeCount}\nCatch (-): ${catchNegativeCount}`;
+    alert(message);
+}
+
+// Autofill DMCatch metrics function
+function autofillDMCatch() {
+    // Get the current data from the table
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    // Find the DMCatch column - look for various possible column names
+    let dmCatchColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('DM Catch') || 
+            headerText.toLowerCase().includes('dm catch') ||
+            headerText.includes('DMCatch')) {
+            dmCatchColumnIndex = i;
+            break;
+        }
+    }
+    
+    if (dmCatchColumnIndex === -1) {
+        // Fallback to 13th column (index 12) as specified
+        dmCatchColumnIndex = 12;
+        const sampleRow = rows.length > 0 ? rows[0] : null;
+        if (!sampleRow || sampleRow.getElementsByTagName('td').length <= dmCatchColumnIndex) {
+            alert('DM Catch column not found (expected col 13). Please ensure the data contains a "DM Catch" column.');
+            return;
+        }
+    }
+    
+    // Count the metrics
+    let backToBackPositiveCount = 0;
+    let backToBackNegativeCount = 0;
+    let uncontestedShotPositiveCount = 0;
+    let uncontestedShotNegativeCount = 0;
+    let swingPositiveCount = 0;
+    let swingNegativeCount = 0;
+    let drivePassPositiveCount = 0;
+    let drivePassNegativeCount = 0;
+    let driveSwingSkipPassPositiveCount = 0;
+    let driveSwingSkipPassNegativeCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > dmCatchColumnIndex) {
+            const cellValue = cells[dmCatchColumnIndex].textContent.trim();
+            
+            if (cellValue.includes('+ve DM Catch: Back-to-Back')) {
+                backToBackPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve DM Catch: Back-to-Back')) {
+                backToBackNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve DM Catch: Uncontested Shot')) {
+                uncontestedShotPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve DM Catch: Uncontested Shot')) {
+                uncontestedShotNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve DM Catch: Swing')) {
+                swingPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve DM Catch: Swing')) {
+                swingNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve DM Catch: Drive Pass')) {
+                drivePassPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve DM Catch: Drive Pass')) {
+                drivePassNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve DM Catch: Drive a Swing/Skip Pass')) {
+                driveSwingSkipPassPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve DM Catch: Drive a Swing/Skip Pass')) {
+                driveSwingSkipPassNegativeCount++;
+            }
+        }
+    }
+    
+    // Update the form fields
+    document.getElementById('dm_catch_back_to_back_positive').value = backToBackPositiveCount;
+    document.getElementById('dm_catch_back_to_back_negative').value = backToBackNegativeCount;
+    document.getElementById('dm_catch_uncontested_shot_positive').value = uncontestedShotPositiveCount;
+    document.getElementById('dm_catch_uncontested_shot_negative').value = uncontestedShotNegativeCount;
+    document.getElementById('dm_catch_swing_positive').value = swingPositiveCount;
+    document.getElementById('dm_catch_swing_negative').value = swingNegativeCount;
+    document.getElementById('dm_catch_drive_pass_positive').value = drivePassPositiveCount;
+    document.getElementById('dm_catch_drive_pass_negative').value = drivePassNegativeCount;
+    document.getElementById('dm_catch_drive_swing_skip_pass_positive').value = driveSwingSkipPassPositiveCount;
+    document.getElementById('dm_catch_drive_swing_skip_pass_negative').value = driveSwingSkipPassNegativeCount;
+    
+    // Show success message
+    const message = `Autofill completed!\nBack-to-Back (+): ${backToBackPositiveCount}\nBack-to-Back (-): ${backToBackNegativeCount}\nUncontested Shot (+): ${uncontestedShotPositiveCount}\nUncontested Shot (-): ${uncontestedShotNegativeCount}\nSwing (+): ${swingPositiveCount}\nSwing (-): ${swingNegativeCount}\nDrive Pass (+): ${drivePassPositiveCount}\nDrive Pass (-): ${drivePassNegativeCount}\nDrive a Swing/Skip Pass (+): ${driveSwingSkipPassPositiveCount}\nDrive a Swing/Skip Pass (-): ${driveSwingSkipPassNegativeCount}`;
+    alert(message);
+}
+
+// Autofill QB12 Decision Making function
+function autofillQB12() {
+    const table = document.getElementById('dataTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    let qb12ColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('QB12Dm') || headerText.toLowerCase().includes('qb12')) {
+            qb12ColumnIndex = i;
+            break;
+        }
+    }
+
+    if (qb12ColumnIndex === -1) {
+        // Fallback to column 47 (index 46)
+        qb12ColumnIndex = 46;
+        const sampleRow = rows.length > 0 ? rows[0] : null;
+        if (!sampleRow || sampleRow.getElementsByTagName('td').length <= qb12ColumnIndex) {
+            alert('QB12Dm column not found (expected col 47). Ensure the data contains a QB12Dm column.');
+            return;
+        }
+    }
+
+    let strongSidePos = 0, strongSideNeg = 0;
+    let baselinePos = 0, baselineNeg = 0;
+    let fillBehindPos = 0, fillBehindNeg = 0;
+    let weakSidePos = 0, weakSideNeg = 0;
+    let rollerPos = 0, rollerNeg = 0;
+    let skipPassPos = 0, skipPassNeg = 0;
+    let cutterPos = 0, cutterNeg = 0;
+
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > qb12ColumnIndex) {
+            const cellValue = cells[qb12ColumnIndex].textContent.trim();
+            if (cellValue.includes('+ve QB12: Strong Side')) strongSidePos++;
+            if (cellValue.includes('-ve QB12: Strong Side')) strongSideNeg++;
+            if (cellValue.includes('+ve QB12: Baseline')) baselinePos++;
+            if (cellValue.includes('-ve QB12: Baseline')) baselineNeg++;
+            if (cellValue.includes('+ve QB12: Fill Behind')) fillBehindPos++;
+            if (cellValue.includes('-ve QB12: Fill Behind')) fillBehindNeg++;
+            if (cellValue.includes('+ve QB12: Weak Side')) weakSidePos++;
+            if (cellValue.includes('-ve QB12: Weak Side')) weakSideNeg++;
+            if (cellValue.includes('+ve QB12: Roller')) rollerPos++;
+            if (cellValue.includes('-ve QB12: Roller')) rollerNeg++;
+            if (cellValue.includes('+ve QB12: Skip Pass')) skipPassPos++;
+            if (cellValue.includes('-ve QB12: Skip Pass')) skipPassNeg++;
+            if (cellValue.includes('+ve QB12: Cutter')) cutterPos++;
+            if (cellValue.includes('-ve QB12: Cutter')) cutterNeg++;
+        }
+    }
+
+    document.getElementById('qb12_strong_side_positive').value = strongSidePos;
+    document.getElementById('qb12_strong_side_negative').value = strongSideNeg;
+    document.getElementById('qb12_baseline_positive').value = baselinePos;
+    document.getElementById('qb12_baseline_negative').value = baselineNeg;
+    document.getElementById('qb12_fill_behind_positive').value = fillBehindPos;
+    const fbNegEl = document.getElementById('qb12_fill_behind_negative');
+    if (fbNegEl) fbNegEl.value = fillBehindNeg;
+    document.getElementById('qb12_weak_side_positive').value = weakSidePos;
+    document.getElementById('qb12_weak_side_negative').value = weakSideNeg;
+    document.getElementById('qb12_roller_positive').value = rollerPos;
+    document.getElementById('qb12_roller_negative').value = rollerNeg;
+    document.getElementById('qb12_skip_pass_positive').value = skipPassPos;
+    document.getElementById('qb12_skip_pass_negative').value = skipPassNeg;
+    document.getElementById('qb12_cutter_positive').value = cutterPos;
+    document.getElementById('qb12_cutter_negative').value = cutterNeg;
+
+    const message = `Autofill QB12 completed!\nStrong Side (+): ${strongSidePos} (-): ${strongSideNeg}\nBaseline (+): ${baselinePos} (-): ${baselineNeg}\nFill Behind (+): ${fillBehindPos} (-): ${fillBehindNeg}\nWeak Side (+): ${weakSidePos} (-): ${weakSideNeg}\nRoller (+): ${rollerPos} (-): ${rollerNeg}\nSkip Pass (+): ${skipPassPos} (-): ${skipPassNeg}\nCutter (+): ${cutterPos} (-): ${cutterNeg}`;
+    alert(message);
+}
+
+// Autofill Driving Metrics function
+function autofillDrivingMetrics() {
+    // Get the current data from the table
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    
+    // Find the Driving column - look for various possible column names
+    let drivingColumnIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        if (headerText.includes('Driving') || 
+            headerText.toLowerCase().includes('driving') ||
+            headerText.includes('Drive')) {
+            drivingColumnIndex = i;
+            break;
+        }
+    }
+    
+    if (drivingColumnIndex === -1) {
+        alert('Driving column not found in the data. Please ensure the data contains a "Driving" column.');
+        return;
+    }
+    
+    // Count the metrics
+    let paintTouchPositiveCount = 0;
+    let paintTouchNegativeCount = 0;
+    let physicalityPositiveCount = 0;
+    let physicalityNegativeCount = 0;
+    
+    for (let row of rows) {
+        const cells = row.getElementsByTagName('td');
+        if (cells.length > drivingColumnIndex) {
+            const cellValue = cells[drivingColumnIndex].textContent.trim();
+            
+            if (cellValue.includes('+ve Driving: Paint Touch')) {
+                paintTouchPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve Driving: Paint Touch')) {
+                paintTouchNegativeCount++;
+            }
+            
+            if (cellValue.includes('+ve Driving: Physicality')) {
+                physicalityPositiveCount++;
+            }
+            
+            if (cellValue.includes('-ve Driving: Physicality')) {
+                physicalityNegativeCount++;
+            }
+        }
+    }
+    
+    // Update the form fields
+    document.getElementById('driving_paint_touch_positive').value = paintTouchPositiveCount;
+    document.getElementById('driving_paint_touch_negative').value = paintTouchNegativeCount;
+    document.getElementById('driving_physicality_positive').value = physicalityPositiveCount;
+    document.getElementById('driving_physicality_negative').value = physicalityNegativeCount;
+    
+    // Show success message
+    const message = `Autofill completed!\nPaint Touch (+): ${paintTouchPositiveCount}\nPaint Touch (-): ${paintTouchNegativeCount}\nPhysicality (+): ${physicalityPositiveCount}\nPhysicality (-): ${physicalityNegativeCount}`;
+    alert(message);
+}
+
+function sortTable(table, columnIndex) {
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = Array.from(tbody.getElementsByTagName('tr'));
+    const headers = table.getElementsByTagName('th');
+    
+    // Remove existing sort indicators
+    for (let header of headers) {
+        const icon = header.querySelector('i');
+        if (icon) {
+            icon.className = 'fas fa-sort text-muted';
+        }
+    }
+    
+    // Add sort indicator to clicked header
+    const clickedHeader = headers[columnIndex];
+    const icon = clickedHeader.querySelector('i');
+    const isAscending = !icon.classList.contains('fa-sort-up');
+    
+    if (isAscending) {
+        icon.className = 'fas fa-sort-up text-primary';
+    } else {
+        icon.className = 'fas fa-sort-down text-primary';
+    }
+    
+    // Sort rows
+    rows.sort((a, b) => {
+        const aValue = a.getElementsByTagName('td')[columnIndex].textContent;
+        const bValue = b.getElementsByTagName('td')[columnIndex].textContent;
+        
+        if (isAscending) {
+            return aValue.localeCompare(bValue);
+        } else {
+            return bValue.localeCompare(aValue);
+        }
+    });
+    
+    // Reorder rows in table
+    for (let row of rows) {
+        tbody.appendChild(row);
+    }
+}
+// Autofill Off Ball - Positioning (col 46)
+function autofillOffBallPositioning() {
+    const table = document.getElementById('dataTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+    let colIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const text = headers[i].textContent.trim();
+        if (text.includes('Positioning') || text.toLowerCase().includes('positioning')) { colIndex = i; break; }
+    }
+    if (colIndex === -1) {
+        colIndex = 45; // fallback to col 46
+    }
+    let createShapePos = 0, createShapeNeg = 0, advAwarePos = 0, advAwareNeg = 0;
+    for (let row of rows) {
+        const cell = row.getElementsByTagName('td')[colIndex];
+        if (!cell) continue;
+        const val = cell.textContent.trim();
+        if (val.includes('+ve Positioning - Create Shape')) createShapePos++;
+        if (val.includes('-ve Positioning - Create Shape')) createShapeNeg++;
+        if (val.includes('+ve Positioning - Advantage Awareness')) advAwarePos++;
+        if (val.includes('-ve Positioning - Advantage Awareness')) advAwareNeg++;
+    }
+    document.getElementById('offball_positioning_create_shape_positive').value = createShapePos;
+    document.getElementById('offball_positioning_create_shape_negative').value = createShapeNeg;
+    document.getElementById('offball_positioning_adv_awareness_positive').value = advAwarePos;
+    document.getElementById('offball_positioning_adv_awareness_negative').value = advAwareNeg;
+    alert(`Autofill Positioning completed!\nCreate Shape (+): ${createShapePos} (-): ${createShapeNeg}\nAdvantage Awareness (+): ${advAwarePos} (-): ${advAwareNeg}`);
+}
+
+// Autofill Off Ball - Transition (col 62) with robust detection
+function autofillOffBallTransition() {
+    const table = document.getElementById('dataTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Prefer exact column number match (Col 62) from header small text
+    let colIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const raw = headers[i].innerText || headers[i].textContent || '';
+        if(/(\(\s*Col\s*62\s*\))/i.test(raw)) { colIndex = i; break; }
+    }
+    // 2) If not found, try to identify the column by header text
+    if (colIndex === -1) {
+        for (let i = 0; i < headers.length; i++) {
+            const text = (headers[i].innerText || headers[i].textContent || '').trim().toLowerCase();
+            if (text.includes('transition')) { colIndex = i; break; }
+        }
+    }
+    // 3) If not found, fallback to column 62 (index 61)
+    if (colIndex === -1 && headers.length > 61) {
+        colIndex = 61;
+    }
+    // 4) If still not confident, scan all columns and pick the best match for transition content
+    if (colIndex === -1) {
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = (cell.textContent || '').toLowerCase().replace(/\s+/g, ' ');
+                if (norm.includes('transition')) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
+    }
+
+    const normalize = (s) => (s || '').toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/&/g, 'and')
+        .replace(/[–—]/g, '-')
+        .trim();
+    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+    const extractCounts = (s) => {
+        // If Transition column ever uses compact (+X/Y-) form
+        const m = s.match(/\(\+\s*(\d+)\s*\/\s*(\d+)\s*\-\s*\)/);
+        if (m) return [parseInt(m[1],10)||0, parseInt(m[2],10)||0];
+        return [0,0];
+    };
+
+    let effortPacePos = 0, effortPaceNeg = 0;
+    for (let row of rows) {
+        const cell = row.getElementsByTagName('td')[colIndex];
+        if (!cell) continue;
+        const v = normalize(cell.textContent);
+        const [pos, neg] = extractCounts(v);
+        if (pos > 0 || neg > 0) {
+            // If compact counter is present but Transition values are aggregated per row, count once
+            // Otherwise, if it’s specific to Effort and Pace, keep as-is
+        }
+        // Support both prefix +ve/-ve and suffix (+)/(-), and '&' vs 'and'
+        if (hasAny(v, [
+            '+ve transition: effort and pace',
+            'transition: effort and pace (+)',
+            'effort and pace (+)'
+        ])) effortPacePos++;
+        if (hasAny(v, [
+            '-ve transition: effort and pace',
+            'transition: effort and pace (-)',
+            'effort and pace (-)'
+        ])) effortPaceNeg++;
+    }
+    document.getElementById('transition_effort_pace_positive').value = effortPacePos;
+    document.getElementById('transition_effort_pace_negative').value = effortPaceNeg;
+    alert(`Autofill Transition completed (using column #${colIndex+1}).\nEffort and Pace (+): ${effortPacePos} (-): ${effortPaceNeg}`);
+}
+
+// Autofill Cutting & Screening (robust detection + column resolution)
+function autofillCuttingScreening() {
+    const table = document.getElementById('dataTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Try to identify the column by header text
+    let colIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const text = headers[i].textContent.trim().toLowerCase();
+        if (text.includes('cutting') || text.includes('screen')) { colIndex = i; break; }
+    }
+    // 2) If not found, try column 11 (index 10) as a user hint
+    if (colIndex === -1 && headers.length > 10) {
+        colIndex = 10;
+    }
+    // 3) If still not found, scan all columns and pick the one with most matches
+    if (colIndex === -1) {
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                if (norm.includes('cutting') || norm.includes('screen')) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
+    }
+
+    // Helper to normalize and match multiple variants
+    const normalize = (s) => s.toLowerCase()
+        .replace(/\s+/g, ' ')             // condense spaces
+        .replace(/&/g, 'and')              // & -> and
+        .replace(/body\s*-\s*to\s*-\s*body/g, 'body to body') // unify hyphenated
+        .trim();
+    const hasAny = (s, patterns) => patterns.some(p => s.includes(p));
+
+    let denialPos=0, denialNeg=0, movePos=0, moveNeg=0, bodyPos=0, bodyNeg=0, screenPos=0, screenNeg=0, cutFillPos=0, cutFillNeg=0;
+    for (let row of rows) {
+        const cell = row.getElementsByTagName('td')[colIndex];
+        if (!cell) continue;
+        const v = normalize(cell.textContent);
+
+        // Allow both +ve/-ve prefix and (+)/(-) suffix styles
+        if (hasAny(v, ['+ve cutting and screening: denial', 'cutting and screening: denial (+)', 'cutting & screening: denial (+)'.replace('&','and')])) denialPos++;
+        if (hasAny(v, ['-ve cutting and screening: denial', 'cutting and screening: denial (-)', 'cutting & screening: denial (-)'.replace('&','and')])) denialNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: movement', 'cutting and screening: movement (+)', 'cutting & screening: movement (+)'.replace('&','and')])) movePos++;
+        if (hasAny(v, ['-ve cutting and screening: movement', 'cutting and screening: movement (-)', 'cutting & screening: movement (-)'.replace('&','and')])) moveNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: body to body', 'cutting and screening: body to body (+)'])) bodyPos++;
+        if (hasAny(v, ['-ve cutting and screening: body to body', 'cutting and screening: body to body (-)'])) bodyNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: screen principle', 'cutting and screening: screen principle (+)', 'cutting and screening: screen principles (+)'])) screenPos++;
+        if (hasAny(v, ['-ve cutting and screening: screen principle', 'cutting and screening: screen principle (-)', 'cutting and screening: screen principles (-)'])) screenNeg++;
+
+        if (hasAny(v, ['+ve cutting and screening: cut fill', 'cutting and screening: cut fill (+)'])) cutFillPos++;
+        if (hasAny(v, ['-ve cutting and screening: cut fill', 'cutting and screening: cut fill (-)'])) cutFillNeg++;
+    }
+    document.getElementById('cs_denial_positive').value = denialPos;
+    document.getElementById('cs_denial_negative').value = denialNeg;
+    document.getElementById('cs_movement_positive').value = movePos;
+    document.getElementById('cs_movement_negative').value = moveNeg;
+    document.getElementById('cs_body_to_body_positive').value = bodyPos;
+    document.getElementById('cs_body_to_body_negative').value = bodyNeg;
+    document.getElementById('cs_screen_principle_positive').value = screenPos;
+    document.getElementById('cs_screen_principle_negative').value = screenNeg;
+    document.getElementById('cs_cut_fill_positive').value = cutFillPos;
+    document.getElementById('cs_cut_fill_negative').value = cutFillNeg;
+    const summary = `Autofill Cutting & Screening completed!\n` +
+        `Denial (+): ${denialPos} (-): ${denialNeg}\n` +
+        `Movement (+): ${movePos} (-): ${moveNeg}\n` +
+        `Body to Body (+): ${bodyPos} (-): ${bodyNeg}\n` +
+        `Screen Principle (+): ${screenPos} (-): ${screenNeg}\n` +
+        `Cut Fill (+): ${cutFillPos} (-): ${cutFillNeg}`;
+    alert(summary);
+}
+
+// Autofill Relocation (robust detection + column resolution, default col 49)
+function autofillRelocation() {
+    const table = document.getElementById('dataTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = tbody ? tbody.getElementsByTagName('tr') : [];
+    const headers = table.getElementsByTagName('thead')[0].getElementsByTagName('th');
+
+    // 1) Prefer exact column number match (Col 49) from header small text
+    let colIndex = -1;
+    for (let i = 0; i < headers.length; i++) {
+        const text = headers[i].innerText || headers[i].textContent || '';
+        if (/(\(\s*Col\s*49\s*\))/i.test(text)) { colIndex = i; break; }
+    }
+    // 2) If not found, try header text match "Relocation" or "Relocate"
+    if (colIndex === -1) {
+        for (let i = 0; i < headers.length; i++) {
+            const text = (headers[i].innerText || headers[i].textContent || '').trim().toLowerCase();
+            const top = text.split('\n')[0].trim();
+            if (top === 'relocation' || top === 'relocate' || text.includes('relocation') || text.includes('relocate')) { colIndex = i; break; }
+        }
+    }
+    // 3) Fallback to column 49 (index 48)
+    if (colIndex === -1 && headers.length > 48) {
+        colIndex = 48;
+    }
+    // 4) Scan for best match if still unknown
+    if (colIndex === -1) {
+        const keywords = ['relocation','relocate','weak corner','45 cut','slide away','fill behind','dunker','corner fill','reverse direction'];
+        let bestIdx = -1, bestScore = -1;
+        for (let i = 0; i < headers.length; i++) {
+            let score = 0;
+            for (let row of rows) {
+                const cell = row.getElementsByTagName('td')[i];
+                if (!cell) continue;
+                const norm = cell.textContent.toLowerCase().replace(/\s+/g, ' ');
+                if (keywords.some(k => norm.includes(k))) score++;
+            }
+            if (score > bestScore) { bestScore = score; bestIdx = i; }
+        }
+        colIndex = bestIdx !== -1 ? bestIdx : 0;
+    }
+
+    const normalize = (s) => s.toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/&/g, 'and')
+        .replace(/[–—]/g, '-')
+        .replace(/\s*-\s*/g, '-')
+        .trim();
+    const hasAll = (s, keywords) => keywords.every(k => s.includes(k));
+    const hasAny = (s, keywords) => keywords.some(k => s.includes(k));
+    const extractCounts = (s) => {
+        // Matches forms like (+8/1-) with flexible spaces
+        const m = s.match(/\(\+\s*(\d+)\s*\/\s*(\d+)\s*-\s*\)/);
+        if (m) return [parseInt(m[1],10)||0, parseInt(m[2],10)||0];
+        return [0,0];
+    };
+
+    let wcPos=0,wcNeg=0,c45Pos=0,c45Neg=0,saPos=0,saNeg=0,fbPos=0,fbNeg=0,dbPos=0,dbNeg=0,cfPos=0,cfNeg=0,rdPos=0,rdNeg=0;
+    for (let row of rows) {
+        const cell = row.getElementsByTagName('td')[colIndex];
+        if (!cell) continue;
+        const v = normalize(cell.textContent || '');
+        const [pos, neg] = extractCounts(v);
+        let matched = false;
+        if (pos > 0 || neg > 0) {
+            if (hasAll(v, ['weak','corner'])) { wcPos += pos; wcNeg += neg; matched = true; }
+            else if (hasAll(v, ['45','cut'])) { c45Pos += pos; c45Neg += neg; matched = true; }
+            else if (hasAll(v, ['slide','away'])) { saPos += pos; saNeg += neg; matched = true; }
+            else if (hasAll(v, ['fill','behind'])) { fbPos += pos; fbNeg += neg; matched = true; }
+            else if (hasAll(v, ['dunker','baseline'])) { dbPos += pos; dbNeg += neg; matched = true; }
+            else if (hasAll(v, ['corner','fill'])) { cfPos += pos; cfNeg += neg; matched = true; }
+            else if (hasAll(v, ['reverse','direction'])) { rdPos += pos; rdNeg += neg; matched = true; }
+        }
+        if (!matched) {
+            if (hasAny(v, ['+ve relocate: weak corner','+ve relocation: weak corner','weak corner (+)'])) wcPos++;
+            if (hasAny(v, ['-ve relocate: weak corner','-ve relocation: weak corner','weak corner (-)'])) wcNeg++;
+
+            if (hasAny(v, ['+ve 45 cut','45 cut (+)','+ve relocate: 45 cut','+ve relocation: 45 cut'])) c45Pos++;
+            if (hasAny(v, ['-ve relocate: 45 cut','-ve relocation: 45 cut','45 cut (-)'])) c45Neg++;
+
+            if (hasAny(v, ['+ve relocate: slide away','+ve relocation: slide away','slide away (+)'])) saPos++;
+            if (hasAny(v, ['-ve relocate: slide away','-ve relocation: slide away','slide away (-)'])) saNeg++;
+
+            if (hasAny(v, ['+ve relocate: fill behind','+ve relocation: fill behind','fill behind (+)'])) fbPos++;
+            if (hasAny(v, ['-ve relocate: fill behind','-ve relocation: fill behind','fill behind (-)'])) fbNeg++;
+
+            if (hasAny(v, ['+ve relocate: dunker-baseline','+ve relocation: dunker-baseline','dunker-baseline (+)','dunker baseline (+)'])) dbPos++;
+            if (hasAny(v, ['-ve relocate: dunker-baseline','-ve relocation: dunker-baseline','dunker-baseline (-)','dunker baseline (-)'])) dbNeg++;
+
+            if (hasAny(v, ['+ve relocate: corner fill','+ve relocation: corner fill','corner fill (+)'])) cfPos++;
+            if (hasAny(v, ['-ve relocate: corner fill','-ve relocation: corner fill','corner fill (-)'])) cfNeg++;
+
+            if (hasAny(v, ['+ve relocate: reverse direction','+ve relocation: reverse direction','reverse direction (+)'])) rdPos++;
+            if (hasAny(v, ['-ve relocate: reverse direction','-ve relocation: reverse direction','reverse direction (-)'])) rdNeg++;
+        }
+    }
+    document.getElementById('relocation_weak_corner_positive').value = wcPos;
+    document.getElementById('relocation_weak_corner_negative').value = wcNeg;
+    document.getElementById('relocation_45_cut_positive').value = c45Pos;
+    document.getElementById('relocation_45_cut_negative').value = c45Neg;
+    document.getElementById('relocation_slide_away_positive').value = saPos;
+    document.getElementById('relocation_slide_away_negative').value = saNeg;
+    document.getElementById('relocation_fill_behind_positive').value = fbPos;
+    document.getElementById('relocation_fill_behind_negative').value = fbNeg;
+    document.getElementById('relocation_dunker_baseline_positive').value = dbPos;
+    document.getElementById('relocation_dunker_baseline_negative').value = dbNeg;
+    document.getElementById('relocation_corner_fill_positive').value = cfPos;
+    document.getElementById('relocation_corner_fill_negative').value = cfNeg;
+    document.getElementById('relocation_reverse_direction_positive').value = rdPos;
+    document.getElementById('relocation_reverse_direction_negative').value = rdNeg;
+    const summaryRel = `Autofill Relocation completed (using column #${colIndex+1}).\n`+
+        `Weak Corner (+): ${wcPos} (-): ${wcNeg}\n`+
+        `45 Cut (+): ${c45Pos} (-): ${c45Neg}\n`+
+        `Slide Away (+): ${saPos} (-): ${saNeg}\n`+
+        `Fill Behind (+): ${fbPos} (-): ${fbNeg}\n`+
+        `Dunker-Baseline (+): ${dbPos} (-): ${dbNeg}\n`+
+        `Corner Fill (+): ${cfPos} (-): ${cfNeg}\n`+
+        `Reverse Direction (+): ${rdPos} (-): ${rdNeg}`;
+    alert(summaryRel);
+}
+
+</script>
+{% endblock %} 

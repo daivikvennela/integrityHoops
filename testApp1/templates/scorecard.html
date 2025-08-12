@@ -244,27 +244,7 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <div class="navigation-bar">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="fas fa-basketball-ball me-2"></i>
-                    <strong>Basketball Cognitive Performance Dashboard</strong>
-                </div>
-                <div>
-                    <a href="/" class="nav-link">
-                        <i class="fas fa-upload me-1"></i>
-                        Upload Data
-                    </a>
-                    <a href="/scorecard" class="nav-link active">
-                        <i class="fas fa-chart-line me-1"></i>
-                        ScoreCard
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+    
 
     <div class="dashboard-container">
         <!-- Header Section -->
@@ -432,6 +412,36 @@
                     <div class="stats-row">
                         <span class="stat-label">% Slide Away</span>
                         <span class="stat-value positive">(+18/2-)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- On Ball - Driving Metrics -->
+        <div class="section-title">On Ball - Driving Metrics</div>
+        <div class="section-block">
+            <div class="block-title">Driving Performance</div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary">Driving: Paint Touch</h6>
+                    <div class="stats-row">
+                        <span class="stat-label">Positive (+)</span>
+                        <span class="stat-value positive" id="driving_paint_touch_positive">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stat-label">Negative (-)</span>
+                        <span class="stat-value negative" id="driving_paint_touch_negative">0</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-primary">Driving Physicality</h6>
+                    <div class="stats-row">
+                        <span class="stat-label">Positive (+)</span>
+                        <span class="stat-value positive" id="driving_physicality_positive">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stat-label">Negative (-)</span>
+                        <span class="stat-value negative" id="driving_physicality_negative">0</span>
                     </div>
                 </div>
             </div>
