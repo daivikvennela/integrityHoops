@@ -93,6 +93,33 @@
         .navigation-bar .nav-link {
             font-size: 0.77em;
         }
+        
+        /* Force all text to white */
+        * {
+            color: white !important;
+        }
+        
+        /* Ensure text remains white in forms and inputs */
+        .form-control, .form-select, input, textarea, select {
+            color: white !important;
+            background-color: rgba(0, 0, 0, 0.3) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        /* Ensure buttons maintain readability */
+        .btn {
+            color: white !important;
+        }
+        
+        /* Tables */
+        table, th, td {
+            color: white !important;
+        }
+        
+        /* Cards and other elements */
+        .card, .alert {
+            color: white !important;
+        }
     </style>
     
     {% block extra_css %}{% endblock %}

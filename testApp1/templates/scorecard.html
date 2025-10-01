@@ -24,9 +24,9 @@
         }
         
         body {
-            background: #ffffff;
+            background: #000000;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #1f2937;
+            color: white;
             line-height: 1.6;
         }
         
@@ -34,8 +34,19 @@
             max-width: 1080px;
             margin: 0 auto;
             padding: 20px;
-            background: white;
+            background: #000000;
             min-height: 1920px;
+        }
+        
+        /* Force all text to white */
+        * {
+            color: white !important;
+        }
+        
+        /* Ensure specific elements remain white */
+        .section-title, .block-title, .metric-title, .metric-value, .player-name, .date-info, 
+        h1, h2, h3, h4, h5, h6, p, span, div, label, td, th {
+            color: white !important;
         }
         
         .header-section {
