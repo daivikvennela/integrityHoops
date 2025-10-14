@@ -1,0 +1,607 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard - Cog Scores{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Black base with subtle neon red glow */
+    .heat-analytics-card {
+        background: #000 !important;
+        border: 1px solid rgba(249, 66, 58, 0.35) !important;
+        box-shadow: 0 0 22px rgba(249, 66, 58, 0.22), 0 0 60px rgba(249, 66, 58, 0.12) !important;
+        border-radius: 12px !important;
+    }
+
+    /* Black buttons with neon red accents */
+    .btn-black-red {
+        background: #000 !important;
+        color: #fff !important;
+        border: 2px solid #F9423A !important;
+        box-shadow: 0 0 12px rgba(249, 66, 58, 0.35);
+        font-weight: 600;
+    }
+    .btn-black-red:hover {
+        background: #111 !important;
+        box-shadow: 0 0 18px rgba(249, 66, 58, 0.55);
+    }
+
+    /* Chart container on true black with red accent border */
+    #cogChart {
+        background: #000 !important;
+        border: 1px solid rgba(249, 66, 58, 0.35) !important;
+        border-radius: 12px !important;
+    }
+
+    /* Dark modals with red accents */
+    .modal-content {
+        background: #0b0f19 !important;
+        border: 1px solid rgba(249, 66, 58, 0.3) !important;
+        color: white !important;
+    }
+
+    .modal-header {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border-bottom: 1px solid rgba(249, 66, 58, 0.3) !important;
+    }
+
+    .modal-footer {
+        background: rgba(0, 0, 0, 0.4) !important;
+        border-top: 1px solid rgba(249, 66, 58, 0.3) !important;
+    }
+
+    .modal-title {
+        color: white !important;
+    }
+
+    .modal-body {
+        background: #0b0f19 !important;
+    }
+
+    .modal-body .form-label {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .modal-body .form-control {
+        background: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(249, 66, 58, 0.3) !important;
+        color: white !important;
+    }
+
+    .modal-body .form-control:focus {
+        background: rgba(0, 0, 0, 0.6) !important;
+        border-color: #F9423A !important;
+        box-shadow: 0 0 0 0.25rem rgba(249, 66, 58, 0.25) !important;
+        color: white !important;
+    }
+
+    /* Close button for dark theme */
+    .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    /* 2K/Madden Style Score Reveal Modal */
+    #scoreRevealModal .modal-dialog {
+        max-width: 800px;
+    }
+
+    #scoreRevealModal .modal-content {
+        background: linear-gradient(135deg, #000 0%, #0b0f19 50%, #000 100%) !important;
+        border: 2px solid #F9423A !important;
+        box-shadow: 0 0 40px rgba(249, 66, 58, 0.6), inset 0 0 60px rgba(249, 66, 58, 0.1) !important;
+    }
+
+    .score-reveal-container {
+        padding: 40px 20px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .score-reveal-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at center, rgba(249, 66, 58, 0.1) 0%, transparent 70%);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+    }
+
+    .score-game-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #F9423A;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 10px;
+        text-shadow: 0 0 20px rgba(249, 66, 58, 0.8);
+        animation: slideInTop 0.6s ease-out;
+    }
+
+    .score-game-date {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 40px;
+        letter-spacing: 2px;
+        animation: slideInTop 0.8s ease-out;
+    }
+
+    @keyframes slideInTop {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .score-label {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+        text-transform: uppercase;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+        animation: fadeIn 1s ease-out 0.5s both;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .score-display {
+        font-size: 7rem;
+        font-weight: 900;
+        color: #F9423A;
+        text-shadow: 0 0 30px rgba(249, 66, 58, 1), 0 0 60px rgba(249, 66, 58, 0.5);
+        margin: 30px 0;
+        font-family: 'Arial Black', sans-serif;
+        position: relative;
+        z-index: 10;
+    }
+
+    .score-percentage {
+        display: inline-block;
+        animation: countUp 2s ease-out forwards;
+    }
+
+    @keyframes countUp {
+        from {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .score-bar-container {
+        width: 100%;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(249, 66, 58, 0.3);
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        margin: 40px 0 30px 0;
+        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .score-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #F9423A 0%, #FF6B5E 50%, #F9423A 100%);
+        border-radius: 20px;
+        position: relative;
+        width: 0%;
+        transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 0 20px rgba(249, 66, 58, 0.8), inset 0 2px 10px rgba(255, 255, 255, 0.3);
+        animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -100% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .score-bar-fill::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+        border-radius: 20px 20px 0 0;
+    }
+
+    .score-bar-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+        animation: slideShine 2s ease-in-out infinite;
+    }
+
+    @keyframes slideShine {
+        0% {
+            left: -100%;
+        }
+        50%, 100% {
+            left: 200%;
+        }
+    }
+
+    .score-bar-markers {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 10px;
+        align-items: center;
+        pointer-events: none;
+    }
+
+    .score-bar-marker {
+        width: 2px;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .score-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 30px;
+        animation: slideInBottom 1s ease-out 1s both;
+    }
+
+    @keyframes slideInBottom {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .score-stat {
+        text-align: center;
+    }
+
+    .score-stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #F9423A;
+        text-shadow: 0 0 10px rgba(249, 66, 58, 0.6);
+    }
+
+    .score-stat-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 5px;
+    }
+
+    .score-rank {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #FFD700;
+        text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+        margin-top: 20px;
+        letter-spacing: 2px;
+        animation: fadeIn 1.5s ease-out 1.5s both;
+    }
+
+    /* Scores table styling */
+    #scoresTable {
+        color: white !important;
+    }
+
+    #scoresTable thead th {
+        background: rgba(249, 66, 58, 0.2) !important;
+        border-color: rgba(249, 66, 58, 0.3) !important;
+        color: white !important;
+        font-weight: 700;
+    }
+
+    #scoresTable tbody tr {
+        border-color: rgba(249, 66, 58, 0.2) !important;
+    }
+
+    #scoresTable tbody tr:hover {
+        background: rgba(249, 66, 58, 0.1) !important;
+    }
+
+    #scoresTable tbody td {
+        vertical-align: middle;
+    }
+
+    /* Disabled button state */
+    .btn-black-red:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card mb-4 heat-analytics-card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="m-0">Analytics Dashboard</h3>
+                <div>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Main Dashboard Menu
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item active" href="#" id="menu-cog-over-games">Cog scores over games</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item disabled" href="#">More coming soon</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Visualization -->
+            <div id="cogChart" style="width: 100%; height: 420px;"></div>
+
+            <!-- Actions -->
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-black-red" data-bs-toggle="modal" data-bs-target="#teamModal">Add Team Cog Scores</button>
+                <button class="btn btn-black-red" data-bs-toggle="modal" data-bs-target="#playerModal">Add Player Cog Scores</button>
+            </div>
+
+            <!-- Precision Slider -->
+            <div id="vizPrecisionSlider" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- Optional ETL Upload -->
+    <div class="card heat-analytics-card">
+        <div class="card-header">
+            <h4 class="m-0">CSV ETL Upload (Optional)</h4>
+        </div>
+        <div class="card-body">
+            <form id="etlForm" class="row g-3">
+                <div class="col-md-5">
+                    <input class="form-control" type="file" id="etlFile" accept=".csv">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="etlLevel">
+                        <option value="team" selected>Team</option>
+                        <option value="player">Player</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-black-red" type="submit">Upload</button>
+                </div>
+                <div class="col-12">
+                    <small class="text-muted">CSV columns: date (YYYY-MM-DD), team, opponent, score, level, player_name</small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Scores List -->
+    <div class="card heat-analytics-card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Current Scores</h4>
+            <button class="btn btn-sm btn-black-red" onclick="refreshScoresList()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover" id="scoresTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Game</th>
+                            <th>Score</th>
+                            <th>Source</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoresTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Modal -->
+<div class="modal fade" id="teamModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Team Cog Score</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="teamForm" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="teamDate" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Score</label>
+                <input type="number" class="form-control" id="teamScore" min="0" max="100" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Team</label>
+                <input type="text" class="form-control" id="teamName" value="Heat" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Opponent</label>
+                <input type="text" class="form-control" id="teamOpponent" required>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Note</label>
+                <input type="text" class="form-control" id="teamNote" placeholder="Optional">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-black-red" id="teamSubmit">Save</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+<!-- Player Modal -->
+<div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Player Cog Score</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="playerForm" class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-control" id="playerDate" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Score</label>
+                <input type="number" class="form-control" id="playerScore" min="0" max="100" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Player Name</label>
+                <input type="text" class="form-control" id="playerName" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Team</label>
+                <input type="text" class="form-control" id="playerTeam" value="Heat">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Opponent</label>
+                <input type="text" class="form-control" id="playerOpponent">
+            </div>
+            <div class="col-12">
+                <label class="form-label">Note</label>
+                <input type="text" class="form-control" id="playerNote" placeholder="Optional">
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-black-red" id="playerSubmit">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Score Reveal Modal (2K/Madden Style) -->
+<div class="modal fade" id="scoreRevealModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="score-reveal-container">
+        <div class="score-reveal-bg"></div>
+        
+        <div class="score-game-title" id="revealGameTitle">HEAT VS BUCKS</div>
+        <div class="score-game-date" id="revealGameDate">10.06.25</div>
+        
+        <div class="score-label">COGNITIVE SCORE</div>
+        
+        <div class="score-display">
+          <span class="score-percentage" id="revealScoreValue">0</span><span style="font-size: 4rem;">%</span>
+        </div>
+        
+        <div class="score-bar-container">
+          <div class="score-bar-fill" id="revealScoreBar"></div>
+          <div class="score-bar-markers">
+            <div class="score-bar-marker"></div>
+            <div class="score-bar-marker"></div>
+            <div class="score-bar-marker"></div>
+            <div class="score-bar-marker"></div>
+          </div>
+        </div>
+        
+        <div class="score-stats">
+          <div class="score-stat">
+            <div class="score-stat-value" id="revealPositives">0</div>
+            <div class="score-stat-label">Positives</div>
+          </div>
+          <div class="score-stat">
+            <div class="score-stat-value" id="revealNegatives">0</div>
+            <div class="score-stat-label">Negatives</div>
+          </div>
+          <div class="score-stat">
+            <div class="score-stat-value" id="revealTotal">0</div>
+            <div class="score-stat-label">Total Plays</div>
+          </div>
+        </div>
+        
+        <div class="score-rank" id="revealRank">AVERAGE</div>
+        
+        <!-- Manual Input Form for Saving -->
+        <div class="mt-4 px-4" id="revealInputForm" style="display: none;">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label" style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">Date</label>
+              <input type="date" class="form-control" id="revealDateInput" required style="background: rgba(0,0,0,0.5); border: 1px solid rgba(249,66,58,0.3); color: white;">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">Team</label>
+              <input type="text" class="form-control" id="revealTeamInput" required style="background: rgba(0,0,0,0.5); border: 1px solid rgba(249,66,58,0.3); color: white;">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label" style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">Opponent</label>
+              <input type="text" class="form-control" id="revealOpponentInput" required style="background: rgba(0,0,0,0.5); border: 1px solid rgba(249,66,58,0.3); color: white;">
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4" style="display: flex; gap: 15px; justify-content: center;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="scoreRevealCloseBtn">Close</button>
+          <button type="button" class="btn btn-black-red" id="addToDashboardBtn">
+            <i class="fas fa-plus-circle"></i> Add Cog Score
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Apache ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/slider.css') }}">
+<script src="{{ url_for('static', filename='js/slider.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analytics_dashboard.js') }}"></script>
+{% endblock %}
+
+
