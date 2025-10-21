@@ -1,123 +1,323 @@
 {% extends "base.html" %}
 
-{% block title %}Upload CSV - CSV ETL Processor{% endblock %}
+{% block title %}IntegrityHoops - Basketball Intelligence, Elevated{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" id="uploadForm">
-            <div class="upload-area mb-4">
-                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                <h4>Upload Your CSV File</h4>
-                <p class="text-muted">Drag and drop your file here or click to browse</p>
-                <input type="file" class="form-control" id="file" name="file" accept=".csv,.xlsx,.xls" required>
-                <div class="file-info" style="display: none;"></div>
-            </div>
-            
-            <div class="processing-options">
-                <h5 class="mb-3">
-                    <i class="fas fa-cogs me-2"></i>
-                    Processing Options
-                </h5>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="remove_duplicates" name="remove_duplicates">
-                            <label class="form-check-label" for="remove_duplicates">
-                                <i class="fas fa-filter me-2"></i>
-                                Remove Duplicates
-                            </label>
-                        </div>
-                        
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="fill_missing" name="fill_missing">
-                            <label class="form-check-label" for="fill_missing">
-                                <i class="fas fa-fill me-2"></i>
-                                Fill Missing Values
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="add_timestamp" name="add_timestamp">
-                            <label class="form-check-label" for="add_timestamp">
-                                <i class="fas fa-clock me-2"></i>
-                                Add Timestamp
-                            </label>
-                        </div>
-                        
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" id="scrape_additional_data" name="scrape_additional_data">
-                            <label class="form-check-label" for="scrape_additional_data">
-                                <i class="fas fa-spider me-2"></i>
-                                Scrape Additional Data
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Scrape Additional Data:</strong> This will attempt to gather additional information for each row (e.g., company details, website info, etc.)
-                </div>
-            </div>
-            
-            <div class="text-center">
-                <button type="submit" class="btn btn-custom btn-lg" id="submitBtn">
-                    <i class="fas fa-play me-2"></i>
-                    Process Data
-                </button>
-                
-                <div class="loading mt-3" id="loading">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Processing your data...</p>
-                </div>
-            </div>
-        </form>
+<!-- Hero Section -->
+<section class="landing-hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Basketball Intelligence, Elevated</h1>
+        <p class="hero-subtitle">
+            Drop in CSV's and generate custom scorecards and visualizations
+        </p>
+        <div class="cta-buttons">
+            <a href="/analytics-dashboard" class="neon-button neon-button-primary">
+                <i class="fas fa-chart-line"></i>
+                View Analytics
+            </a>
+            <a href="/smartdash" class="neon-button neon-button-secondary">
+                <i class="fas fa-brain"></i>
+                Explore Dashboard
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="landing-features fade-in-section">
+    <div class="features-container">
+        <h2 class="section-title">Powerful Features</h2>
+        <p class="section-subtitle">
+            Everything you need to track, analyze, and optimize basketball cognitive performance
+        </p>
         
-        <div class="mt-5">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        How to Use
-                    </h5>
+        <div class="features-grid">
+            <!-- Analytics Feature -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
                 </div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        <li>Upload your CSV or Excel file using the upload area above</li>
-                        <li>Select the processing options you want to apply</li>
-                        <li>Click "Process Data" to start the ETL pipeline</li>
-                        <li>View the results in the interactive table</li>
-                        <li>Download the processed file if needed</li>
-                    </ol>
+                <h3 class="feature-title">Analytics Dashboard</h3>
+                <p class="feature-description">
+                    Real-time cognitive performance metrics with interactive visualizations. 
+                    Track scores over time, compare games, and identify trends instantly.
+                </p>
+                <a href="/analytics-dashboard" class="feature-link">
+                    View Analytics <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- Player Management Feature -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
                 </div>
+                <h3 class="feature-title">Player Management</h3>
+                <p class="feature-description">
+                    Comprehensive player tracking and scorecard management. Monitor individual 
+                    performance, create detailed reports, and manage player data efficiently.
+                </p>
+                <a href="/player-management" class="feature-link">
+                    Manage Players <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- SmartDash Feature -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="feature-title">Smart Insights</h3>
+                <p class="feature-description">
+                    Intelligent dashboard with automated insights and cognitive score calculations. 
+                    Upload game data and get instant performance analysis.
+                </p>
+                <a href="/smartdash" class="feature-link">
+                    Get Insights <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <!-- ML Notebook Feature -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <h3 class="feature-title">ML Notebook</h3>
+                <p class="feature-description">
+                    Interactive Jupyter-style notebook for machine learning and data analysis. 
+                    Run Python code, build models, and visualize results in real-time.
+                </p>
+                <a href="/ml-notebook" class="feature-link">
+                    Open Notebook <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Accurate</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">Real-Time</div>
+                <div class="stat-label">Analytics</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">AI-Powered</div>
+                <div class="stat-label">Insights</div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
+<!-- Quick Access Section -->
+<section class="landing-quick-access fade-in-section">
+    <div class="quick-access-container">
+        <div class="quick-access-card">
+            <h2 class="section-title">Quick Access</h2>
+            <p class="section-subtitle">
+                Jump directly to your most-used features
+            </p>
+            
+            <div class="quick-access-grid">
+                <a href="/analytics-dashboard" class="quick-access-item">
+                    <i class="fas fa-chart-line quick-access-icon"></i>
+                    <div class="quick-access-label">Analytics</div>
+                </a>
+                
+                <a href="/smartdash" class="quick-access-item">
+                    <i class="fas fa-brain quick-access-icon"></i>
+                    <div class="quick-access-label">SmartDash</div>
+                </a>
+                
+                <a href="/ml-notebook" class="quick-access-item">
+                    <i class="fas fa-laptop-code quick-access-icon"></i>
+                    <div class="quick-access-label">ML Notebook</div>
+                </a>
+                
+                <a href="/players" class="quick-access-item">
+                    <i class="fas fa-users quick-access-icon"></i>
+                    <div class="quick-access-label">Players</div>
+                </a>
+                
+                <a href="/player-management" class="quick-access-item">
+                    <i class="fas fa-tachometer-alt quick-access-icon"></i>
+                    <div class="quick-access-label">Management</div>
+                </a>
+                
+                <a href="/settings" class="quick-access-item">
+                    <i class="fas fa-cog quick-access-icon"></i>
+                    <div class="quick-access-label">Settings</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="landing-footer">
+    <div class="footer-content">
+        <p class="footer-text">
+            IntegrityHoops &copy; 2025 - Basketball Cognitive Performance Dashboard
+        </p>
+        <div class="footer-links">
+            <a href="/analytics-dashboard" class="footer-link">Analytics</a>
+            <a href="/smartdash" class="footer-link">SmartDash</a>
+            <a href="/ml-notebook" class="footer-link">ML Notebook</a>
+            <a href="/players" class="footer-link">Players</a>
+            <a href="/player-management" class="footer-link">Management</a>
+            <a href="/settings" class="footer-link">Settings</a>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-document.getElementById('uploadForm').addEventListener('submit', function() {
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('submitBtn').disabled = true;
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
 });
 
-// File input change handler
-document.getElementById('file').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const fileInfo = document.querySelector('.file-info');
+// Intersection Observer for fade-in animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+        }
+    });
+}, observerOptions);
+
+// Observe all fade-in sections
+document.querySelectorAll('.fade-in-section').forEach(section => {
+    observer.observe(section);
+});
+
+// Parallax effect for hero background
+let ticking = false;
+
+function updateParallax() {
+    const scrolled = window.pageYOffset;
+    const hero = document.querySelector('.landing-hero');
     
-    if (file) {
-        fileInfo.innerHTML = `<i class="fas fa-file me-2"></i>Selected: ${file.name}`;
-        fileInfo.style.display = 'block';
-    } else {
-        fileInfo.style.display = 'none';
+    if (hero) {
+        const yPos = scrolled * 0.5;
+        hero.style.transform = `translateY(${yPos}px)`;
+    }
+    
+    ticking = false;
+}
+
+window.addEventListener('scroll', () => {
+    if (!ticking) {
+        window.requestAnimationFrame(updateParallax);
+        ticking = true;
     }
 });
+
+// Add dynamic gradient animation to hero title
+const heroTitle = document.querySelector('.hero-title');
+if (heroTitle) {
+    let hue = 0;
+    setInterval(() => {
+        hue = (hue + 1) % 360;
+        // Subtle color shift effect
+    }, 50);
+}
+
+// Performance optimization: Reduce animations on low-end devices
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.fade-in-section').forEach(section => {
+        section.classList.add('is-visible');
+    });
+}
+
+// Preload critical pages
+if ('IntersectionObserver' in window) {
+    const linkPreloader = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const link = entry.target;
+                const href = link.getAttribute('href');
+                if (href && !href.startsWith('#')) {
+                    const preloadLink = document.createElement('link');
+                    preloadLink.rel = 'prefetch';
+                    preloadLink.href = href;
+                    document.head.appendChild(preloadLink);
+                }
+                linkPreloader.unobserve(link);
+            }
+        });
+    });
+
+    document.querySelectorAll('.feature-link, .quick-access-item').forEach(link => {
+        linkPreloader.observe(link);
+    });
+}
+
+// Add subtle cursor glow effect
+const createCursorGlow = () => {
+    const glow = document.createElement('div');
+    glow.className = 'cursor-glow';
+    glow.style.cssText = `
+        position: fixed;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(249, 66, 58, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.3s ease;
+        opacity: 0;
+    `;
+    document.body.appendChild(glow);
+
+    let mouseX = 0, mouseY = 0;
+    let glowX = 0, glowY = 0;
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        glow.style.opacity = '1';
+    });
+
+    document.addEventListener('mouseleave', () => {
+        glow.style.opacity = '0';
+    });
+
+    function animate() {
+        glowX += (mouseX - glowX) * 0.1;
+        glowY += (mouseY - glowY) * 0.1;
+        glow.style.left = glowX + 'px';
+        glow.style.top = glowY + 'px';
+        requestAnimationFrame(animate);
+    }
+    animate();
+};
+
+// Only add cursor glow on desktop
+if (window.innerWidth > 768) {
+    createCursorGlow();
+}
 </script>
-{% endblock %} 
+{% endblock %}

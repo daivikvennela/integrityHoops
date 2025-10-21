@@ -24,7 +24,41 @@ class Scorecard:
                  qb12_skip_pass_positive: int = 0, qb12_skip_pass_negative: int = 0,
                  qb12_cutter_positive: int = 0, qb12_cutter_negative: int = 0,
                  driving_paint_touch_positive: int = 0, driving_paint_touch_negative: int = 0,
-                 driving_physicality_positive: int = 0, driving_physicality_negative: int = 0):
+                 driving_physicality_positive: int = 0, driving_physicality_negative: int = 0,
+                 # Off Ball - Positioning
+                 offball_positioning_create_shape_positive: int = 0,
+                 offball_positioning_create_shape_negative: int = 0,
+                 offball_positioning_adv_awareness_positive: int = 0,
+                 offball_positioning_adv_awareness_negative: int = 0,
+                 # Off Ball - Transition
+                 transition_effort_pace_positive: int = 0,
+                 transition_effort_pace_negative: int = 0,
+                 # Cutting & Screening
+                 cs_denial_positive: int = 0,
+                 cs_denial_negative: int = 0,
+                 cs_movement_positive: int = 0,
+                 cs_movement_negative: int = 0,
+                 cs_body_to_body_positive: int = 0,
+                 cs_body_to_body_negative: int = 0,
+                 cs_screen_principle_positive: int = 0,
+                 cs_screen_principle_negative: int = 0,
+                 cs_cut_fill_positive: int = 0,
+                 cs_cut_fill_negative: int = 0,
+                 # Relocation
+                 relocation_weak_corner_positive: int = 0,
+                 relocation_weak_corner_negative: int = 0,
+                 relocation_45_cut_positive: int = 0,
+                 relocation_45_cut_negative: int = 0,
+                 relocation_slide_away_positive: int = 0,
+                 relocation_slide_away_negative: int = 0,
+                 relocation_fill_behind_positive: int = 0,
+                 relocation_fill_behind_negative: int = 0,
+                 relocation_dunker_baseline_positive: int = 0,
+                 relocation_dunker_baseline_negative: int = 0,
+                 relocation_corner_fill_positive: int = 0,
+                 relocation_corner_fill_negative: int = 0,
+                 relocation_reverse_direction_positive: int = 0,
+                 relocation_reverse_direction_negative: int = 0):
         """
         Initialize a new Scorecard instance.
         
@@ -99,6 +133,40 @@ class Scorecard:
         self.driving_paint_touch_negative = driving_paint_touch_negative
         self.driving_physicality_positive = driving_physicality_positive
         self.driving_physicality_negative = driving_physicality_negative
+        # Off Ball - Positioning
+        self.offball_positioning_create_shape_positive = offball_positioning_create_shape_positive
+        self.offball_positioning_create_shape_negative = offball_positioning_create_shape_negative
+        self.offball_positioning_adv_awareness_positive = offball_positioning_adv_awareness_positive
+        self.offball_positioning_adv_awareness_negative = offball_positioning_adv_awareness_negative
+        # Off Ball - Transition
+        self.transition_effort_pace_positive = transition_effort_pace_positive
+        self.transition_effort_pace_negative = transition_effort_pace_negative
+        # Cutting & Screening
+        self.cs_denial_positive = cs_denial_positive
+        self.cs_denial_negative = cs_denial_negative
+        self.cs_movement_positive = cs_movement_positive
+        self.cs_movement_negative = cs_movement_negative
+        self.cs_body_to_body_positive = cs_body_to_body_positive
+        self.cs_body_to_body_negative = cs_body_to_body_negative
+        self.cs_screen_principle_positive = cs_screen_principle_positive
+        self.cs_screen_principle_negative = cs_screen_principle_negative
+        self.cs_cut_fill_positive = cs_cut_fill_positive
+        self.cs_cut_fill_negative = cs_cut_fill_negative
+        # Relocation
+        self.relocation_weak_corner_positive = relocation_weak_corner_positive
+        self.relocation_weak_corner_negative = relocation_weak_corner_negative
+        self.relocation_45_cut_positive = relocation_45_cut_positive
+        self.relocation_45_cut_negative = relocation_45_cut_negative
+        self.relocation_slide_away_positive = relocation_slide_away_positive
+        self.relocation_slide_away_negative = relocation_slide_away_negative
+        self.relocation_fill_behind_positive = relocation_fill_behind_positive
+        self.relocation_fill_behind_negative = relocation_fill_behind_negative
+        self.relocation_dunker_baseline_positive = relocation_dunker_baseline_positive
+        self.relocation_dunker_baseline_negative = relocation_dunker_baseline_negative
+        self.relocation_corner_fill_positive = relocation_corner_fill_positive
+        self.relocation_corner_fill_negative = relocation_corner_fill_negative
+        self.relocation_reverse_direction_positive = relocation_reverse_direction_positive
+        self.relocation_reverse_direction_negative = relocation_reverse_direction_negative
         # Note: player bars are derived from the atomic counts above; not persisted
     
     def to_dict(self) -> dict:
@@ -142,7 +210,41 @@ class Scorecard:
             'driving_paint_touch_positive': self.driving_paint_touch_positive,
             'driving_paint_touch_negative': self.driving_paint_touch_negative,
             'driving_physicality_positive': self.driving_physicality_positive,
-            'driving_physicality_negative': self.driving_physicality_negative
+            'driving_physicality_negative': self.driving_physicality_negative,
+            # Off Ball - Positioning
+            'offball_positioning_create_shape_positive': self.offball_positioning_create_shape_positive,
+            'offball_positioning_create_shape_negative': self.offball_positioning_create_shape_negative,
+            'offball_positioning_adv_awareness_positive': self.offball_positioning_adv_awareness_positive,
+            'offball_positioning_adv_awareness_negative': self.offball_positioning_adv_awareness_negative,
+            # Off Ball - Transition
+            'transition_effort_pace_positive': self.transition_effort_pace_positive,
+            'transition_effort_pace_negative': self.transition_effort_pace_negative,
+            # Cutting & Screening
+            'cs_denial_positive': self.cs_denial_positive,
+            'cs_denial_negative': self.cs_denial_negative,
+            'cs_movement_positive': self.cs_movement_positive,
+            'cs_movement_negative': self.cs_movement_negative,
+            'cs_body_to_body_positive': self.cs_body_to_body_positive,
+            'cs_body_to_body_negative': self.cs_body_to_body_negative,
+            'cs_screen_principle_positive': self.cs_screen_principle_positive,
+            'cs_screen_principle_negative': self.cs_screen_principle_negative,
+            'cs_cut_fill_positive': self.cs_cut_fill_positive,
+            'cs_cut_fill_negative': self.cs_cut_fill_negative,
+            # Relocation
+            'relocation_weak_corner_positive': self.relocation_weak_corner_positive,
+            'relocation_weak_corner_negative': self.relocation_weak_corner_negative,
+            'relocation_45_cut_positive': self.relocation_45_cut_positive,
+            'relocation_45_cut_negative': self.relocation_45_cut_negative,
+            'relocation_slide_away_positive': self.relocation_slide_away_positive,
+            'relocation_slide_away_negative': self.relocation_slide_away_negative,
+            'relocation_fill_behind_positive': self.relocation_fill_behind_positive,
+            'relocation_fill_behind_negative': self.relocation_fill_behind_negative,
+            'relocation_dunker_baseline_positive': self.relocation_dunker_baseline_positive,
+            'relocation_dunker_baseline_negative': self.relocation_dunker_baseline_negative,
+            'relocation_corner_fill_positive': self.relocation_corner_fill_positive,
+            'relocation_corner_fill_negative': self.relocation_corner_fill_negative,
+            'relocation_reverse_direction_positive': self.relocation_reverse_direction_positive,
+            'relocation_reverse_direction_negative': self.relocation_reverse_direction_negative,
         }
 
     # --------------------- Player Bar Model & Builder ---------------------
@@ -219,6 +321,56 @@ class Scorecard:
         driving_positive = int(self.driving_paint_touch_positive) + int(self.driving_physicality_positive)
         driving_negative = int(self.driving_paint_touch_negative) + int(self.driving_physicality_negative)
 
+        # Off Ball - Positioning
+        positioning_positive = (
+            int(self.offball_positioning_create_shape_positive)
+            + int(self.offball_positioning_adv_awareness_positive)
+        )
+        positioning_negative = (
+            int(self.offball_positioning_create_shape_negative)
+            + int(self.offball_positioning_adv_awareness_negative)
+        )
+
+        # Off Ball - Transition
+        transition_positive = int(self.transition_effort_pace_positive)
+        transition_negative = int(self.transition_effort_pace_negative)
+
+        # Cutting & Screening (aggregate multiple sub-metrics)
+        cs_positive = (
+            int(self.cs_denial_positive)
+            + int(self.cs_movement_positive)
+            + int(self.cs_body_to_body_positive)
+            + int(self.cs_screen_principle_positive)
+            + int(self.cs_cut_fill_positive)
+        )
+        cs_negative = (
+            int(self.cs_denial_negative)
+            + int(self.cs_movement_negative)
+            + int(self.cs_body_to_body_negative)
+            + int(self.cs_screen_principle_negative)
+            + int(self.cs_cut_fill_negative)
+        )
+
+        # Relocation (aggregate multiple sub-metrics)
+        relocation_positive = (
+            int(self.relocation_weak_corner_positive)
+            + int(self.relocation_45_cut_positive)
+            + int(self.relocation_slide_away_positive)
+            + int(self.relocation_fill_behind_positive)
+            + int(self.relocation_dunker_baseline_positive)
+            + int(self.relocation_corner_fill_positive)
+            + int(self.relocation_reverse_direction_positive)
+        )
+        relocation_negative = (
+            int(self.relocation_weak_corner_negative)
+            + int(self.relocation_45_cut_negative)
+            + int(self.relocation_slide_away_negative)
+            + int(self.relocation_fill_behind_negative)
+            + int(self.relocation_dunker_baseline_negative)
+            + int(self.relocation_corner_fill_negative)
+            + int(self.relocation_reverse_direction_negative)
+        )
+
         # QB12 Decision Making
         qb12_positive = (
             int(self.qb12_strong_side_positive)
@@ -244,6 +396,10 @@ class Scorecard:
             Scorecard.PlayerBar(key='dm_catch', label='DM Catch', positive=dm_catch_positive, negative=dm_catch_negative),
             Scorecard.PlayerBar(key='driving', label='Driving', positive=driving_positive, negative=driving_negative),
             Scorecard.PlayerBar(key='qb12_dm', label='QB12 Decision Making', positive=qb12_positive, negative=qb12_negative),
+            Scorecard.PlayerBar(key='positioning', label='Off Ball Positioning', positive=positioning_positive, negative=positioning_negative),
+            Scorecard.PlayerBar(key='transition', label='Transition', positive=transition_positive, negative=transition_negative),
+            Scorecard.PlayerBar(key='cutting_screening', label='Cutting & Screening', positive=cs_positive, negative=cs_negative),
+            Scorecard.PlayerBar(key='relocation', label='Relocation', positive=relocation_positive, negative=relocation_negative),
         ]
 
         return bars
@@ -293,56 +449,59 @@ class Scorecard:
             data.get('driving_paint_touch_positive', 0),
             data.get('driving_paint_touch_negative', 0),
             data.get('driving_physicality_positive', 0),
-            data.get('driving_physicality_negative', 0)
+            data.get('driving_physicality_negative', 0),
+            # Off Ball - Positioning
+            data.get('offball_positioning_create_shape_positive', 0),
+            data.get('offball_positioning_create_shape_negative', 0),
+            data.get('offball_positioning_adv_awareness_positive', 0),
+            data.get('offball_positioning_adv_awareness_negative', 0),
+            # Off Ball - Transition
+            data.get('transition_effort_pace_positive', 0),
+            data.get('transition_effort_pace_negative', 0),
+            # Cutting & Screening
+            data.get('cs_denial_positive', 0),
+            data.get('cs_denial_negative', 0),
+            data.get('cs_movement_positive', 0),
+            data.get('cs_movement_negative', 0),
+            data.get('cs_body_to_body_positive', 0),
+            data.get('cs_body_to_body_negative', 0),
+            data.get('cs_screen_principle_positive', 0),
+            data.get('cs_screen_principle_negative', 0),
+            data.get('cs_cut_fill_positive', 0),
+            data.get('cs_cut_fill_negative', 0),
+            # Relocation
+            data.get('relocation_weak_corner_positive', 0),
+            data.get('relocation_weak_corner_negative', 0),
+            data.get('relocation_45_cut_positive', 0),
+            data.get('relocation_45_cut_negative', 0),
+            data.get('relocation_slide_away_positive', 0),
+            data.get('relocation_slide_away_negative', 0),
+            data.get('relocation_fill_behind_positive', 0),
+            data.get('relocation_fill_behind_negative', 0),
+            data.get('relocation_dunker_baseline_positive', 0),
+            data.get('relocation_dunker_baseline_negative', 0),
+            data.get('relocation_corner_fill_positive', 0),
+            data.get('relocation_corner_fill_negative', 0),
+            data.get('relocation_reverse_direction_positive', 0),
+            data.get('relocation_reverse_direction_negative', 0),
         )
     
     def __str__(self) -> str:
         """String representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, qb12_strong_side_positive={self.qb12_strong_side_positive}, qb12_strong_side_negative={self.qb12_strong_side_negative}, qb12_baseline_positive={self.qb12_baseline_positive}, qb12_baseline_negative={self.qb12_baseline_negative}, qb12_fill_behind_positive={self.qb12_fill_behind_positive}, qb12_fill_behind_negative={self.qb12_fill_behind_negative}, qb12_weak_side_positive={self.qb12_weak_side_positive}, qb12_weak_side_negative={self.qb12_weak_side_negative}, qb12_roller_positive={self.qb12_roller_positive}, qb12_roller_negative={self.qb12_roller_negative}, qb12_skip_pass_positive={self.qb12_skip_pass_positive}, qb12_skip_pass_negative={self.qb12_skip_pass_negative}, qb12_cutter_positive={self.qb12_cutter_positive}, qb12_cutter_negative={self.qb12_cutter_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard({self.to_dict()})"
     
     def __repr__(self) -> str:
         """Detailed string representation of the scorecard."""
-        return f"Scorecard(player_name='{self.player_name}', date_created={self.date_created}, space_read_live_dribble={self.space_read_live_dribble}, space_read_catch={self.space_read_catch}, space_read_live_dribble_negative={self.space_read_live_dribble_negative}, space_read_catch_negative={self.space_read_catch_negative}, dm_catch_back_to_back_positive={self.dm_catch_back_to_back_positive}, dm_catch_back_to_back_negative={self.dm_catch_back_to_back_negative}, dm_catch_uncontested_shot_positive={self.dm_catch_uncontested_shot_positive}, dm_catch_uncontested_shot_negative={self.dm_catch_uncontested_shot_negative}, dm_catch_swing_positive={self.dm_catch_swing_positive}, dm_catch_swing_negative={self.dm_catch_swing_negative}, dm_catch_drive_pass_positive={self.dm_catch_drive_pass_positive}, dm_catch_drive_pass_negative={self.dm_catch_drive_pass_negative}, dm_catch_drive_swing_skip_pass_positive={self.dm_catch_drive_swing_skip_pass_positive}, dm_catch_drive_swing_skip_pass_negative={self.dm_catch_drive_swing_skip_pass_negative}, qb12_strong_side_positive={self.qb12_strong_side_positive}, qb12_strong_side_negative={self.qb12_strong_side_negative}, qb12_baseline_positive={self.qb12_baseline_positive}, qb12_baseline_negative={self.qb12_baseline_negative}, qb12_fill_behind_positive={self.qb12_fill_behind_positive}, qb12_fill_behind_negative={self.qb12_fill_behind_negative}, qb12_weak_side_positive={self.qb12_weak_side_positive}, qb12_weak_side_negative={self.qb12_weak_side_negative}, qb12_roller_positive={self.qb12_roller_positive}, qb12_roller_negative={self.qb12_roller_negative}, qb12_skip_pass_positive={self.qb12_skip_pass_positive}, qb12_skip_pass_negative={self.qb12_skip_pass_negative}, qb12_cutter_positive={self.qb12_cutter_positive}, qb12_cutter_negative={self.qb12_cutter_negative}, driving_paint_touch_positive={self.driving_paint_touch_positive}, driving_paint_touch_negative={self.driving_paint_touch_negative}, driving_physicality_positive={self.driving_physicality_positive}, driving_physicality_negative={self.driving_physicality_negative})"
+        return f"Scorecard({self.to_dict()})"
     
     def __eq__(self, other) -> bool:
         """Check if two scorecards are equal."""
         if not isinstance(other, Scorecard):
             return False
-        return (self.player_name == other.player_name and 
-                self.date_created == other.date_created and
-                self.space_read_live_dribble == other.space_read_live_dribble and
-                self.space_read_catch == other.space_read_catch and
-                self.space_read_live_dribble_negative == other.space_read_live_dribble_negative and
-                self.space_read_catch_negative == other.space_read_catch_negative and
-                self.dm_catch_back_to_back_positive == other.dm_catch_back_to_back_positive and
-                self.dm_catch_back_to_back_negative == other.dm_catch_back_to_back_negative and
-                self.dm_catch_uncontested_shot_positive == other.dm_catch_uncontested_shot_positive and
-                self.dm_catch_uncontested_shot_negative == other.dm_catch_uncontested_shot_negative and
-                self.dm_catch_swing_positive == other.dm_catch_swing_positive and
-                self.dm_catch_swing_negative == other.dm_catch_swing_negative and
-                self.dm_catch_drive_pass_positive == other.dm_catch_drive_pass_positive and
-                self.dm_catch_drive_pass_negative == other.dm_catch_drive_pass_negative and
-                self.dm_catch_drive_swing_skip_pass_positive == other.dm_catch_drive_swing_skip_pass_positive and
-                self.dm_catch_drive_swing_skip_pass_negative == other.dm_catch_drive_swing_skip_pass_negative and
-                self.qb12_strong_side_positive == other.qb12_strong_side_positive and
-                self.qb12_strong_side_negative == other.qb12_strong_side_negative and
-                self.qb12_baseline_positive == other.qb12_baseline_positive and
-                self.qb12_baseline_negative == other.qb12_baseline_negative and
-                self.qb12_fill_behind_positive == other.qb12_fill_behind_positive and
-                self.qb12_fill_behind_negative == other.qb12_fill_behind_negative and
-                self.qb12_weak_side_positive == other.qb12_weak_side_positive and
-                self.qb12_weak_side_negative == other.qb12_weak_side_negative and
-                self.qb12_roller_positive == other.qb12_roller_positive and
-                self.qb12_roller_negative == other.qb12_roller_negative and
-                self.qb12_skip_pass_positive == other.qb12_skip_pass_positive and
-                self.qb12_skip_pass_negative == other.qb12_skip_pass_negative and
-                self.qb12_cutter_positive == other.qb12_cutter_positive and
-                self.qb12_cutter_negative == other.qb12_cutter_negative and
-                self.driving_paint_touch_positive == other.driving_paint_touch_positive and
-                self.driving_paint_touch_negative == other.driving_paint_touch_negative and
-                self.driving_physicality_positive == other.driving_physicality_positive and
-                self.driving_physicality_negative == other.driving_physicality_negative)
+        return self.to_dict() == other.to_dict()
     
     def __hash__(self) -> int:
         """Hash the scorecard for use in sets and as dictionary keys."""
-        return hash((self.player_name, self.date_created, self.space_read_live_dribble, self.space_read_catch, self.space_read_live_dribble_negative, self.space_read_catch_negative, self.dm_catch_back_to_back_positive, self.dm_catch_back_to_back_negative, self.dm_catch_uncontested_shot_positive, self.dm_catch_uncontested_shot_negative, self.dm_catch_swing_positive, self.dm_catch_swing_negative, self.dm_catch_drive_pass_positive, self.dm_catch_drive_pass_negative, self.dm_catch_drive_swing_skip_pass_positive, self.dm_catch_drive_swing_skip_pass_negative, self.qb12_strong_side_positive, self.qb12_strong_side_negative, self.qb12_baseline_positive, self.qb12_baseline_negative, self.qb12_fill_behind_positive, self.qb12_fill_behind_negative, self.qb12_weak_side_positive, self.qb12_weak_side_negative, self.qb12_roller_positive, self.qb12_roller_negative, self.qb12_skip_pass_positive, self.qb12_skip_pass_negative, self.qb12_cutter_positive, self.qb12_cutter_negative, self.driving_paint_touch_positive, self.driving_paint_touch_negative, self.driving_physicality_positive, self.driving_physicality_negative)) 
+        # Hash generated from the tuple of sorted items for stability
+        items = tuple(sorted(self.to_dict().items()))
+        return hash(items)

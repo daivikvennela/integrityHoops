@@ -19,7 +19,8 @@ def test_database_connection():
     # Test with correct path
     print("\n1. Testing with correct database path...")
     try:
-        db_manager = DatabaseManager("data/basketball.db")
+        db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'src', 'core', 'data', 'basketball.db'))
+        db_manager = DatabaseManager(db_path)
         players = db_manager.get_all_players()
         print(f"   ✅ Found {len(players)} players in database")
         

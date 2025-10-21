@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}ML Notebook - IntegrityHoops{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/ml-notebook.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="ml-notebook-container">
+    <!-- Header -->
+    <div class="notebook-header">
+        <div class="header-left">
+            <h1 class="notebook-title">
+                <i class="fas fa-laptop-code"></i>
+                ML Notebook
+            </h1>
+            <span class="kernel-status" id="kernelStatus">
+                <i class="fas fa-circle"></i> Kernel Ready
+            </span>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary" id="restartKernelBtn" title="Restart Kernel">
+                <i class="fas fa-redo"></i> Restart Kernel
+            </button>
+            <button class="btn btn-primary" id="saveNotebookBtn" title="Save Notebook">
+                <i class="fas fa-save"></i> Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="notebook-toolbar">
+        <div class="toolbar-section">
+            <label for="templateSelect">Template:</label>
+            <select id="templateSelect" class="form-control">
+                <option value="">-- Select Template --</option>
+                <option value="linear_regression">Linear Regression</option>
+                <option value="data_exploration">Data Exploration</option>
+                <option value="blank">Blank Notebook</option>
+            </select>
+        </div>
+        
+        <div class="toolbar-section">
+            <label for="csvSelect">CSV File:</label>
+            <select id="csvSelect" class="form-control">
+                <option value="">-- Select CSV --</option>
+                {% for csv_file in csv_files %}
+                <option value="{{ csv_file }}">{{ csv_file }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-secondary" id="loadCsvBtn">
+                <i class="fas fa-file-csv"></i> Load CSV
+            </button>
+        </div>
+        
+        <div class="toolbar-section">
+            <label for="csvUpload" class="btn btn-secondary">
+                <i class="fas fa-upload"></i> Upload CSV
+                <input type="file" id="csvUpload" accept=".csv" style="display: none;">
+            </label>
+        </div>
+    </div>
+
+    <!-- Main Content Area with Tabs -->
+    <div class="notebook-main">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="editor">
+                <i class="fas fa-code"></i> Code Editor
+            </button>
+            <button class="tab-btn" data-tab="output">
+                <i class="fas fa-chart-bar"></i> Output Viewer
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content-container">
+            <!-- Editor Tab -->
+            <div class="tab-pane active" id="editorTab">
+                <div class="editor-controls">
+                    <button class="btn btn-primary" id="addCellBtn">
+                        <i class="fas fa-plus"></i> Add Cell
+                    </button>
+                    <button class="btn btn-success" id="runAllBtn">
+                        <i class="fas fa-play"></i> Run All
+                    </button>
+                    <span class="editor-hint">
+                        <i class="fas fa-info-circle"></i> Press <kbd>Shift+Enter</kbd> to run cell
+                    </span>
+                </div>
+                
+                <div class="cells-container" id="cellsContainer">
+                    <!-- Cells will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Output Tab -->
+            <div class="tab-pane" id="outputTab">
+                <div class="output-controls">
+                    <button class="btn btn-secondary" id="clearOutputBtn">
+                        <i class="fas fa-trash"></i> Clear Output
+                    </button>
+                    <span class="output-info" id="outputInfo">
+                        No output yet. Run some cells to see results here.
+                    </span>
+                </div>
+                
+                <div class="output-container" id="outputContainer">
+                    <!-- Output will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cell Template (hidden) -->
+<template id="cellTemplate">
+    <div class="notebook-cell" data-cell-id="">
+        <div class="cell-toolbar">
+            <span class="cell-number">[<span class="exec-count">-</span>]</span>
+            <button class="cell-btn run-cell" title="Run Cell (Shift+Enter)">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="cell-btn delete-cell" title="Delete Cell">
+                <i class="fas fa-trash"></i>
+            </button>
+            <span class="cell-status"></span>
+        </div>
+        <div class="cell-editor">
+            <textarea class="cell-code"></textarea>
+        </div>
+    </div>
+</template>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Executing...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- CodeMirror -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/python-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+
+<!-- ML Notebook Editor -->
+<script src="{{ url_for('static', filename='js/ml-notebook-editor.js') }}"></script>
+
+<script>
+// Initialize notebook on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const notebook = new MLNotebook({
+        kernelSessionId: '{{ kernel_session_id }}',
+        apiBaseUrl: '/api/notebook'
+    });
+    
+    // Make notebook globally accessible for debugging
+    window.notebook = notebook;
+});
+</script>
+{% endblock %}
+

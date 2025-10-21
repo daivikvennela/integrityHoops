@@ -1626,7 +1626,7 @@
                                 {# Jinja lacks split filter; use rsplit to get the last path segment #}
                                 {% set _path = output_path|default(filename, true)|replace('\\','/') %}
                                 {% set last_segment = _path.rsplit('/', 1)[-1] %}
-                                <a href="{{ url_for('scorecard_plus_with_data', filename=last_segment) }}" class="btn btn-outline-warning btn-lg ms-2" id="openNeonDashboardBtn">
+                                <a href="{{ url_for('dashboard_bp.scorecard_plus_with_data', filename=last_segment) }}" class="btn btn-outline-warning btn-lg ms-2" id="openNeonDashboardBtn">
                                     <i class="fas fa-bolt me-2"></i>
                                     Open Neon Dashboard
                                 </a>

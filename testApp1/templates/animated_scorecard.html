@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Animated Scorecard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animated-scorecard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="scorecard-container">
+    <!-- Upload Section -->
+    {% if not scorecard_data %}
+    <div class="upload-section animate-fade-in">
+        <div class="upload-card">
+            <h2><i class="fas fa-upload me-2"></i>Upload Game Data</h2>
+            <p class="text-muted">Upload a processed basketball cognitive CSV file to generate an animated scorecard</p>
+            
+            <form id="scorecardUploadForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <input type="file" class="form-control" id="scorecardFile" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-neon-red" id="uploadBtn">
+                    <i class="fas fa-chart-bar me-2"></i>Generate Scorecard
+                </button>
+            </form>
+            
+            {% if processed_files %}
+            <div class="mt-4">
+                <h5>Or select from recent files:</h5>
+                <div class="list-group mt-2">
+                    {% for file in processed_files[:5] %}
+                    <a href="{{ url_for('animated_scorecard_with_data', filename=file) }}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-file-csv me-2"></i>{{ file }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    
+    <!-- Animated Scorecard Display -->
+    <div class="scorecard-main" id="scorecardMain">
+        <!-- Header Section -->
+        <div class="scorecard-header">
+            <div class="header-left">
+                <div class="team-logo">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="team-info">
+                    <div class="team-label">Player</div>
+                    <div class="team-name">{{ scorecard_data.player }}</div>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="versus-section">
+                    <div class="versus-label">Versus</div>
+                    <div class="versus-team">{{ scorecard_data.opponent }}</div>
+                </div>
+                <div class="ppp-section">
+                    <div class="ppp-label">PPP</div>
+                    <div class="ppp-value">{{ scorecard_data.ppp }}</div>
+                </div>
+                <div class="shared-cognition-section">
+                    <div class="sc-label">Shared Cognition<br/>(+{{ scorecard_data.positive_count }} / {{ scorecard_data.negative_count }}-)</div>
+                    <div class="sc-value">{{ scorecard_data.shared_cognition }}%</div>
+                </div>
+                <div class="integrity-logo">
+                    <i class="fas fa-basketball-ball"></i>
+                    <div class="logo-text">INTEGRITY<br/>Overall Cognition</div>
+                </div>
+                <div class="game-moment">
+                    <div class="gm-label">Game Moment<br/>(+{{ scorecard_data.positive_count }} / {{ scorecard_data.negative_count }}-)</div>
+                    <div class="gm-negative">Negative</div>
+                    <div class="gm-turnovers">Turnovers<br/>{{ scorecard_data.turnovers }}</div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="date-section">
+                    <div class="date-label">Date</div>
+                    <div class="date-value">{{ scorecard_data.date }}</div>
+                </div>
+                <div class="time-modifier">
+                    <div class="tm-label">Time Modifier</div>
+                    <div class="tm-value">Stat</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content Grid -->
+        <div class="scorecard-content">
+            <!-- Left Section: On Ball Cognition -->
+            <div class="section on-ball-section">
+                <h3 class="section-title">{{ scorecard_data.on_ball.overall_percentage }}% On Ball Cognition</h3>
+                
+                <div class="circular-indicators">
+                    <!-- Space Read -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.on_ball.space_read.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.on_ball.space_read.percentage }}</div>
+                                <div class="circle-label">Space Read</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.on_ball.space_read.positive }}/{{ scorecard_data.on_ball.space_read.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.on_ball.space_read.label }}</div>
+                    </div>
+                    
+                    <!-- Decision on Catch -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.on_ball.dm_catch.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.on_ball.dm_catch.percentage }}</div>
+                                <div class="circle-label">Decision on</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.on_ball.dm_catch.positive }}/{{ scorecard_data.on_ball.dm_catch.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.on_ball.dm_catch.label }}</div>
+                    </div>
+                    
+                    <!-- Driving -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.on_ball.driving.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.on_ball.driving.percentage }}</div>
+                                <div class="circle-label">Driving</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.on_ball.driving.positive }}/{{ scorecard_data.on_ball.driving.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.on_ball.driving.label }}</div>
+                    </div>
+                    
+                    <!-- QB12 -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.on_ball.qb12.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.on_ball.qb12.percentage }}</div>
+                                <div class="circle-label">QB12</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.on_ball.qb12.positive }}/{{ scorecard_data.on_ball.qb12.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">QB12 Decision Making</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center Section: Technical Breakdown -->
+            <div class="section technical-section">
+                <h3 class="section-title">{{ scorecard_data.technical.overall_percentage }}% Technical Breakdown</h3>
+                
+                <div class="horizontal-bars">
+                    {% for key, value in scorecard_data.technical.items() %}
+                    {% if key != 'overall_percentage' and value is mapping %}
+                    <div class="bar-metric">
+                        <div class="bar-label">{{ value.label }}</div>
+                        <div class="bar-container">
+                            <div class="bar-positive">
+                                <div class="bar-fill" data-width="{{ (value.positive / (value.positive + value.negative + 1) * 100) | round(1) }}"></div>
+                                <span class="bar-count">{{ value.positive }}</span>
+                            </div>
+                            <div class="bar-negative">
+                                <div class="bar-fill-neg" data-width="{{ (value.negative / (value.positive + value.negative + 1) * 100) | round(1) }}"></div>
+                                <span class="bar-count">{{ value.negative }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Right Section: Off Ball Cognition -->
+            <div class="section off-ball-section">
+                <h3 class="section-title">{{ scorecard_data.off_ball.overall_percentage }}% Off Ball Cognition</h3>
+                
+                <div class="circular-indicators">
+                    <!-- Positioning -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.off_ball.positioning.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.off_ball.positioning.percentage }}</div>
+                                <div class="circle-label">Positioning</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.off_ball.positioning.positive }}/{{ scorecard_data.off_ball.positioning.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.off_ball.positioning.label }}</div>
+                    </div>
+                    
+                    <!-- Cutting & Screening -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.off_ball.cutting_screening.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.off_ball.cutting_screening.percentage }}</div>
+                                <div class="circle-label">Cutting</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.off_ball.cutting_screening.positive }}/{{ scorecard_data.off_ball.cutting_screening.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.off_ball.cutting_screening.label }}</div>
+                    </div>
+                    
+                    <!-- Relocation -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.off_ball.relocation.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.off_ball.relocation.percentage }}</div>
+                                <div class="circle-label">Relocation</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.off_ball.relocation.positive }}/{{ scorecard_data.off_ball.relocation.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.off_ball.relocation.label }}</div>
+                    </div>
+                    
+                    <!-- Transition -->
+                    <div class="circular-metric">
+                        <div class="circle-container">
+                            <svg class="progress-ring" width="120" height="120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="50" />
+                                <circle class="progress-ring-circle" cx="60" cy="60" r="50" 
+                                        data-percentage="{{ scorecard_data.off_ball.transition.percentage }}" />
+                            </svg>
+                            <div class="circle-content">
+                                <div class="circle-percentage">{{ scorecard_data.off_ball.transition.percentage }}</div>
+                                <div class="circle-label">Transition</div>
+                                <div class="circle-ratio">(+{{ scorecard_data.off_ball.transition.positive }}/{{ scorecard_data.off_ball.transition.negative }}-)</div>
+                            </div>
+                        </div>
+                        <div class="metric-label">{{ scorecard_data.off_ball.transition.label }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shot Distribution Pie Chart (Top Right) -->
+            <div class="shot-chart-section">
+                <div class="pie-chart-container">
+                    <canvas id="shotDistributionChart" width="200" height="200"></canvas>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #10b981;"></span>
+                            <span>3PT: {{ scorecard_data.shot_distribution.three_pt.percentage }}%</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #F9423A;"></span>
+                            <span>Deep 2: {{ scorecard_data.shot_distribution.deep_2.percentage }}%</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #6b7280;"></span>
+                            <span>Short 2: {{ scorecard_data.shot_distribution.short_2.percentage }}%</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: #3b82f6;"></span>
+                            <span>Long 2: {{ scorecard_data.shot_distribution.long_2.percentage }}%</span>
+                        </div>
+                    </div>
+                    <div class="points-scored">
+                        <div class="points-label">Points Scored</div>
+                        <div class="points-value">{{ scorecard_data.shot_distribution.points_scored }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/animated-scorecard.js') }}"></script>
+<script>
+    // Initialize scorecard with data if available
+    {% if scorecard_data %}
+    window.scorecardData = {{ scorecard_data | tojson }};
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeAnimatedScorecard(window.scorecardData);
+    });
+    {% endif %}
+</script>
+{% endblock %}
+

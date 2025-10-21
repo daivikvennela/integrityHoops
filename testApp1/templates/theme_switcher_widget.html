@@ -1,0 +1,234 @@
+<!-- Theme Switcher Widget -->
+<!-- Include this snippet in any page to add theme switching capability -->
+
+<!-- Theme Manager Script -->
+<script src="{{ url_for('static', filename='js/theme-manager.js') }}"></script>
+
+<!-- Theme Switcher Button (Floating) -->
+<div id="theme-switcher-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <div style="position: relative;">
+        <!-- Main Theme Button -->
+        <button id="theme-toggle-btn" onclick="toggleThemeWidget()" 
+                style="width: 56px; height: 56px; border-radius: 50%; border: none; 
+                       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                       color: white; font-size: 24px; cursor: pointer; 
+                       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                       transition: all 0.3s ease; display: flex; align-items: center; 
+                       justify-content: center;">
+            <i class="fas fa-palette"></i>
+        </button>
+        
+        <!-- Theme Options Panel -->
+        <div id="theme-options-panel" 
+             style="position: absolute; bottom: 70px; right: 0; background: white; 
+                    border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
+                    padding: 15px; min-width: 250px; display: none; opacity: 0;
+                    transition: all 0.3s ease;">
+            
+            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #e0e0e0;">
+                <h6 style="margin: 0; font-weight: 700; color: #333;">
+                    <i class="fas fa-palette"></i> Select Theme
+                </h6>
+            </div>
+            
+            <!-- Default Theme Option -->
+            <div class="theme-option" onclick="selectThemeFromWidget('default')" 
+                 style="padding: 12px; border-radius: 8px; cursor: pointer; 
+                        margin-bottom: 10px; border: 2px solid #e0e0e0;
+                        transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; 
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333; font-size: 0.95rem;">Default</div>
+                        <div style="font-size: 0.75rem; color: #999;">Purple gradient</div>
+                    </div>
+                    <i class="fas fa-check theme-check-default" style="color: #10b981; display: none;"></i>
+                </div>
+            </div>
+            
+            <!-- Miami Heat Theme Option -->
+            <div class="theme-option" onclick="selectThemeFromWidget('heat')" 
+                 style="padding: 12px; border-radius: 8px; cursor: pointer; 
+                        margin-bottom: 10px; border: 2px solid #e0e0e0;
+                        transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 8px; 
+                                background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
+                                border: 2px solid #F9423A;"></div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; color: #333; font-size: 0.95rem;">Miami Heat</div>
+                        <div style="font-size: 0.75rem; color: #999;">Neon red dark</div>
+                    </div>
+                    <i class="fas fa-check theme-check-heat" style="color: #F9423A; display: none;"></i>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 2px solid #e0e0e0;">
+                <a href="/settings" style="display: block; text-align: center; color: #667eea; 
+                                          text-decoration: none; font-size: 0.9rem; font-weight: 600;">
+                    <i class="fas fa-cog"></i> More Settings
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .theme-option:hover {
+        background: #f8f9fa !important;
+        border-color: #667eea !important;
+        transform: translateX(-3px);
+    }
+    
+    #theme-toggle-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    
+    /* Heat theme button style */
+    body.theme-heat #theme-toggle-btn {
+        background: linear-gradient(135deg, #F9423A 0%, #C8372F 100%) !important;
+        box-shadow: 0 4px 12px rgba(249, 66, 58, 0.5) !important;
+    }
+    
+    body.theme-heat #theme-toggle-btn:hover {
+        box-shadow: 0 0 20px rgba(249, 66, 58, 0.8) !important;
+    }
+    
+    /* Heat theme panel style */
+    body.theme-heat #theme-options-panel {
+        background: #1A1A1A !important;
+        border: 1px solid rgba(249, 66, 58, 0.3);
+    }
+    
+    body.theme-heat #theme-options-panel h6 {
+        color: #F9423A !important;
+    }
+    
+    body.theme-heat .theme-option {
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    body.theme-heat .theme-option:hover {
+        background: rgba(249, 66, 58, 0.1) !important;
+        border-color: #F9423A !important;
+    }
+    
+    body.theme-heat .theme-option div[style*="color: #333"] {
+        color: #F5F5F5 !important;
+    }
+</style>
+
+<script>
+    let themePanelOpen = false;
+    
+    function toggleThemeWidget() {
+        const panel = document.getElementById('theme-options-panel');
+        themePanelOpen = !themePanelOpen;
+        
+        if (themePanelOpen) {
+            panel.style.display = 'block';
+            setTimeout(() => {
+                panel.style.opacity = '1';
+                panel.style.transform = 'translateY(0)';
+            }, 10);
+        } else {
+            panel.style.opacity = '0';
+            panel.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                panel.style.display = 'none';
+            }, 300);
+        }
+        
+        updateThemeIndicators();
+    }
+    
+    function selectThemeFromWidget(theme) {
+        if (window.IntegrityHoopsTheme) {
+            window.IntegrityHoopsTheme.setTheme(theme);
+            updateThemeIndicators();
+            
+            // Show confirmation
+            showThemeNotification('Theme changed to ' + (theme === 'heat' ? 'Miami Heat' : 'Default'));
+            
+            // Close panel after a short delay
+            setTimeout(() => {
+                if (themePanelOpen) {
+                    toggleThemeWidget();
+                }
+            }, 800);
+        }
+    }
+    
+    function updateThemeIndicators() {
+        const currentTheme = window.IntegrityHoopsTheme ? 
+                            window.IntegrityHoopsTheme.getCurrentTheme() : 'default';
+        
+        // Update check marks
+        document.querySelector('.theme-check-default').style.display = 
+            currentTheme === 'default' ? 'block' : 'none';
+        document.querySelector('.theme-check-heat').style.display = 
+            currentTheme === 'heat' ? 'block' : 'none';
+        
+        // Update option highlighting
+        document.querySelectorAll('.theme-option').forEach(opt => {
+            opt.style.borderColor = '#e0e0e0';
+        });
+        
+        const activeOption = currentTheme === 'default' ? 
+                            document.querySelectorAll('.theme-option')[0] :
+                            document.querySelectorAll('.theme-option')[1];
+        if (activeOption) {
+            activeOption.style.borderColor = currentTheme === 'heat' ? '#F9423A' : '#667eea';
+            activeOption.style.background = currentTheme === 'heat' ? 
+                                           'rgba(249, 66, 58, 0.05)' : 
+                                           'rgba(102, 126, 234, 0.05)';
+        }
+    }
+    
+    function showThemeNotification(message) {
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
+                        background: #10b981; color: white; padding: 12px 24px; 
+                        border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                        z-index: 10000; animation: slideDown 0.3s ease; font-weight: 600;">
+                <i class="fas fa-check-circle"></i> ${message}
+            </div>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideUp 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 2000);
+    }
+    
+    // Close panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const widget = document.getElementById('theme-switcher-widget');
+        if (themePanelOpen && widget && !widget.contains(event.target)) {
+            toggleThemeWidget();
+        }
+    });
+    
+    // Initialize indicators on load
+    window.addEventListener('load', updateThemeIndicators);
+    window.addEventListener('themeChanged', updateThemeIndicators);
+    
+    // Animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 0); opacity: 1; }
+            to { transform: translate(-50%, -100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+

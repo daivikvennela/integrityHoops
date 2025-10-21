@@ -9,32 +9,63 @@ from datetime import datetime
 import logging
 from src.processors.custom_etl_processor import StatisticalDataProcessor
 from src.processors.basketball_cognitive_processor import BasketballCognitiveProcessor
+from src.processors.cog_score_calculator import CogScoreCalculator
 from src.api.player_api import player_api
 from src.api.player_management_dashboard import player_dashboard
 from src.core.dashboard import dashboard_bp
 from src.database.db_manager import DatabaseManager
+from src.api.notebook_api import notebook_api, notebook_bp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Production configuration - PostgreSQL support
+FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
+if FLASK_ENV == 'production':
+    # Use PostgreSQL in production
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+        # Render uses postgres://, but psycopg2 needs postgresql://
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+else:
+    # Use SQLite in development
+    DATABASE_URL = None
+
 app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
-app.secret_key = 'your-secret-key-here'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 
 # Register blueprints
 app.register_blueprint(player_api)
 app.register_blueprint(player_dashboard)
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(notebook_api)
+app.register_blueprint(notebook_bp)
 
 # Configuration (use absolute paths based on app.root_path)
 DATA_ROOT = os.path.join(app.root_path, 'data')
-UPLOAD_FOLDER = os.path.join(DATA_ROOT, 'uploads')
-PROCESSED_FOLDER = os.path.join(DATA_ROOT, 'processed')
-DB_PATH = os.path.join(DATA_ROOT, 'basketball.db')
+
+# Use environment variables for production or fallback to defaults
+if FLASK_ENV == 'production':
+    # Production uses ephemeral storage
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', '/tmp/uploads')
+    PROCESSED_FOLDER = os.environ.get('PROCESSED_FOLDER', '/tmp/processed')
+else:
+    # Development uses local storage
+    UPLOAD_FOLDER = os.path.join(DATA_ROOT, 'uploads')
+    PROCESSED_FOLDER = os.path.join(DATA_ROOT, 'processed')
+
+# Database path - PostgreSQL in production, SQLite in development
+if DATABASE_URL:
+    DB_PATH = DATABASE_URL  # PostgreSQL connection string
+else:
+    DB_PATH = os.path.join(DATA_ROOT, 'basketball.db')  # SQLite for local
+
 ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
 
-# Create data directories if they don't exist
-os.makedirs(DATA_ROOT, exist_ok=True)
+# Create data directories if they don't exist (for development)
+if FLASK_ENV != 'production':
+    os.makedirs(DATA_ROOT, exist_ok=True)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
@@ -69,6 +100,199 @@ from werkzeug.exceptions import RequestEntityTooLarge
 def file_too_large(e):
     flash('File too large (max 16MB). Please upload a smaller file.')
     return redirect(url_for('smartdash'))
+
+# -----------------------------
+# Analytics Dashboard (Cog Scores)
+# -----------------------------
+
+@app.route('/analytics-dashboard')
+def analytics_dashboard():
+    """Main analytics dashboard page (visualizations + ETL)."""
+    return render_template('analytics_dashboard.html')
+
+@app.route('/animated-scorecard')
+def animated_scorecard():
+    """Animated scorecard dashboard page"""
+    # Check if there are any processed cognitive performance files
+    processed_files = []
+    if os.path.exists(PROCESSED_FOLDER):
+        for file in os.listdir(PROCESSED_FOLDER):
+            if file.startswith('processed_cognitive_') and file.endswith('.csv'):
+                processed_files.append(file)
+    
+    # Get the most recent file if available
+    latest_file = None
+    if processed_files:
+        latest_file = max(processed_files, key=lambda x: os.path.getctime(os.path.join(PROCESSED_FOLDER, x)))
+    
+    return render_template('animated_scorecard.html', latest_file=latest_file, processed_files=processed_files)
+
+@app.route('/animated-scorecard/<filename>')
+def animated_scorecard_with_data(filename):
+    """Animated scorecard with specific data file"""
+    try:
+        file_path = os.path.join(PROCESSED_FOLDER, filename)
+        if not os.path.exists(file_path):
+            flash('File not found')
+            return redirect(url_for('animated_scorecard'))
+        
+        # Load the processed data
+        df = pd.read_csv(file_path)
+        
+        # Generate animated scorecard data
+        processor = BasketballCognitiveProcessor()
+        scorecard_data = processor.generate_animated_scorecard_data(df)
+        
+        # Get the original CSV filename for display
+        original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
+        
+        return render_template('animated_scorecard.html', 
+                             filename=filename,
+                             original_filename=original_filename,
+                             scorecard_data=scorecard_data)
+        
+    except Exception as e:
+        logger.exception("Error loading animated scorecard data")
+        flash(f'Error loading data: {str(e)}')
+        return redirect(url_for('animated_scorecard'))
+
+@app.route('/api/scorecard-data/<filename>')
+def api_scorecard_data(filename):
+    """API endpoint to return scorecard data as JSON for animations"""
+    try:
+        file_path = os.path.join(PROCESSED_FOLDER, filename)
+        if not os.path.exists(file_path):
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+        
+        # Load the processed data
+        df = pd.read_csv(file_path)
+        
+        # Generate animated scorecard data
+        processor = BasketballCognitiveProcessor()
+        scorecard_data = processor.generate_animated_scorecard_data(df)
+        
+        return jsonify({'success': True, 'data': scorecard_data})
+        
+    except Exception as e:
+        logger.exception("Error generating scorecard data API response")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores')
+def api_cog_scores():
+    """Return cog scores over games for charting.
+    Query params:
+      level=team|player (default team)
+      team=<team name>
+      player_name=<player name>
+    """
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        level = request.args.get('level', 'team')
+        team = request.args.get('team')
+        player_name = request.args.get('player_name')
+        points = db_manager.get_cog_scores_over_time(level=level, team=team, player_name=player_name)
+        return jsonify({'success': True, 'level': level, 'points': points})
+    except Exception as e:
+        logger.exception('Error fetching cog scores')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/team', methods=['POST'])
+def api_add_team_cog_score():
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        data = request.get_json() or {}
+        game_date = int(data.get('game_date'))  # epoch seconds
+        team = (data.get('team') or '').strip()
+        opponent = (data.get('opponent') or '').strip()
+        score = int(data.get('score'))
+        source = data.get('source')
+        note = data.get('note')
+        if not team or not opponent:
+            return jsonify({'success': False, 'error': 'team and opponent are required'}), 400
+        ok = db_manager.insert_team_cog_score(game_date, team, opponent, score, source, note)
+        return jsonify({'success': ok})
+    except Exception as e:
+        logger.exception('Error adding team cog score')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/player', methods=['POST'])
+def api_add_player_cog_score():
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        data = request.get_json() or {}
+        game_date = int(data.get('game_date'))
+        player_name = (data.get('player_name') or '').strip()
+        team = data.get('team')
+        opponent = data.get('opponent')
+        score = int(data.get('score'))
+        source = data.get('source')
+        note = data.get('note')
+        if not player_name:
+            return jsonify({'success': False, 'error': 'player_name is required'}), 400
+        ok = db_manager.insert_player_cog_score(game_date, player_name, team, opponent, score, source, note)
+        return jsonify({'success': ok})
+    except Exception as e:
+        logger.exception('Error adding player cog score')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/team/<int:score_id>', methods=['DELETE'])
+def api_delete_team_cog_score(score_id: int):
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        ok = db_manager.delete_team_cog_score_by_id(score_id)
+        return jsonify({'success': ok})
+    except Exception as e:
+        logger.exception('Error deleting team cog score')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/player/<int:score_id>', methods=['DELETE'])
+def api_delete_player_cog_score(score_id: int):
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        ok = db_manager.delete_player_cog_score_by_id(score_id)
+        return jsonify({'success': ok})
+    except Exception as e:
+        logger.exception('Error deleting player cog score')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/calculate-from-csv', methods=['POST'])
+def api_calculate_cog_score_from_csv():
+    """Calculate cognitive scores from an uploaded CSV file."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'success': False, 'error': 'Invalid file type. Only CSV files are allowed'}), 400
+        
+        # Save uploaded file temporarily
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], f'temp_{filename}')
+        file.save(temp_path)
+        
+        try:
+            # Calculate cognitive scores
+            calculator = CogScoreCalculator(temp_path)
+            report = calculator.get_full_report()
+            
+            logger.info(f"Calculated cog scores for {filename}: {report['overall_score']:.2f}%")
+            
+            return jsonify({
+                'success': True,
+                'data': report
+            })
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
+    except Exception as e:
+        logger.exception('Error calculating cog scores from CSV')
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 def scrape_company_data(company_name):
     """Scrape additional data for a company (example function)"""
@@ -165,6 +389,16 @@ def process_data_etl(df, processing_options):
 def index():
     return render_template('index.html')
 
+@app.route('/heat-theme-demo')
+def heat_theme_demo():
+    """Miami Heat Professional Theme Demo"""
+    return render_template('heat_theme_demo.html')
+
+@app.route('/settings')
+def settings():
+    """Application Settings"""
+    return render_template('settings.html')
+
 @app.route('/scorecard')
 def scorecard():
     """ScoreCard dashboard route"""
@@ -228,60 +462,8 @@ def scorecard_plus():
     
     return render_template('scorecard_plus.html', latest_file=latest_file)
 
-@app.route('/scorecard-plus/<filename>')
-def scorecard_plus_with_data(filename):
-    """Proxy route delegating to dashboard blueprint for backward compatibility"""
-    return redirect(url_for('dashboard_bp.scorecard_plus_with_data', filename=filename))
-
-@app.route('/scorecard-plus/<filename>/refresh')
-def scorecard_plus_refresh(filename):
-    """Refresh ScoreCard Plus dashboard by reprocessing the file"""
-    try:
-        # Get the original CSV file path
-        original_filename = filename.replace('processed_cognitive_', '').replace('.csv', '')
-        original_file_path = os.path.join('..', f'{original_filename}.csv')
-        
-        # Check if original file exists
-        if not os.path.exists(original_file_path):
-            flash('Original CSV file not found')
-            return redirect(url_for('scorecard_plus_with_data', filename=filename))
-        
-        # Load and reprocess the original CSV file
-        df = pd.read_csv(original_file_path)
-        
-        # Process the data with ETL
-        processing_options = {
-            'add_timestamp': True,
-            'scrape_additional_data': False
-        }
-        
-        # Use the cognitive processor to reprocess
-        processor = BasketballCognitiveProcessor()
-        if processor.detect_cognitive_data(df):
-            processed_df, performance_summary_df = processor.process_cognitive_data(df, processing_options)
-            
-            # Save the reprocessed data
-            output_filename = f"processed_cognitive_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            output_path = os.path.join(PROCESSED_FOLDER, output_filename)
-            processed_df.to_csv(output_path, index=False)
-            
-            # Calculate fresh ScoreCard Plus metrics
-            scorecard_metrics = processor.calculate_scorecard_plus_metrics(processed_df)
-            
-            flash('Dashboard refreshed with latest data!')
-            return render_template('scorecard_plus.html', 
-                                 filename=output_filename,
-                                 original_filename=original_filename,
-                                 scorecard_metrics=scorecard_metrics,
-                                 df=processed_df,
-                                 refreshed=True)
-        else:
-            flash('File is not recognized as basketball cognitive data')
-            return redirect(url_for('scorecard_plus_with_data', filename=filename))
-        
-    except Exception as e:
-        flash(f'Error refreshing data: {str(e)}')
-        return redirect(url_for('scorecard_plus_with_data', filename=filename))
+## Removed duplicate handlers for /scorecard-plus/<filename> and refresh.
+## Blueprint `dashboard_bp` owns those endpoints.
 
 @app.route('/players')
 def players():
@@ -290,8 +472,8 @@ def players():
 
 @app.route('/player-management')
 def player_management():
-    """Advanced Player Management Dashboard"""
-    return render_template('player_management_dashboard.html')
+    # Prefer the blueprint route for the main dashboard page
+    return redirect(url_for('player_dashboard.player_management_dashboard'))
 def players():
     """Player management page"""
     return render_template('players.html')
@@ -460,8 +642,8 @@ def smartdash_upload():
             
             flash('File uploaded and processed successfully!')
             
-            # Get all players for the dropdown - using correct database path
-            db_manager = DatabaseManager("data/basketball.db")
+            # Get all players for the dropdown - using configured absolute database path
+            db_manager = DatabaseManager(app.config['DB_PATH'])
             # Ensure database has required columns
             try:
                 with db_manager.get_connection() as conn:
@@ -572,6 +754,40 @@ def create_scorecard():
         driving_paint_touch_negative = int(request.form.get('driving_paint_touch_negative', 0))
         driving_physicality_positive = int(request.form.get('driving_physicality_positive', 0))
         driving_physicality_negative = int(request.form.get('driving_physicality_negative', 0))
+        # Off Ball - Positioning
+        offball_positioning_create_shape_positive = int(request.form.get('offball_positioning_create_shape_positive', 0))
+        offball_positioning_create_shape_negative = int(request.form.get('offball_positioning_create_shape_negative', 0))
+        offball_positioning_adv_awareness_positive = int(request.form.get('offball_positioning_adv_awareness_positive', 0))
+        offball_positioning_adv_awareness_negative = int(request.form.get('offball_positioning_adv_awareness_negative', 0))
+        # Off Ball - Transition
+        transition_effort_pace_positive = int(request.form.get('transition_effort_pace_positive', 0))
+        transition_effort_pace_negative = int(request.form.get('transition_effort_pace_negative', 0))
+        # Cutting & Screening
+        cs_denial_positive = int(request.form.get('cs_denial_positive', 0))
+        cs_denial_negative = int(request.form.get('cs_denial_negative', 0))
+        cs_movement_positive = int(request.form.get('cs_movement_positive', 0))
+        cs_movement_negative = int(request.form.get('cs_movement_negative', 0))
+        cs_body_to_body_positive = int(request.form.get('cs_body_to_body_positive', 0))
+        cs_body_to_body_negative = int(request.form.get('cs_body_to_body_negative', 0))
+        cs_screen_principle_positive = int(request.form.get('cs_screen_principle_positive', 0))
+        cs_screen_principle_negative = int(request.form.get('cs_screen_principle_negative', 0))
+        cs_cut_fill_positive = int(request.form.get('cs_cut_fill_positive', 0))
+        cs_cut_fill_negative = int(request.form.get('cs_cut_fill_negative', 0))
+        # Relocation
+        relocation_weak_corner_positive = int(request.form.get('relocation_weak_corner_positive', 0))
+        relocation_weak_corner_negative = int(request.form.get('relocation_weak_corner_negative', 0))
+        relocation_45_cut_positive = int(request.form.get('relocation_45_cut_positive', 0))
+        relocation_45_cut_negative = int(request.form.get('relocation_45_cut_negative', 0))
+        relocation_slide_away_positive = int(request.form.get('relocation_slide_away_positive', 0))
+        relocation_slide_away_negative = int(request.form.get('relocation_slide_away_negative', 0))
+        relocation_fill_behind_positive = int(request.form.get('relocation_fill_behind_positive', 0))
+        relocation_fill_behind_negative = int(request.form.get('relocation_fill_behind_negative', 0))
+        relocation_dunker_baseline_positive = int(request.form.get('relocation_dunker_baseline_positive', 0))
+        relocation_dunker_baseline_negative = int(request.form.get('relocation_dunker_baseline_negative', 0))
+        relocation_corner_fill_positive = int(request.form.get('relocation_corner_fill_positive', 0))
+        relocation_corner_fill_negative = int(request.form.get('relocation_corner_fill_negative', 0))
+        relocation_reverse_direction_positive = int(request.form.get('relocation_reverse_direction_positive', 0))
+        relocation_reverse_direction_negative = int(request.form.get('relocation_reverse_direction_negative', 0))
         
         if not player_name:
             print("🚨 DEBUG: No player name provided!")
@@ -616,7 +832,41 @@ def create_scorecard():
             driving_paint_touch_positive=driving_paint_touch_positive,
             driving_paint_touch_negative=driving_paint_touch_negative,
             driving_physicality_positive=driving_physicality_positive,
-            driving_physicality_negative=driving_physicality_negative
+            driving_physicality_negative=driving_physicality_negative,
+            # Off Ball - Positioning
+            offball_positioning_create_shape_positive=offball_positioning_create_shape_positive,
+            offball_positioning_create_shape_negative=offball_positioning_create_shape_negative,
+            offball_positioning_adv_awareness_positive=offball_positioning_adv_awareness_positive,
+            offball_positioning_adv_awareness_negative=offball_positioning_adv_awareness_negative,
+            # Off Ball - Transition
+            transition_effort_pace_positive=transition_effort_pace_positive,
+            transition_effort_pace_negative=transition_effort_pace_negative,
+            # Cutting & Screening
+            cs_denial_positive=cs_denial_positive,
+            cs_denial_negative=cs_denial_negative,
+            cs_movement_positive=cs_movement_positive,
+            cs_movement_negative=cs_movement_negative,
+            cs_body_to_body_positive=cs_body_to_body_positive,
+            cs_body_to_body_negative=cs_body_to_body_negative,
+            cs_screen_principle_positive=cs_screen_principle_positive,
+            cs_screen_principle_negative=cs_screen_principle_negative,
+            cs_cut_fill_positive=cs_cut_fill_positive,
+            cs_cut_fill_negative=cs_cut_fill_negative,
+            # Relocation
+            relocation_weak_corner_positive=relocation_weak_corner_positive,
+            relocation_weak_corner_negative=relocation_weak_corner_negative,
+            relocation_45_cut_positive=relocation_45_cut_positive,
+            relocation_45_cut_negative=relocation_45_cut_negative,
+            relocation_slide_away_positive=relocation_slide_away_positive,
+            relocation_slide_away_negative=relocation_slide_away_negative,
+            relocation_fill_behind_positive=relocation_fill_behind_positive,
+            relocation_fill_behind_negative=relocation_fill_behind_negative,
+            relocation_dunker_baseline_positive=relocation_dunker_baseline_positive,
+            relocation_dunker_baseline_negative=relocation_dunker_baseline_negative,
+            relocation_corner_fill_positive=relocation_corner_fill_positive,
+            relocation_corner_fill_negative=relocation_corner_fill_negative,
+            relocation_reverse_direction_positive=relocation_reverse_direction_positive,
+            relocation_reverse_direction_negative=relocation_reverse_direction_negative,
         )
         
         print("🔧 DEBUG: Scorecard object created successfully")
@@ -761,6 +1011,70 @@ def create_scorecard():
                 if "driving_physicality_negative" not in columns:
                     cursor.execute("ALTER TABLE scorecards ADD COLUMN driving_physicality_negative INTEGER DEFAULT 0")
                     print("Added driving_physicality_negative column")
+                # Off Ball - Positioning
+                if "offball_positioning_create_shape_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN offball_positioning_create_shape_positive INTEGER DEFAULT 0")
+                if "offball_positioning_create_shape_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN offball_positioning_create_shape_negative INTEGER DEFAULT 0")
+                if "offball_positioning_adv_awareness_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN offball_positioning_adv_awareness_positive INTEGER DEFAULT 0")
+                if "offball_positioning_adv_awareness_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN offball_positioning_adv_awareness_negative INTEGER DEFAULT 0")
+                # Off Ball - Transition
+                if "transition_effort_pace_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN transition_effort_pace_positive INTEGER DEFAULT 0")
+                if "transition_effort_pace_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN transition_effort_pace_negative INTEGER DEFAULT 0")
+                # Cutting & Screening
+                if "cs_denial_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_denial_positive INTEGER DEFAULT 0")
+                if "cs_denial_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_denial_negative INTEGER DEFAULT 0")
+                if "cs_movement_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_movement_positive INTEGER DEFAULT 0")
+                if "cs_movement_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_movement_negative INTEGER DEFAULT 0")
+                if "cs_body_to_body_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_body_to_body_positive INTEGER DEFAULT 0")
+                if "cs_body_to_body_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_body_to_body_negative INTEGER DEFAULT 0")
+                if "cs_screen_principle_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_screen_principle_positive INTEGER DEFAULT 0")
+                if "cs_screen_principle_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_screen_principle_negative INTEGER DEFAULT 0")
+                if "cs_cut_fill_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_cut_fill_positive INTEGER DEFAULT 0")
+                if "cs_cut_fill_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN cs_cut_fill_negative INTEGER DEFAULT 0")
+                # Relocation
+                if "relocation_weak_corner_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_weak_corner_positive INTEGER DEFAULT 0")
+                if "relocation_weak_corner_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_weak_corner_negative INTEGER DEFAULT 0")
+                if "relocation_45_cut_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_45_cut_positive INTEGER DEFAULT 0")
+                if "relocation_45_cut_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_45_cut_negative INTEGER DEFAULT 0")
+                if "relocation_slide_away_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_slide_away_positive INTEGER DEFAULT 0")
+                if "relocation_slide_away_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_slide_away_negative INTEGER DEFAULT 0")
+                if "relocation_fill_behind_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_fill_behind_positive INTEGER DEFAULT 0")
+                if "relocation_fill_behind_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_fill_behind_negative INTEGER DEFAULT 0")
+                if "relocation_dunker_baseline_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_dunker_baseline_positive INTEGER DEFAULT 0")
+                if "relocation_dunker_baseline_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_dunker_baseline_negative INTEGER DEFAULT 0")
+                if "relocation_corner_fill_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_corner_fill_positive INTEGER DEFAULT 0")
+                if "relocation_corner_fill_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_corner_fill_negative INTEGER DEFAULT 0")
+                if "relocation_reverse_direction_positive" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_reverse_direction_positive INTEGER DEFAULT 0")
+                if "relocation_reverse_direction_negative" not in columns:
+                    cursor.execute("ALTER TABLE scorecards ADD COLUMN relocation_reverse_direction_negative INTEGER DEFAULT 0")
                 
                 conn.commit()
                 print("🔧 DEBUG: Database migration completed successfully")

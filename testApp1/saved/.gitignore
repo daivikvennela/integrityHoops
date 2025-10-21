@@ -1,0 +1,4 @@
+# Ignore all saved notebooks except this .gitignore
+*
+!.gitignore
+

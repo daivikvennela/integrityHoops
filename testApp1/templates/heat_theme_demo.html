@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miami Heat Theme - IntegrityHoops</title>
+    
+    <!-- Miami Heat Professional Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/miami-heat-theme.css') }}">
+    
+    <style>
+        /* Additional demo-specific styles */
+        .demo-section {
+            margin-bottom: 60px;
+        }
+        
+        .component-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="heat-navbar">
+        <div class="heat-container">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 class="text-neon-red" style="margin: 0;">
+                    🏀 INTEGRITY HOOPS
+                </h2>
+                <div>
+                    <a href="/" class="heat-nav-link active">Home</a>
+                    <a href="/smartdash" class="heat-nav-link">SmartDash</a>
+                    <a href="/players" class="heat-nav-link">Players</a>
+                    <a href="/scorecard" class="heat-nav-link">Scorecard</a>
+                    <a href="/player-management" class="heat-nav-link">Management</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="heat-container" style="margin-top: 40px;">
+        
+        <!-- Dashboard Header -->
+        <div class="heat-dashboard-header fade-in">
+            <h1 class="text-neon-red">MIAMI HEAT PROFESSIONAL THEME</h1>
+            <p style="font-size: 1.2rem; opacity: 0.9;">Clean. Sleek. Professional Basketball Analytics Interface</p>
+        </div>
+
+        <!-- Typography Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">TYPOGRAPHY</h2>
+            <div class="heat-card">
+                <h1>Heading 1 - Display Font (Orbitron)</h1>
+                <h2>Heading 2 - Heading Font (Rajdhani)</h2>
+                <h3>Heading 3 - Professional Headers</h3>
+                <h4>Heading 4 - Section Titles</h4>
+                <h5>Heading 5 - Subsections</h5>
+                <h6>Heading 6 - Small Headers</h6>
+                <p>Regular paragraph text using Inter font family for maximum readability and professional appearance. Perfect for analytics and data presentation.</p>
+                <p class="text-heat-red">Text in Heat Red color</p>
+                <p class="text-neon-red">Text with Neon Red Glow Effect</p>
+                <p class="text-heat-gold">Text in Heat Gold Accent</p>
+            </div>
+        </section>
+
+        <!-- Buttons Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">BUTTONS</h2>
+            <div class="heat-card">
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn-heat btn-heat-primary">Primary Button</button>
+                    <button class="btn-heat btn-heat-outline">Outline Button</button>
+                    <button class="btn-heat btn-heat-ghost">Ghost Button</button>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn-heat btn-heat-primary pulse-red">Pulsing Button</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cards Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">CARDS & STATS</h2>
+            <div class="heat-grid heat-grid-4">
+                <div class="heat-stat-card">
+                    <div class="heat-stat-value">94.2</div>
+                    <div class="heat-stat-label">Offensive Rating</div>
+                </div>
+                <div class="heat-stat-card">
+                    <div class="heat-stat-value">87.5</div>
+                    <div class="heat-stat-label">Defensive Rating</div>
+                </div>
+                <div class="heat-stat-card">
+                    <div class="heat-stat-value">+6.7</div>
+                    <div class="heat-stat-label">Net Rating</div>
+                </div>
+                <div class="heat-stat-card">
+                    <div class="heat-stat-value">42</div>
+                    <div class="heat-stat-label">Games Played</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Standard Cards -->
+        <section class="demo-section fade-in">
+            <div class="heat-grid heat-grid-3">
+                <div class="heat-card neon-red-glow">
+                    <div class="heat-card-header">
+                        <h3>Player Performance</h3>
+                    </div>
+                    <p>This card features the neon red glow effect and professional styling perfect for displaying player statistics and analytics.</p>
+                    <button class="btn-heat btn-heat-outline">View Details</button>
+                </div>
+                
+                <div class="heat-card">
+                    <div class="heat-card-header">
+                        <h3>Team Analytics</h3>
+                    </div>
+                    <p>Clean card design with Miami Heat color scheme for presenting team-level data and insights.</p>
+                    <button class="btn-heat btn-heat-primary">Analyze</button>
+                </div>
+                
+                <div class="heat-card">
+                    <div class="heat-card-header">
+                        <h3>Cognitive Metrics</h3>
+                    </div>
+                    <p>Professional card layout for cognitive performance data and basketball intelligence metrics.</p>
+                    <button class="btn-heat btn-heat-ghost">Details</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forms Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">FORMS & INPUTS</h2>
+            <div class="heat-card">
+                <div class="heat-grid heat-grid-2">
+                    <div>
+                        <label class="heat-label">Player Name</label>
+                        <input type="text" class="heat-input" placeholder="Enter player name...">
+                    </div>
+                    <div>
+                        <label class="heat-label">Position</label>
+                        <select class="heat-select">
+                            <option>Point Guard</option>
+                            <option>Shooting Guard</option>
+                            <option>Small Forward</option>
+                            <option>Power Forward</option>
+                            <option>Center</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="btn-heat btn-heat-primary">Submit Data</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Table Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">DATA TABLES</h2>
+            <div class="heat-card">
+                <table class="heat-table">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Position</th>
+                            <th>PPG</th>
+                            <th>APG</th>
+                            <th>RPG</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Jimmy Butler</td>
+                            <td>SF</td>
+                            <td>22.9</td>
+                            <td>5.3</td>
+                            <td>5.9</td>
+                            <td><span class="heat-badge heat-badge-red">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>Bam Adebayo</td>
+                            <td>C</td>
+                            <td>19.3</td>
+                            <td>3.2</td>
+                            <td>10.2</td>
+                            <td><span class="heat-badge heat-badge-red">Active</span></td>
+                        </tr>
+                        <tr>
+                            <td>Tyler Herro</td>
+                            <td>SG</td>
+                            <td>20.1</td>
+                            <td>4.1</td>
+                            <td>5.4</td>
+                            <td><span class="heat-badge heat-badge-outline">Out</span></td>
+                        </tr>
+                        <tr>
+                            <td>Kyle Lowry</td>
+                            <td>PG</td>
+                            <td>11.2</td>
+                            <td>6.2</td>
+                            <td>4.0</td>
+                            <td><span class="heat-badge heat-badge-red">Active</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Progress Bars -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">PROGRESS INDICATORS</h2>
+            <div class="heat-card">
+                <div style="margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span class="heat-label">Offensive Efficiency</span>
+                        <span class="text-heat-red" style="font-weight: 700;">85%</span>
+                    </div>
+                    <div class="heat-progress">
+                        <div class="heat-progress-bar" style="width: 85%;"></div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span class="heat-label">Defensive Rating</span>
+                        <span class="text-heat-red" style="font-weight: 700;">92%</span>
+                    </div>
+                    <div class="heat-progress">
+                        <div class="heat-progress-bar" style="width: 92%;"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span class="heat-label">Cognitive Performance</span>
+                        <span class="text-heat-red" style="font-weight: 700;">78%</span>
+                    </div>
+                    <div class="heat-progress">
+                        <div class="heat-progress-bar" style="width: 78%;"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Badges Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">BADGES & TAGS</h2>
+            <div class="heat-card">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span class="heat-badge heat-badge-red">Elite</span>
+                    <span class="heat-badge heat-badge-outline">Starter</span>
+                    <span class="heat-badge heat-badge-gold">MVP Candidate</span>
+                    <span class="heat-badge heat-badge-red">All-Star</span>
+                    <span class="heat-badge heat-badge-outline">Rookie</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alerts Section -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">ALERTS & NOTIFICATIONS</h2>
+            <div class="heat-alert">
+                <strong>Information:</strong> Player data has been updated successfully.
+            </div>
+            <div class="heat-alert heat-alert-success">
+                <strong>Success:</strong> Scorecard created and saved to database.
+            </div>
+            <div class="heat-alert heat-alert-warning">
+                <strong>Warning:</strong> Some player statistics are missing from the dataset.
+            </div>
+        </section>
+
+        <!-- Special Effects -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">NEON EFFECTS</h2>
+            <div class="heat-grid heat-grid-3">
+                <div class="heat-card neon-red-glow">
+                    <h4 class="text-neon-red">Neon Red Glow</h4>
+                    <p>Card with subtle neon red glow effect</p>
+                </div>
+                <div class="heat-card neon-red-border">
+                    <h4 class="text-neon-red">Neon Border</h4>
+                    <p>Card with neon red border effect</p>
+                </div>
+                <div class="heat-card pulse-red">
+                    <h4 class="text-neon-red">Pulsing Effect</h4>
+                    <p>Card with animated pulse effect</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Divider -->
+        <div class="heat-divider"></div>
+
+        <!-- Loading Spinner -->
+        <section class="demo-section fade-in">
+            <h2 class="heat-section-title">LOADING INDICATORS</h2>
+            <div class="heat-card text-center">
+                <div style="display: flex; justify-content: center; align-items: center; padding: 40px;">
+                    <div class="heat-spinner"></div>
+                </div>
+                <p>Professional loading animation with neon red glow</p>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <div class="heat-divider"></div>
+        <div style="text-align: center; padding: 40px 0; opacity: 0.7;">
+            <p class="text-neon-red" style="font-family: var(--font-display); font-weight: 900; font-size: 1.5rem;">
+                INTEGRITY HOOPS
+            </p>
+            <p>Professional Basketball Analytics Platform</p>
+            <p style="font-size: 0.9rem; opacity: 0.6;">Powered by Miami Heat Professional Theme</p>
+        </div>
+
+    </div>
+
+    <script>
+        // Add staggered fade-in animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>

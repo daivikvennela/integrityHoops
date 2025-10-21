@@ -13,16 +13,13 @@ import json
 player_api = Blueprint('player_api', __name__)
 
 # Initialize database manager using app-configured absolute path when available
+import os
 try:
-    from flask import current_app as _ca
-    _db_path = None
-    try:
-        _db_path = _ca.config.get('DB_PATH')
-    except Exception:
-        _db_path = None
-    db_manager = DatabaseManager(_db_path or "data/basketball.db")
+    _db_path = current_app.config.get('DB_PATH')  # type: ignore[attr-defined]
 except Exception:
-    db_manager = DatabaseManager("data/basketball.db")
+    _db_path = None
+_fallback_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'core', 'data', 'basketball.db'))
+db_manager = DatabaseManager(_db_path or _fallback_db_path)
 
 
 @player_api.route('/api/players', methods=['GET'])
