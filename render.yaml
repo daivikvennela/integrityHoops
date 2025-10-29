@@ -8,6 +8,10 @@ services:
     buildCommand: pip install --only-binary=:all: -r testApp1/config/requirements.txt
     startCommand: cd testApp1 && gunicorn --workers=4 --bind 0.0.0.0:$PORT src.core.app:app --timeout 120
     envVars:
+      - key: DATABASE_URL
+        value: postgresql://integrityhoopselevate_user:xzV5tiGUIQQics5Ynz8xGa5e5ffI275e@dpg-d4189vs9c44c7391tht0-a.oregon-postgres.render.com/integrityhoopselevate
+      - key: PGSSLMODE
+        value: require
       - key: SECRET_KEY
         generateValue: true
       - key: FLASK_ENV
