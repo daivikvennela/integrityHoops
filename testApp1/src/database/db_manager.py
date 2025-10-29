@@ -20,6 +20,14 @@ class DatabaseManager:
         """
         # Normalize to absolute path to avoid environment-dependent relative lookups
         self.db_path = os.path.abspath(db_path)
+        # Ensure parent directory exists for SQLite/file DBs
+        try:
+            if not str(self.db_path).startswith(('postgres://', 'postgresql://')):
+                dirpath = os.path.dirname(self.db_path) or '.'
+                os.makedirs(dirpath, exist_ok=True)
+        except Exception:
+            # Non-fatal; continue and let connect raise if needed
+            pass
         self.init_database()
     
     def get_connection(self) -> sqlite3.Connection:

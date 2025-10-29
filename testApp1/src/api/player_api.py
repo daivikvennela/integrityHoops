@@ -8,23 +8,28 @@ from src.models import Player, Scorecard
 from src.database import DatabaseManager
 from datetime import datetime
 import json
+import os
 
 # Create Blueprint for player API
 player_api = Blueprint('player_api', __name__)
 
-# Initialize database manager using app-configured absolute path when available
-import os
-try:
-    _db_path = current_app.config.get('DB_PATH')  # type: ignore[attr-defined]
-except Exception:
-    _db_path = None
-_fallback_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'core', 'data', 'basketball.db'))
-db_manager = DatabaseManager(_db_path or _fallback_db_path)
+def get_db_manager():
+    db_path = current_app.config.get('DB_PATH')
+    # If DB_PATH indicates SQLite/file, ensure parent directory exists and use it
+    if db_path and not str(db_path).startswith(('postgres://', 'postgresql://')):
+        dirpath = os.path.dirname(db_path) or '.'
+        os.makedirs(dirpath, exist_ok=True)
+        return DatabaseManager(db_path)
+    # Fallback to a guaranteed writable SQLite path in prod-like environments
+    fallback = os.environ.get('SQLITE_FALLBACK', '/tmp/basketball.db')
+    os.makedirs(os.path.dirname(fallback), exist_ok=True)
+    return DatabaseManager(fallback)
 
 
 @player_api.route('/api/players', methods=['GET'])
 def get_all_players():
     """Get all players."""
+    db_manager = get_db_manager()
     try:
         players = db_manager.get_all_players()
         players_data = []
@@ -50,6 +55,7 @@ def get_all_players():
 @player_api.route('/api/players/<player_name>', methods=['GET'])
 def get_player(player_name):
     """Get a specific player by name."""
+    db_manager = get_db_manager()
     try:
         player = db_manager.get_player_by_name(player_name)
         
@@ -76,6 +82,7 @@ def get_player(player_name):
 @player_api.route('/api/players', methods=['POST'])
 def create_player():
     """Create a new player."""
+    db_manager = get_db_manager()
     try:
         data = request.get_json()
         
@@ -125,6 +132,7 @@ def create_player():
 @player_api.route('/api/players/<player_name>', methods=['PUT'])
 def update_player(player_name):
     """Update a player."""
+    db_manager = get_db_manager()
     try:
         data = request.get_json()
         
@@ -178,6 +186,7 @@ def update_player(player_name):
 @player_api.route('/api/players/<player_name>', methods=['DELETE'])
 def delete_player(player_name):
     """Delete a player."""
+    db_manager = get_db_manager()
     try:
         # Check if player exists
         player = db_manager.get_player_by_name(player_name)
@@ -209,6 +218,7 @@ def delete_player(player_name):
 @player_api.route('/api/players/<player_name>/scorecards', methods=['GET'])
 def get_player_scorecards(player_name):
     """Get all scorecards for a specific player."""
+    db_manager = get_db_manager()
     try:
         # Check if player exists
         player = db_manager.get_player_by_name(player_name)
@@ -240,6 +250,7 @@ def get_player_scorecards(player_name):
 @player_api.route('/api/players/<player_name>/scorecards', methods=['POST'])
 def create_scorecard(player_name):
     """Create a new scorecard for a player."""
+    db_manager = get_db_manager()
     try:
         # Check if player exists
         player = db_manager.get_player_by_name(player_name)
@@ -290,6 +301,7 @@ def create_scorecard(player_name):
 @player_api.route('/api/players/<player_name>/scorecards/<int:date_created>', methods=['DELETE'])
 def delete_scorecard(player_name, date_created):
     """Delete a specific scorecard."""
+    db_manager = get_db_manager()
     try:
         success = db_manager.delete_scorecard(player_name, date_created)
         
@@ -313,6 +325,7 @@ def delete_scorecard(player_name, date_created):
 @player_api.route('/api/stats', methods=['GET'])
 def get_database_stats():
     """Get database statistics."""
+    db_manager = get_db_manager()
     try:
         stats = db_manager.get_database_stats()
         

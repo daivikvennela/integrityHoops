@@ -61,6 +61,14 @@ if DATABASE_URL:
 else:
     DB_PATH = os.path.join(DATA_ROOT, 'basketball.db')  # SQLite for local
 
+# If running in production without a DATABASE_URL, force a writable SQLite path
+if not DATABASE_URL and FLASK_ENV == 'production':
+    DB_PATH = os.environ.get('DB_PATH', '/tmp/basketball.db')
+
+# Ensure parent directory exists for file-based DB_PATH
+if not str(DB_PATH).startswith(('postgres://', 'postgresql://')):
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
 
 # Create data directories if they don't exist (for development)
