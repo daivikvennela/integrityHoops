@@ -1,0 +1,491 @@
+/* Animated Scorecard - NBA 2K/Madden Style */
+/* Black background with neon red accents (#F9423A) */
+
+:root {
+    --neon-red: #F9423A;
+    --neon-red-glow: rgba(249, 66, 58, 0.6);
+    --black-base: #000;
+    --dark-gray: #1a1a1a;
+    --light-gray: #e5e7eb;
+}
+
+/* Main Container */
+.scorecard-container {
+    min-height: 100vh;
+    background: #000;
+    padding: 20px;
+}
+
+/* Upload Section */
+.upload-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.upload-card {
+    background: var(--black-base);
+    border: 2px solid var(--neon-red);
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 600px;
+    box-shadow: 0 0 30px var(--neon-red-glow);
+}
+
+.upload-card h2 {
+    color: var(--neon-red);
+    text-shadow: 0 0 10px var(--neon-red-glow);
+    margin-bottom: 20px;
+}
+
+.btn-neon-red {
+    background: var(--black-base);
+    color: #fff;
+    border: 2px solid var(--neon-red);
+    padding: 12px 30px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(249, 66, 58, 0.3);
+}
+
+.btn-neon-red:hover {
+    background: var(--neon-red);
+    box-shadow: 0 0 25px var(--neon-red-glow);
+    transform: translateY(-2px);
+}
+
+/* Scorecard Main */
+.scorecard-main {
+    background: var(--black-base);
+    border: 2px solid var(--neon-red);
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 0 40px var(--neon-red-glow), inset 0 0 30px rgba(249, 66, 58, 0.05);
+    animation: slideUp 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header Section */
+.scorecard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--neon-red);
+    animation: fadeIn 0.8s ease 0.5s both;
+}
+
+.header-left, .header-center, .header-right {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.team-logo {
+    width: 60px;
+    height: 60px;
+    background: var(--neon-red);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    box-shadow: 0 0 20px var(--neon-red-glow);
+}
+
+.team-info, .versus-section, .date-section, .time-modifier {
+    text-align: left;
+}
+
+.team-label, .versus-label, .ppp-label, .sc-label, .gm-label, .date-label, .tm-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.team-name, .versus-team, .ppp-value, .sc-value, .date-value, .tm-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--neon-red);
+    text-shadow: 0 0 10px var(--neon-red-glow);
+}
+
+.integrity-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+.integrity-logo i {
+    font-size: 3rem;
+    color: var(--neon-red);
+    margin-bottom: 5px;
+}
+
+.logo-text {
+    font-size: 0.7rem;
+    text-align: center;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.game-moment {
+    text-align: center;
+}
+
+.gm-negative {
+    color: var(--neon-red);
+    font-weight: 700;
+}
+
+.gm-turnovers {
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* Main Content Grid */
+.scorecard-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
+    position: relative;
+}
+
+/* Sections */
+.section {
+    background: rgba(26, 26, 26, 0.8);
+    border: 1px solid rgba(249, 66, 58, 0.3);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 0 20px rgba(249, 66, 58, 0.15);
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--neon-red);
+    text-align: center;
+    margin-bottom: 25px;
+    text-shadow: 0 0 15px var(--neon-red-glow);
+    animation: fadeIn 1s ease 1s both;
+}
+
+/* Circular Indicators */
+.circular-indicators {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.circular-metric {
+    text-align: center;
+    animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.circular-metric:nth-child(1) { animation-delay: 1s; }
+.circular-metric:nth-child(2) { animation-delay: 1.2s; }
+.circular-metric:nth-child(3) { animation-delay: 1.4s; }
+.circular-metric:nth-child(4) { animation-delay: 1.6s; }
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5) rotate(-20deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+    }
+}
+
+.circle-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 10px;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 8;
+}
+
+.progress-ring-circle {
+    fill: none;
+    stroke: var(--neon-red);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 314;
+    stroke-dashoffset: 314;
+    filter: drop-shadow(0 0 8px var(--neon-red-glow));
+    transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.circle-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.circle-percentage {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--neon-red);
+    text-shadow: 0 0 10px var(--neon-red-glow);
+}
+
+.circle-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 2px;
+}
+
+.circle-ratio {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+/* Horizontal Bars */
+.horizontal-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.bar-metric {
+    animation: slideInLeft 0.6s ease both;
+}
+
+.bar-metric:nth-child(1) { animation-delay: 1.5s; }
+.bar-metric:nth-child(2) { animation-delay: 1.6s; }
+.bar-metric:nth-child(3) { animation-delay: 1.7s; }
+.bar-metric:nth-child(4) { animation-delay: 1.8s; }
+.bar-metric:nth-child(5) { animation-delay: 1.9s; }
+.bar-metric:nth-child(6) { animation-delay: 2.0s; }
+.bar-metric:nth-child(7) { animation-delay: 2.1s; }
+.bar-metric:nth-child(8) { animation-delay: 2.2s; }
+.bar-metric:nth-child(9) { animation-delay: 2.3s; }
+.bar-metric:nth-child(10) { animation-delay: 2.4s; }
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.bar-label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.bar-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.bar-positive, .bar-negative {
+    flex: 1;
+    height: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-red), #ff6b5e);
+    border-radius: 12px;
+    width: 0%;
+    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px var(--neon-red-glow);
+}
+
+.bar-fill-neg {
+    height: 100%;
+    background: linear-gradient(90deg, #555, #333);
+    border-radius: 12px;
+    width: 0%;
+    transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-count {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* Shot Chart */
+.shot-chart-section {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
+    animation: fadeIn 1s ease 2.5s both;
+}
+
+.pie-chart-container {
+    background: rgba(26, 26, 26, 0.9);
+    border: 1px solid rgba(249, 66, 58, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+#shotDistributionChart {
+    margin-bottom: 15px;
+}
+
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.points-scored {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(249, 66, 58, 0.3);
+}
+
+.points-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+}
+
+.points-value {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--neon-red);
+    text-shadow: 0 0 15px var(--neon-red-glow);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 30px var(--neon-red-glow);
+    }
+    50% {
+        box-shadow: 0 0 50px var(--neon-red-glow);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.8s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .scorecard-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .shot-chart-section {
+        position: relative;
+        width: 100%;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .scorecard-header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .circular-indicators {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* List Group Styling */
+.list-group-item {
+    background: rgba(26, 26, 26, 0.8) !important;
+    border-color: rgba(249, 66, 58, 0.3) !important;
+    color: #fff !important;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background: rgba(249, 66, 58, 0.2) !important;
+    border-color: var(--neon-red) !important;
+    transform: translateX(5px);
+}
+
+/* Form Control Styling */
+.form-control {
+    background: rgba(26, 26, 26, 0.8) !important;
+    border: 2px solid rgba(249, 66, 58, 0.3) !important;
+    color: #fff !important;
+}
+
+.form-control:focus {
+    background: rgba(26, 26, 26, 0.9) !important;
+    border-color: var(--neon-red) !important;
+    box-shadow: 0 0 15px var(--neon-red-glow) !important;
+}
+

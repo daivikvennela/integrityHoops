@@ -1,0 +1,161 @@
+/**
+ * Miami Heat Theme
+ * Same as default theme but with red neon instead of purple
+ */
+
+/* Override the default purple theme with Miami Heat red */
+body.theme-heat {
+    background: linear-gradient(135deg, #C8372F 0%, #F9423A 100%) !important;
+}
+
+/* Navigation - Red instead of purple with Apple-style glass effect */
+body.theme-heat .navigation-bar {
+    background: rgba(26, 15, 15, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 0.5px solid rgba(249, 66, 58, 0.2) !important;
+    box-shadow: 0 1px 3px rgba(249, 66, 58, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24) !important;
+}
+
+body.theme-heat .nav-link.active {
+    color: white !important;
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(249, 66, 58, 0.6) !important;
+}
+
+body.theme-heat .nav-link:hover {
+    color: rgba(249, 66, 58, 0.9) !important;
+    transform: translateY(-1px) scale(1.02) !important;
+}
+
+/* Fallback for browsers that don't support backdrop-filter */
+@supports not (backdrop-filter: blur(20px)) {
+    body.theme-heat .navigation-bar {
+        background: rgba(26, 15, 15, 0.95) !important;
+    }
+}
+
+/* Text - Keep it white/light for readability */
+body.theme-heat,
+body.theme-heat * {
+    color: white !important;
+}
+
+/* Forms and inputs */
+body.theme-heat .form-control,
+body.theme-heat .form-select,
+body.theme-heat input,
+body.theme-heat textarea,
+body.theme-heat select {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(249, 66, 58, 0.3) !important;
+    color: white !important;
+}
+
+body.theme-heat .form-control:focus,
+body.theme-heat .form-select:focus,
+body.theme-heat input:focus,
+body.theme-heat textarea:focus,
+body.theme-heat select:focus {
+    border-color: var(--heat-red) !important;
+    box-shadow: 0 0 0 0.25rem rgba(249, 66, 58, 0.25) !important;
+    background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Buttons - Red theme */
+body.theme-heat .btn-primary {
+    background-color: var(--heat-red) !important;
+    border-color: var(--heat-red) !important;
+}
+
+body.theme-heat .btn-primary:hover {
+    background-color: var(--heat-red-bright) !important;
+    border-color: var(--heat-red-bright) !important;
+}
+
+body.theme-heat .btn-outline-primary {
+    color: var(--heat-red) !important;
+    border-color: var(--heat-red) !important;
+}
+
+body.theme-heat .btn-outline-primary:hover {
+    background-color: var(--heat-red) !important;
+    color: white !important;
+}
+
+/* Cards */
+body.theme-heat .card {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(249, 66, 58, 0.3) !important;
+}
+
+body.theme-heat .card-header {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    border-bottom-color: rgba(249, 66, 58, 0.3) !important;
+}
+
+/* Alerts */
+body.theme-heat .alert-info {
+    background-color: rgba(249, 66, 58, 0.15) !important;
+    border-color: rgba(249, 66, 58, 0.3) !important;
+    color: white !important;
+}
+
+/* Tables */
+body.theme-heat table {
+    color: white !important;
+}
+
+body.theme-heat table thead th {
+    background-color: rgba(249, 66, 58, 0.2) !important;
+    border-color: rgba(249, 66, 58, 0.3) !important;
+}
+
+body.theme-heat table tbody td {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-heat table tbody tr:hover {
+    background-color: rgba(249, 66, 58, 0.1) !important;
+}
+
+/* Links */
+body.theme-heat a {
+    color: var(--heat-bright) !important;
+}
+
+body.theme-heat a:hover {
+    color: var(--heat-red-bright) !important;
+}
+
+/* Keep the text readable */
+body.theme-heat .text-primary {
+    color: var(--heat-red) !important;
+}
+
+body.theme-heat .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Badges */
+body.theme-heat .badge-primary {
+    background-color: var(--heat-red) !important;
+}
+
+/* Ensure placeholders are visible */
+body.theme-heat ::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+    opacity: 1;
+}
+
+body.theme-heat ::-webkit-input-placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.theme-heat ::-moz-placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+body.theme-heat :-ms-input-placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
