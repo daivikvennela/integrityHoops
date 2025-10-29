@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     region: oregon
-    runtimeVersion: 3.12.6
+    runtimeVersion: 3.13.4
     buildCommand: pip install --only-binary=:all: -r testApp1/config/requirements.txt
     startCommand: cd testApp1 && gunicorn --workers=4 --bind 0.0.0.0:$PORT src.core.app:app --timeout 120
     envVars:
