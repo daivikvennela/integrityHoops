@@ -5,7 +5,7 @@ services:
     runtime: python
     plan: free  # Change to 'starter' for paid tier
     region: oregon  # or your preferred region
-    buildCommand: pip install -r config/requirements.txt
+    buildCommand: pip install -r testApp1/config/requirements.txt
     startCommand: cd testApp1 && gunicorn --workers=4 --bind 0.0.0.0:$PORT src.core.app:app --timeout 120
     envVars:
       - key: PYTHON_VERSION
@@ -26,7 +26,7 @@ services:
         value: /tmp/uploads
       - key: PROCESSED_FOLDER
         value: /tmp/processed
-    healthCheckPath: /
+    healthCheckPath: /healthz
     autoDeploy: true  # Auto-deploy on git push
 
 databases:
