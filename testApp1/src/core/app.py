@@ -394,6 +394,11 @@ def heat_theme_demo():
     """Miami Heat Professional Theme Demo"""
     return render_template('heat_theme_demo.html')
 
+@app.route('/healthz')
+def healthz():
+    """Lightweight health check endpoint for cloud platforms."""
+    return jsonify({'status': 'ok'}), 200
+
 @app.route('/settings')
 def settings():
     """Application Settings"""
