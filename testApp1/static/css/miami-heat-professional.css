@@ -1,0 +1,526 @@
+/**
+ * Miami Heat Professional Theme
+ * A clean, sleek, professional dark interface with neon red accents
+ * Inspired by the Miami Heat brand colors
+ */
+
+/* ===========================
+   CSS Variables
+   =========================== */
+:root {
+    --heat-red: #F9423A;
+    --heat-red-bright: #FF5449;
+    --heat-black: #000000;
+    --heat-dark-gray: #0A0A0A;
+    --heat-mid-gray: #1A1A1A;
+    --heat-light-gray: #2A2A2A;
+    --heat-gold: #FFB81C;
+    --heat-white: #FFFFFF;
+    --heat-off-white: #F5F5F5;
+}
+
+/* ===========================
+   Typography
+   =========================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@500;600;700&family=Orbitron:wght@700;900&display=swap');
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, var(--heat-black) 0%, var(--heat-dark-gray) 50%, var(--heat-mid-gray) 100%);
+    color: var(--heat-white);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    color: var(--heat-white);
+}
+
+.text-heat-red {
+    color: var(--heat-red) !important;
+}
+
+.text-neon-red {
+    color: var(--heat-red);
+    text-shadow: 0 0 10px rgba(249, 66, 58, 0.5);
+}
+
+.text-heat-gold {
+    color: var(--heat-gold);
+}
+
+/* ===========================
+   Layout System
+   =========================== */
+.heat-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.heat-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.heat-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.heat-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.heat-grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1024px) {
+    .heat-grid-3, .heat-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .heat-grid-2, .heat-grid-3, .heat-grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===========================
+   Cards
+   =========================== */
+.heat-card {
+    background: var(--heat-mid-gray);
+    border: 1px solid rgba(249, 66, 58, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.3s ease;
+}
+
+.heat-card:hover {
+    border-color: rgba(249, 66, 58, 0.5);
+    transform: translateY(-2px);
+}
+
+.heat-card-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--heat-light-gray);
+}
+
+.heat-card-header h3 {
+    margin: 0;
+    color: var(--heat-white);
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+.btn-heat {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.btn-heat-primary {
+    background: var(--heat-red);
+    color: var(--heat-white);
+    border: 2px solid var(--heat-red);
+    box-shadow: 0 0 15px rgba(249, 66, 58, 0.3);
+}
+
+.btn-heat-primary:hover {
+    background: var(--heat-red-bright);
+    box-shadow: 0 0 25px rgba(249, 66, 58, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-heat-outline {
+    background: transparent;
+    color: var(--heat-red);
+    border: 2px solid var(--heat-red);
+}
+
+.btn-heat-outline:hover {
+    background: var(--heat-red);
+    color: var(--heat-white);
+    box-shadow: 0 0 15px rgba(249, 66, 58, 0.4);
+}
+
+.btn-heat-ghost {
+    background: transparent;
+    color: var(--heat-white);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-heat-ghost:hover {
+    border-color: var(--heat-red);
+    color: var(--heat-red);
+}
+
+/* ===========================
+   Badges
+   =========================== */
+.heat-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.heat-badge-red {
+    background: var(--heat-red);
+    color: var(--heat-white);
+    box-shadow: 0 0 10px rgba(249, 66, 58, 0.4);
+}
+
+.heat-badge-outline {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.heat-badge-gold {
+    background: var(--heat-gold);
+    color: var(--heat-black);
+    font-weight: 700;
+}
+
+/* ===========================
+   Forms & Inputs
+   =========================== */
+.heat-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--heat-white);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.heat-input, .heat-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(249, 66, 58, 0.3);
+    border-radius: 8px;
+    color: var(--heat-white);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.heat-input:focus, .heat-select:focus {
+    outline: none;
+    border-color: var(--heat-red);
+    box-shadow: 0 0 0 3px rgba(249, 66, 58, 0.2);
+}
+
+.heat-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ===========================
+   Tables
+   =========================== */
+.heat-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--heat-mid-gray);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.heat-table thead {
+    background: rgba(249, 66, 58, 0.2);
+}
+
+.heat-table th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 700;
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--heat-white);
+    border-bottom: 2px solid var(--heat-red);
+}
+
+.heat-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--heat-off-white);
+}
+
+.heat-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.heat-table tbody tr:hover {
+    background: rgba(249, 66, 58, 0.1);
+}
+
+/* ===========================
+   Navigation
+   =========================== */
+.heat-navbar {
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(249, 66, 58, 0.3);
+    padding: 16px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.heat-nav-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    padding: 8px 16px;
+    margin: 0 4px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-family: 'Rajdhani', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.heat-nav-link:hover {
+    color: var(--heat-red);
+    background: rgba(249, 66, 58, 0.1);
+}
+
+.heat-nav-link.active {
+    color: var(--heat-white);
+    background: rgba(249, 66, 58, 0.2);
+    box-shadow: 0 0 10px rgba(249, 66, 58, 0.3);
+}
+
+/* ===========================
+   Progress Bars
+   =========================== */
+.heat-progress {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.heat-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--heat-red) 0%, var(--heat-red-bright) 100%);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(249, 66, 58, 0.5);
+}
+
+/* ===========================
+   Alerts
+   =========================== */
+.heat-alert {
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--heat-white);
+}
+
+.heat-alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+}
+
+.heat-alert-warning {
+    background: rgba(255, 184, 28, 0.1);
+    border-color: var(--heat-gold);
+}
+
+.heat-alert-danger {
+    background: rgba(249, 66, 58, 0.1);
+    border-color: var(--heat-red);
+}
+
+/* ===========================
+   Special Effects
+   =========================== */
+.neon-red-glow {
+    box-shadow: 0 0 20px rgba(249, 66, 58, 0.4), 0 0 40px rgba(249, 66, 58, 0.2);
+}
+
+.neon-red-border {
+    border: 2px solid var(--heat-red);
+    box-shadow: 0 0 10px rgba(249, 66, 58, 0.5);
+}
+
+.neon-red-underline {
+    border-bottom: 2px solid var(--heat-red);
+    box-shadow: 0 2px 10px rgba(249, 66, 58, 0.4);
+    padding-bottom: 2px;
+}
+
+.pulse-red {
+    animation: pulse-red 2s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(249, 66, 58, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(249, 66, 58, 0.6);
+    }
+}
+
+/* ===========================
+   Animations
+   =========================== */
+.fade-in {
+    animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.heat-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(249, 66, 58, 0.2);
+    border-top-color: var(--heat-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ===========================
+   Dashboard Components
+   =========================== */
+.heat-dashboard-header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.heat-dashboard-header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    margin-bottom: 12px;
+    color: var(--heat-white);
+}
+
+.heat-dashboard-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.125rem;
+}
+
+.heat-section-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    color: var(--heat-white);
+}
+
+.heat-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--heat-red), transparent);
+    margin: 24px 0;
+}
+
+/* ===========================
+   Stat Cards
+   =========================== */
+.heat-stat-card {
+    background: var(--heat-mid-gray);
+    border: 1px solid rgba(249, 66, 58, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.heat-stat-card:hover {
+    border-color: var(--heat-red);
+    box-shadow: 0 0 20px rgba(249, 66, 58, 0.3);
+    transform: translateY(-4px);
+}
+
+.heat-stat-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--heat-red);
+    text-shadow: 0 0 20px rgba(249, 66, 58, 0.5);
+    margin-bottom: 8px;
+}
+
+.heat-stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===========================
+   Utility Classes
+   =========================== */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+.mt-1 { margin-top: 8px; }
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 24px; }
+.mt-4 { margin-top: 32px; }
+
+.mb-1 { margin-bottom: 8px; }
+.mb-2 { margin-bottom: 16px; }
+.mb-3 { margin-bottom: 24px; }
+.mb-4 { margin-bottom: 32px; }
+
+.p-1 { padding: 8px; }
+.p-2 { padding: 16px; }
+.p-3 { padding: 24px; }
+.p-4 { padding: 32px; }
+
+.heat-shadow {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.heat-shadow-red {
+    box-shadow: 0 4px 20px rgba(249, 66, 58, 0.4);
+}
+

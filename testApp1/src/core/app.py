@@ -399,6 +399,75 @@ def settings():
     """Application Settings"""
     return render_template('settings.html')
 
+# -----------------------------
+# Games UI (Index + Detail)
+# -----------------------------
+
+@app.route('/games')
+def games_index():
+    """Games index page - Heat themed with filters and game cards.
+    Uses mock data initially; will be wired to DatabaseManager.list_games.
+    """
+    # Mock data structure for initial UI wiring
+    mock_games = [
+        {
+            'id': 1,
+            'game_date': int(datetime(2025, 10, 6).timestamp()),
+            'team': 'Heat',
+            'opponent': 'Bucks',
+            'is_home': True,
+            'team_score': 66,
+            'player_scorecards_count': 8,
+        },
+        {
+            'id': 2,
+            'game_date': int(datetime(2025, 10, 4).timestamp()),
+            'team': 'Heat',
+            'opponent': 'Magic',
+            'is_home': False,
+            'team_score': 72,
+            'player_scorecards_count': 10,
+        },
+    ]
+    return render_template('games.html', games=mock_games)
+
+
+@app.route('/games/<int:game_id>')
+def game_detail(game_id: int):
+    """Game detail page - Shows team scorecard and player performances.
+    Uses mock data initially; will be wired to DatabaseManager.get_game.
+    """
+    # Mock detail payload
+    mock = {
+        'meta': {
+            'id': game_id,
+            'game_date': int(datetime(2025, 10, 6).timestamp()),
+            'team': 'Heat',
+            'opponent': 'Bucks',
+            'is_home': True,
+            'venue': 'Kaseya Center',
+            'final_score_team': 110,
+            'final_score_opp': 105,
+        },
+        'teamScorecard': {
+            'score': 66,
+            'source': 'csv',
+            'note': 'Auto-calculated from CSV',
+        },
+        'playerScorecards': [
+            {'player_name': 'Jimmy Butler', 'bars': [], 'totals': {'positive': 24, 'negative': 8}},
+            {'player_name': 'Bam Adebayo', 'bars': [], 'totals': {'positive': 20, 'negative': 6}},
+            {'player_name': 'Tyler Herro', 'bars': [], 'totals': {'positive': 18, 'negative': 9}},
+        ],
+        'roster': [
+            {'player_name': 'Jimmy Butler', 'status': 'active', 'minutes': 34, 'points': 22, 'rebounds': 6, 'assists': 5},
+            {'player_name': 'Bam Adebayo', 'status': 'active', 'minutes': 36, 'points': 24, 'rebounds': 11, 'assists': 4},
+            {'player_name': 'Tyler Herro', 'status': 'active', 'minutes': 31, 'points': 19, 'rebounds': 4, 'assists': 3},
+        ],
+    }
+
+    return render_template('game_detail.html', game=mock)
+
 @app.route('/scorecard')
 def scorecard():
     """ScoreCard dashboard route"""

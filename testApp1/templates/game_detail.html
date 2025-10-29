@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Game Detail - IntegrityHoops{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/miami-heat-professional.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="heat-container">
+  <div class="heat-dashboard-header fade-in">
+    <h1 class="text-neon-red" style="font-family: 'Orbitron', sans-serif;">
+      {{ game.meta.team }} vs {{ game.meta.opponent }}
+    </h1>
+    <p>
+      <span class="heat-badge heat-badge-outline">{{ 'HOME' if game.meta.is_home else 'AWAY' }}</span>
+      <span class="heat-badge heat-badge-outline">{{ game.meta.venue }}</span>
+    </p>
+  </div>
+
+  <div class="heat-grid heat-grid-3">
+    <div class="heat-stat-card">
+      <div class="heat-stat-value">{{ game.teamScorecard.score }}</div>
+      <div class="heat-stat-label">Team Cog Score</div>
+    </div>
+    <div class="heat-stat-card">
+      <div class="heat-stat-value">{{ game.meta.final_score_team }}</div>
+      <div class="heat-stat-label">Team Points</div>
+    </div>
+    <div class="heat-stat-card">
+      <div class="heat-stat-value">{{ game.meta.final_score_opp }}</div>
+      <div class="heat-stat-label">Opponent Points</div>
+    </div>
+  </div>
+
+  <div class="heat-card mt-3 fade-in">
+    <h2 class="heat-section-title">OVERVIEW</h2>
+    <div class="heat-grid heat-grid-2">
+      <div>
+        <canvas id="teamCategoryChart" height="160"></canvas>
+      </div>
+      <div>
+        <canvas id="playerComparisonChart" height="160"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="heat-card mt-3 fade-in">
+    <h2 class="heat-section-title">PLAYER PERFORMANCES</h2>
+    <table class="heat-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Minutes</th>
+          <th>PTS</th>
+          <th>REB</th>
+          <th>AST</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in game.roster %}
+        <tr>
+          <td>{{ r.player_name }}</td>
+          <td>{{ r.minutes }}</td>
+          <td>{{ r.points }}</td>
+          <td>{{ r.rebounds }}</td>
+          <td>{{ r.assists }}</td>
+          <td>
+            <span class="heat-badge {% if r.status == 'active' %}heat-badge-red{% else %}heat-badge-outline{% endif %}">{{ r.status|upper }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <script type="application/json" id="game-data-json">{{ game | tojson }}</script>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}
+
+
