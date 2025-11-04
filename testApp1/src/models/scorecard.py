@@ -9,6 +9,7 @@ class Scorecard:
     """
     
     def __init__(self, player_name: str, date_created: Optional[int] = None, 
+                 game_id: Optional[str] = None,
                  space_read_live_dribble: int = 0, space_read_catch: int = 0,
                  space_read_live_dribble_negative: int = 0, space_read_catch_negative: int = 0,
                  dm_catch_back_to_back_positive: int = 0, dm_catch_back_to_back_negative: int = 0,
@@ -101,6 +102,7 @@ class Scorecard:
         """
         self.player_name = player_name
         self.date_created = date_created or int(datetime.now().timestamp())
+        self.game_id = game_id
         self.space_read_live_dribble = space_read_live_dribble
         self.space_read_catch = space_read_catch
         self.space_read_live_dribble_negative = space_read_live_dribble_negative
@@ -179,6 +181,7 @@ class Scorecard:
         return {
             'player_name': self.player_name,
             'date_created': self.date_created,
+            'game_id': self.game_id,
             'space_read_live_dribble': self.space_read_live_dribble,
             'space_read_catch': self.space_read_catch,
             'space_read_live_dribble_negative': self.space_read_live_dribble_negative,
@@ -418,6 +421,7 @@ class Scorecard:
         return cls(
             data['player_name'], 
             data['date_created'],
+            data.get('game_id'),
             data.get('space_read_live_dribble', 0),
             data.get('space_read_catch', 0),
             data.get('space_read_live_dribble_negative', 0),

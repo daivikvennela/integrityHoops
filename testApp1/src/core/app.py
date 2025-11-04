@@ -223,6 +223,79 @@ def api_add_team_cog_score():
         logger.exception('Error adding team cog score')
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/team-statistics', methods=['GET'])
+def api_team_statistics():
+    """Get team statistics over time for cognitive categories.
+    
+    Query params:
+      category: Optional category name (if not provided, returns all categories)
+    
+    Returns:
+      JSON with statistics grouped by game date
+    """
+    try:
+        from src.utils.statistics_calculator import StatisticsCalculator
+        from datetime import datetime
+        
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        category = request.args.get('category')  # Optional: filter by category
+        
+        # Get all games ordered by date
+        games = db_manager.get_all_games()
+        
+        # Build statistics data
+        statistics_data = []
+        
+        for game in games:
+            # Get all scorecards for this game
+            scorecards = db_manager.get_scorecards_by_game(game.id)
+            
+            if not scorecards:
+                continue
+            
+            # Calculate statistics
+            if category:
+                # Single category view
+                percentage = StatisticsCalculator.calculate_category_percentage(scorecards, category)
+                if percentage is not None:
+                    # Convert date to YYYY-MM-DD format for frontend
+                    date_obj = datetime.fromtimestamp(game.date)
+                    statistics_data.append({
+                        'date': date_obj.strftime('%Y-%m-%d'),
+                        'date_string': game.date_string,
+                        'category': category,
+                        'percentage': percentage,
+                        'game_id': game.id,
+                        'opponent': game.opponent
+                    })
+            else:
+                # All categories view
+                all_stats = StatisticsCalculator.calculate_all_categories(scorecards)
+                date_obj = datetime.fromtimestamp(game.date)
+                for cat, percentage in all_stats.items():
+                    if percentage is not None:
+                        statistics_data.append({
+                            'date': date_obj.strftime('%Y-%m-%d'),
+                            'date_string': game.date_string,
+                            'category': cat,
+                            'percentage': percentage,
+                            'game_id': game.id,
+                            'opponent': game.opponent
+                        })
+        
+        # Sort by date
+        statistics_data.sort(key=lambda x: x['date'])
+        
+        return jsonify({
+            'success': True,
+            'statistics': statistics_data,
+            'category': category
+        })
+        
+    except Exception as e:
+        logger.exception('Error fetching team statistics')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/cog-scores/player', methods=['POST'])
 def api_add_player_cog_score():
     try:
@@ -726,6 +799,18 @@ def smartdash_upload():
             
             # Get all players for the dropdown - using configured absolute database path
             db_manager = DatabaseManager(app.config['DB_PATH'])
+            
+            # Extract game metadata and create/get game
+            game_id = None
+            if 'Timeline' in processed_df.columns and len(processed_df) > 0:
+                from src.utils.game_id_generator import parse_game_metadata
+                timeline_value = processed_df['Timeline'].iloc[0]
+                date_string, team, opponent = parse_game_metadata(str(timeline_value))
+                if date_string and opponent:
+                    game = db_manager.get_or_create_game(date_string, opponent, team or "Heat")
+                    if game:
+                        game_id = game.id
+            
             # Ensure database has required columns
             try:
                 with db_manager.get_connection() as conn:
@@ -779,7 +864,8 @@ def smartdash_upload():
                                  completeness=completeness,
                                  summary_stats=summary_stats,
                                  performance_summary_path=performance_summary_path,
-                                 players=players)
+                                 players=players,
+                                 game_id=game_id)
     
         except Exception as e:
             logger.exception("Error processing SmartDash upload")
@@ -804,6 +890,7 @@ def create_scorecard():
         
         date_created = int(datetime.now().timestamp())
         print(f"🔧 DEBUG: Date created: {date_created}")
+        game_id = request.form.get('game_id')  # Optional game_id
         space_read_live_dribble = int(request.form.get('space_read_live_dribble', 0))
         space_read_catch = int(request.form.get('space_read_catch', 0))
         space_read_live_dribble_negative = int(request.form.get('space_read_live_dribble_negative', 0))
@@ -883,6 +970,7 @@ def create_scorecard():
         scorecard = Scorecard(
             player_name=player_name, 
             date_created=date_created,
+            game_id=game_id,
             space_read_live_dribble=space_read_live_dribble,
             space_read_catch=space_read_catch,
             space_read_live_dribble_negative=space_read_live_dribble_negative,

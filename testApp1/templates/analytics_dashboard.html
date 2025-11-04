@@ -412,6 +412,31 @@
         </div>
     </div>
 
+    <!-- Team Statistics Over Time -->
+    <div class="card heat-analytics-card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Team Statistics Over Time</h4>
+            <div class="d-flex gap-2 align-items-center">
+                <select class="form-select form-select-sm" id="statisticsCategory" style="width: auto; background: #000; border: 1px solid rgba(249,66,58,0.3); color: white;">
+                    <option value="">All Categories</option>
+                    <option value="Cutting & Screening">Cutting & Screening</option>
+                    <option value="DM Catch">DM Catch</option>
+                    <option value="Finishing">Finishing</option>
+                    <option value="Footwork">Footwork</option>
+                    <option value="Passing">Passing</option>
+                    <option value="Positioning">Positioning</option>
+                    <option value="QB12 DM">QB12 DM</option>
+                    <option value="Relocation">Relocation</option>
+                    <option value="Space Read">Space Read</option>
+                    <option value="Transition">Transition</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body">
+            <canvas id="teamStatisticsChart" style="width: 100%; height: 400px;"></canvas>
+        </div>
+    </div>
+
     <!-- Current Scores List -->
     <div class="card heat-analytics-card mt-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -604,6 +629,8 @@
 {% block extra_js %}
 <!-- Apache ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<!-- Chart.js for Team Statistics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/slider.css') }}">
 <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
 <script src="{{ url_for('static', filename='js/analytics_dashboard.js') }}"></script>

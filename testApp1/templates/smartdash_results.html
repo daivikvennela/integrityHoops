@@ -517,6 +517,9 @@
                             Create New Scorecard
                         </h5>
                         <form method="POST" action="{{ url_for('create_scorecard') }}" id="createScorecardForm">
+                            {% if game_id %}
+                            <input type="hidden" name="game_id" value="{{ game_id }}">
+                            {% endif %}
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">

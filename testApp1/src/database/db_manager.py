@@ -4,6 +4,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from src.models.player import Player
 from src.models.scorecard import Scorecard
+from src.models.game import Game
 
 
 class DatabaseManager:
@@ -50,6 +51,18 @@ class DatabaseManager:
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
+            
+            # Create games table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS games (
+                    id TEXT PRIMARY KEY,
+                    date INTEGER NOT NULL,
+                    date_string TEXT NOT NULL,
+                    opponent TEXT NOT NULL,
+                    team TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
+                )
+            ''')
             
             # Create players table
             cursor.execute('''
@@ -132,7 +145,9 @@ class DatabaseManager:
                     relocation_corner_fill_negative INTEGER DEFAULT 0,
                     relocation_reverse_direction_positive INTEGER DEFAULT 0,
                     relocation_reverse_direction_negative INTEGER DEFAULT 0,
-                    FOREIGN KEY (player_name) REFERENCES players (name)
+                    game_id TEXT,
+                    FOREIGN KEY (player_name) REFERENCES players (name),
+                    FOREIGN KEY (game_id) REFERENCES games (id)
                 )
             ''')
 
@@ -165,6 +180,8 @@ class DatabaseManager:
             
             # Ensure any missing columns are added (handles upgrades)
             self._ensure_scorecard_columns(conn)
+            # Ensure game_id column exists in scorecards
+            self._ensure_game_id_column(conn)
             # Seed initial cog scores if empty
             self._seed_initial_cog_scores(conn)
             conn.commit()
@@ -211,6 +228,16 @@ class DatabaseManager:
         ]
         for c in columns:
             add(c)
+    
+    def _ensure_game_id_column(self, conn: sqlite3.Connection) -> None:
+        """Ensure game_id column exists in scorecards table."""
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(scorecards)")
+        existing = {row[1] for row in cursor.fetchall()}
+        
+        if 'game_id' not in existing:
+            cursor.execute("ALTER TABLE scorecards ADD COLUMN game_id TEXT")
+            print("Added game_id column to scorecards table")
 
     def _seed_initial_cog_scores(self, conn: sqlite3.Connection) -> None:
         """Seed initial team cog scores if tables are empty.
@@ -584,7 +611,7 @@ class DatabaseManager:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    '''SELECT player_name, date_created,
+                    '''SELECT player_name, date_created, game_id,
                         space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative,
                         dm_catch_back_to_back_positive, dm_catch_back_to_back_negative, dm_catch_uncontested_shot_positive, dm_catch_uncontested_shot_negative,
                         dm_catch_swing_positive, dm_catch_swing_negative, dm_catch_drive_pass_positive, dm_catch_drive_pass_negative,
@@ -618,18 +645,19 @@ class DatabaseManager:
                     scorecard = Scorecard(
                         row[0],  # player_name
                         row[1],  # date_created
-                        row[2], row[3], row[4], row[5],
-                        row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15],
-                        row[16], row[17], row[18], row[19], row[20], row[21], row[22], row[23], row[24], row[25],
-                        row[26], row[27], row[28], row[29], row[30], row[31], row[32], row[33],
+                        row[2],  # game_id
+                        row[3], row[4], row[5], row[6],
+                        row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16],
+                        row[17], row[18], row[19], row[20], row[21], row[22], row[23], row[24], row[25], row[26],
+                        row[27], row[28], row[29], row[30], row[31], row[32], row[33], row[34],
                         # Off Ball - Positioning
-                        row[34], row[35], row[36], row[37],
+                        row[35], row[36], row[37], row[38],
                         # Off Ball - Transition
-                        row[38], row[39],
+                        row[39], row[40],
                         # Cutting & Screening
-                        row[40], row[41], row[42], row[43], row[44], row[45], row[46], row[47], row[48], row[49],
+                        row[41], row[42], row[43], row[44], row[45], row[46], row[47], row[48], row[49], row[50],
                         # Relocation
-                        row[50], row[51], row[52], row[53], row[54], row[55], row[56], row[57], row[58], row[59], row[60], row[61], row[62], row[63],
+                        row[51], row[52], row[53], row[54], row[55], row[56], row[57], row[58], row[59], row[60], row[61], row[62], row[63], row[64],
                     )
                     scorecards.append(scorecard)
                 
@@ -671,6 +699,203 @@ class DatabaseManager:
         """
         scorecards = self.get_scorecards_by_player(player.name)
         player.scorecards = scorecards
+    
+    def create_game(self, game: Game) -> bool:
+        """
+        Create a new game in the database.
+        
+        Args:
+            game (Game): Game object to create
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''INSERT INTO games (id, date, date_string, opponent, team, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?)''',
+                    (game.id, game.date, game.date_string, game.opponent, game.team, game.created_at)
+                )
+                conn.commit()
+                return True
+        except sqlite3.IntegrityError:
+            # Game already exists (id is primary key)
+            return True
+        except Exception as e:
+            print(f"Error creating game: {e}")
+            return False
+    
+    def get_game_by_id(self, game_id: str) -> Optional[Game]:
+        """
+        Get a game by its ID.
+        
+        Args:
+            game_id (str): Game ID
+            
+        Returns:
+            Optional[Game]: Game object if found, None otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT id, date, date_string, opponent, team, created_at FROM games WHERE id = ?',
+                    (game_id,)
+                )
+                row = cursor.fetchone()
+                if row:
+                    return Game(
+                        game_id=row[0],
+                        date=row[1],
+                        date_string=row[2],
+                        opponent=row[3],
+                        team=row[4],
+                        created_at=row[5]
+                    )
+                return None
+        except Exception as e:
+            print(f"Error getting game: {e}")
+            return None
+    
+    def get_or_create_game(self, date_string: str, opponent: str, team: str = "Heat") -> Optional[Game]:
+        """
+        Get existing game or create a new one.
+        
+        Args:
+            date_string (str): Date string in MM.DD.YY format
+            opponent (str): Opponent team name
+            team (str): Team name (default: "Heat")
+            
+        Returns:
+            Optional[Game]: Game object, or None if creation fails
+        """
+        from src.utils.game_id_generator import generate_game_id, date_string_to_timestamp
+        
+        game_id = generate_game_id(date_string, opponent, team)
+        existing_game = self.get_game_by_id(game_id)
+        
+        if existing_game:
+            return existing_game
+        
+        # Create new game
+        date_timestamp = date_string_to_timestamp(date_string)
+        if date_timestamp is None:
+            print(f"Error: Could not parse date string: {date_string}")
+            return None
+        
+        new_game = Game(
+            game_id=game_id,
+            date=date_timestamp,
+            date_string=date_string,
+            opponent=opponent,
+            team=team
+        )
+        
+        if self.create_game(new_game):
+            return new_game
+        return None
+    
+    def get_scorecards_by_game(self, game_id: str) -> List[Scorecard]:
+        """
+        Get all scorecards for a specific game.
+        
+        Args:
+            game_id (str): Game ID
+            
+        Returns:
+            List[Scorecard]: List of scorecards for the game
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT player_name, date_created, game_id,
+                        space_read_live_dribble, space_read_catch, space_read_live_dribble_negative, space_read_catch_negative,
+                        dm_catch_back_to_back_positive, dm_catch_back_to_back_negative, dm_catch_uncontested_shot_positive, dm_catch_uncontested_shot_negative,
+                        dm_catch_swing_positive, dm_catch_swing_negative, dm_catch_drive_pass_positive, dm_catch_drive_pass_negative,
+                        dm_catch_drive_swing_skip_pass_positive, dm_catch_drive_swing_skip_pass_negative,
+                        qb12_strong_side_positive, qb12_strong_side_negative, qb12_baseline_positive, qb12_baseline_negative,
+                        qb12_fill_behind_positive, qb12_fill_behind_negative, qb12_weak_side_positive, qb12_weak_side_negative,
+                        qb12_roller_positive, qb12_roller_negative, qb12_skip_pass_positive, qb12_skip_pass_negative,
+                        qb12_cutter_positive, qb12_cutter_negative,
+                        driving_paint_touch_positive, driving_paint_touch_negative, driving_physicality_positive, driving_physicality_negative,
+                        offball_positioning_create_shape_positive, offball_positioning_create_shape_negative,
+                        offball_positioning_adv_awareness_positive, offball_positioning_adv_awareness_negative,
+                        transition_effort_pace_positive, transition_effort_pace_negative,
+                        cs_denial_positive, cs_denial_negative, cs_movement_positive, cs_movement_negative,
+                        cs_body_to_body_positive, cs_body_to_body_negative, cs_screen_principle_positive, cs_screen_principle_negative,
+                        cs_cut_fill_positive, cs_cut_fill_negative,
+                        relocation_weak_corner_positive, relocation_weak_corner_negative,
+                        relocation_45_cut_positive, relocation_45_cut_negative,
+                        relocation_slide_away_positive, relocation_slide_away_negative,
+                        relocation_fill_behind_positive, relocation_fill_behind_negative,
+                        relocation_dunker_baseline_positive, relocation_dunker_baseline_negative,
+                        relocation_corner_fill_positive, relocation_corner_fill_negative,
+                        relocation_reverse_direction_positive, relocation_reverse_direction_negative
+                     FROM scorecards WHERE game_id = ? ORDER BY date_created DESC''',
+                    (game_id,)
+                )
+                rows = cursor.fetchall()
+                
+                scorecards = []
+                for row in rows:
+                    scorecard = Scorecard(
+                        row[0],  # player_name
+                        row[1],  # date_created
+                        row[2],  # game_id
+                        row[3], row[4], row[5], row[6],
+                        row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], row[16],
+                        row[17], row[18], row[19], row[20], row[21], row[22], row[23], row[24], row[25], row[26],
+                        row[27], row[28], row[29], row[30], row[31], row[32], row[33], row[34],
+                        # Off Ball - Positioning
+                        row[35], row[36], row[37], row[38],
+                        # Off Ball - Transition
+                        row[39], row[40],
+                        # Cutting & Screening
+                        row[41], row[42], row[43], row[44], row[45], row[46], row[47], row[48], row[49], row[50],
+                        # Relocation
+                        row[51], row[52], row[53], row[54], row[55], row[56], row[57], row[58], row[59], row[60],
+                        row[61], row[62], row[63], row[64]
+                    )
+                    scorecards.append(scorecard)
+                
+                return scorecards
+        except Exception as e:
+            print(f"Error getting scorecards by game: {e}")
+            return []
+    
+    def get_all_games(self) -> List[Game]:
+        """
+        Get all games from the database.
+        
+        Returns:
+            List[Game]: List of all games
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT id, date, date_string, opponent, team, created_at FROM games ORDER BY date DESC'
+                )
+                rows = cursor.fetchall()
+                
+                games = []
+                for row in rows:
+                    games.append(Game(
+                        game_id=row[0],
+                        date=row[1],
+                        date_string=row[2],
+                        opponent=row[3],
+                        team=row[4],
+                        created_at=row[5]
+                    ))
+                
+                return games
+        except Exception as e:
+            print(f"Error getting all games: {e}")
+            return []
     
     def get_database_stats(self) -> Dict[str, Any]:
         """

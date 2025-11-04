@@ -570,4 +570,267 @@ async function deleteScoreFromList(scoreId) {
   }
 }
 
+// Team Statistics Chart
+(function() {
+  'use strict';
+  
+  const chartCanvas = document.getElementById('teamStatisticsChart');
+  const categorySelect = document.getElementById('statisticsCategory');
+  
+  if (!chartCanvas || !categorySelect) return;
+  
+  let statisticsChart = null;
+  
+  // Category colors
+  const categoryColors = {
+    'Cutting & Screening': '#FF6B6B',
+    'DM Catch': '#4ECDC4',
+    'Finishing': '#FFE66D',
+    'Footwork': '#95E1D3',
+    'Passing': '#F38181',
+    'Positioning': '#AA96DA',
+    'QB12 DM': '#FCBAD3',
+    'Relocation': '#A8E6CF',
+    'Space Read': '#FFD3A5',
+    'Transition': '#C7CEEA'
+  };
+  
+  async function loadTeamStatistics(category = '') {
+    try {
+      const url = category 
+        ? `/api/team-statistics?category=${encodeURIComponent(category)}`
+        : '/api/team-statistics';
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (!data.success || !data.statistics) {
+        console.error('Failed to load statistics:', data.error);
+        return;
+      }
+      
+      updateStatisticsChart(data.statistics, category);
+    } catch (error) {
+      console.error('Error loading team statistics:', error);
+    }
+  }
+  
+  function updateStatisticsChart(statistics, category) {
+    const ctx = chartCanvas.getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (statisticsChart) {
+      statisticsChart.destroy();
+    }
+    
+    // Group data by date
+    const dates = [...new Set(statistics.map(s => s.date))].sort();
+    
+    // Format dates for display (MM/DD/YY)
+    const formattedDates = dates.map(date => {
+      const d = new Date(date);
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const year = String(d.getFullYear()).slice(-2);
+      return `${month}/${day}/${year}`;
+    });
+    
+    if (category) {
+      // Single category view
+      const categoryData = statistics
+        .filter(s => s.category === category)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      
+      const percentages = dates.map(date => {
+        const point = categoryData.find(d => d.date === date);
+        return point ? point.percentage : null;
+      });
+      
+      statisticsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: formattedDates,
+          datasets: [{
+            label: category,
+            data: percentages,
+            borderColor: categoryColors[category] || '#CCCCCC',
+            backgroundColor: categoryColors[category] ? categoryColors[category] + '20' : 'rgba(204, 204, 204, 0.2)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: categoryColors[category] || '#CCCCCC',
+            pointBorderColor: '#000',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: {
+                color: '#fff',
+                font: {
+                  size: 14,
+                  weight: 'bold'
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              titleColor: '#F9423A',
+              bodyColor: '#fff',
+              borderColor: '#F9423A',
+              borderWidth: 2,
+              padding: 12,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#fff',
+                font: {
+                  size: 12
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              ticks: {
+                color: '#fff',
+                font: {
+                  size: 12
+                },
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              min: 0,
+              max: 100
+            }
+          }
+        }
+      });
+    } else {
+      // All categories view
+      const categories = [...new Set(statistics.map(s => s.category))];
+      
+      const datasets = categories.map(cat => {
+        const categoryData = statistics
+          .filter(s => s.category === cat)
+          .sort((a, b) => a.date.localeCompare(b.date));
+        
+        const percentages = dates.map(date => {
+          const point = categoryData.find(d => d.date === date);
+          return point ? point.percentage : null;
+        });
+        
+        return {
+          label: cat,
+          data: percentages,
+          borderColor: categoryColors[cat] || '#CCCCCC',
+          backgroundColor: categoryColors[cat] ? categoryColors[cat] + '20' : 'rgba(204, 204, 204, 0.2)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: categoryColors[cat] || '#CCCCCC',
+          pointBorderColor: '#000',
+          pointBorderWidth: 1.5
+        };
+      });
+      
+      statisticsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: formattedDates,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: {
+                color: '#fff',
+                font: {
+                  size: 12
+                },
+                padding: 15,
+                usePointStyle: true
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              titleColor: '#F9423A',
+              bodyColor: '#fff',
+              borderColor: '#F9423A',
+              borderWidth: 2,
+              padding: 12,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#fff',
+                font: {
+                  size: 11
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              ticks: {
+                color: '#fff',
+                font: {
+                  size: 11
+                },
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              min: 0,
+              max: 100
+            }
+          }
+        }
+      });
+    }
+  }
+  
+  // Load statistics on page load
+  loadTeamStatistics();
+  
+  // Handle category selector change
+  categorySelect.addEventListener('change', function() {
+    loadTeamStatistics(this.value);
+  });
+})();
+
 
