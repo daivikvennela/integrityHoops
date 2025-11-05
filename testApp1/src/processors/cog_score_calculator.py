@@ -46,7 +46,15 @@ class CogScoreCalculator:
         
     def load_csv(self) -> pd.DataFrame:
         """Load and return the CSV data."""
-        self.df = pd.read_csv(self.csv_path)
+        # Simple approach - let pandas handle it
+        try:
+            self.df = pd.read_csv(self.csv_path, low_memory=False)
+        except Exception as e:
+            # If that fails, try with different encoding
+            try:
+                self.df = pd.read_csv(self.csv_path, encoding='latin-1', low_memory=False)
+            except Exception as e2:
+                raise Exception(f"Failed to read CSV file: {str(e2)}")
         
         # Extract game name and date from first row's Timeline column
         if not self.df.empty and 'Timeline' in self.df.columns:

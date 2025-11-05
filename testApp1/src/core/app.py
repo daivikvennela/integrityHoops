@@ -330,13 +330,25 @@ def api_team_statistics():
             logger.error(f"Test CSV directory not found: {test_csvs_dir}")
             return jsonify({'success': False, 'error': 'Test CSV directory not found'}), 500
         
-        # Get all CSV files
-        csv_files = [f for f in os.listdir(test_csvs_dir) if f.endswith('.csv')]
+        # Get all CSV files (exclude .numbers files and other non-CSV files)
+        csv_files = [f for f in os.listdir(test_csvs_dir) if f.endswith('.csv') and not f.endswith('.numbers')]
         csv_files.sort()  # Sort by filename (which includes date)
+        
+        if not csv_files:
+            logger.warning(f"No CSV files found in {test_csvs_dir}")
+            return jsonify({
+                'success': True,
+                'statistics': [],
+                'category': category,
+                'overall_scores': {},
+                'game_info': {}
+            })
         
         statistics_data = []
         overall_scores = {}
         game_info = {}  # Store filename and opponent per date
+        processing_errors = []  # Track errors for diagnostics
+        processed_files = []  # Track successfully processed files
         
         # Process each CSV file
         for csv_file in csv_files:
@@ -346,13 +358,17 @@ def api_team_statistics():
             date_string, date_iso, opponent, full_filename = parse_date_from_filename(csv_file)
             
             if not date_string or not date_iso:
-                logger.warning(f"Could not parse date from filename: {csv_file}")
+                error_msg = f"Could not parse date from filename: {csv_file}"
+                logger.warning(error_msg)
+                processing_errors.append(error_msg)
                 continue
             
             try:
                 # Calculate statistics using CogScoreCalculator
                 calculator = CogScoreCalculator(csv_path)
                 scores, overall = calculator.calculate_all_scores()
+                
+                logger.info(f"Successfully processed {csv_file}: overall={overall:.2f}%, scores keys={list(scores.keys())}")
                 
                 # Store overall score
                 overall_scores[date_iso] = overall
@@ -365,6 +381,7 @@ def api_team_statistics():
                 }
                 
                 # Map CSV column names to display categories and build statistics
+                categories_found = 0
                 for csv_col, display_name in COLUMN_NAME_MAP.items():
                     if csv_col in scores and display_name in DISPLAY_CATEGORIES:
                         score_data = scores[csv_col]
@@ -378,9 +395,19 @@ def api_team_statistics():
                             'opponent': opponent,
                             'filename': full_filename
                         })
+                        categories_found += 1
+                
+                logger.info(f"Added {categories_found} categories from {csv_file}")
+                processed_files.append(csv_file)
                 
             except Exception as e:
-                logger.exception(f"Error processing CSV file {csv_file}: {str(e)}")
+                error_msg = str(e)
+                full_error = f"Error processing CSV file {csv_file}: {error_msg}"
+                logger.error(full_error, exc_info=True)
+                processing_errors.append(full_error)
+                # Log more details about the error
+                if "Cannot convert numpy.ndarray" in error_msg:
+                    logger.error(f"This is likely a pandas/numpy version compatibility issue. File: {csv_file}")
                 continue
         
         # Filter by category if specified
@@ -390,13 +417,30 @@ def api_team_statistics():
         # Sort by date
         statistics_data.sort(key=lambda x: x['date'])
         
-        return jsonify({
+        # Log summary
+        logger.info(f"Team statistics summary: {len(processed_files)} files processed, {len(statistics_data)} data points, {len(processing_errors)} errors")
+        
+        # Build response with diagnostic info
+        response_data = {
             'success': True,
             'statistics': statistics_data,
             'category': category,
             'overall_scores': overall_scores,  # Overall cog scores by date
-            'game_info': game_info  # Additional game metadata
-        })
+            'game_info': game_info,  # Additional game metadata
+            'diagnostics': {
+                'files_found': len(csv_files),
+                'files_processed': len(processed_files),
+                'data_points': len(statistics_data),
+                'errors': processing_errors if processing_errors else None
+            }
+        }
+        
+        # If we have files but no data, this is a warning condition
+        if csv_files and not statistics_data:
+            logger.warning(f"Found {len(csv_files)} CSV files but generated 0 statistics data points. This may indicate a data processing issue.")
+            response_data['warning'] = f'Processed {len(processed_files)} files but found no statistics data. Check logs for errors.'
+        
+        return jsonify(response_data)
         
     except Exception as e:
         logger.exception('Error fetching team statistics')
