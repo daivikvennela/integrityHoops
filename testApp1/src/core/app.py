@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file, make_response
 from werkzeug.utils import secure_filename
 import json
 from datetime import datetime
@@ -221,6 +221,21 @@ def api_add_team_cog_score():
         return jsonify({'success': ok})
     except Exception as e:
         logger.exception('Error adding team cog score')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/reset', methods=['POST'])
+def api_reset_cog_scores():
+    """Clear all team and player cog scores (does not affect other data)."""
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        with db_manager.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM team_cog_scores')
+            cursor.execute('DELETE FROM player_cog_scores')
+            conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.exception('Error resetting cog scores')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def parse_date_from_filename(filename: str) -> tuple:
@@ -464,6 +479,317 @@ def api_calculate_cog_score_from_csv():
                 
     except Exception as e:
         logger.exception('Error calculating cog scores from CSV')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/team-statistics/export-pdf', methods=['POST'])
+def api_export_team_statistics_pdf():
+    """Generate premium PDF report with team statistics, charts, and analytics insights."""
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from reportlab.pdfgen import canvas
+        from io import BytesIO
+        import base64
+        
+        data = request.get_json() or {}
+        chart_image = data.get('chart_image', '')
+        statistics = data.get('statistics', [])
+        overall_scores = data.get('overall_scores', {})
+        game_info = data.get('game_info', {})
+        category = data.get('category', '')
+        insights = data.get('insights', {})
+        
+        if not chart_image:
+            return jsonify({'success': False, 'error': 'No chart image provided'}), 400
+        
+        # Create PDF buffer
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, 
+                               rightMargin=0.75*inch, leftMargin=0.75*inch,
+                               topMargin=0.75*inch, bottomMargin=0.75*inch)
+        
+        # Container for PDF elements
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#F9423A'),
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=16,
+            textColor=colors.HexColor('#F9423A'),
+            spaceAfter=12,
+            fontName='Helvetica-Bold'
+        )
+        
+        subheading_style = ParagraphStyle(
+            'CustomSubheading',
+            parent=styles['Heading3'],
+            fontSize=14,
+            textColor=colors.black,
+            spaceAfter=10,
+            fontName='Helvetica-Bold'
+        )
+        
+        # Cover Page
+        elements.append(Spacer(1, 2*inch))
+        elements.append(Paragraph('HEAT TEAM STATISTICS', title_style))
+        elements.append(Spacer(1, 0.5*inch))
+        elements.append(Paragraph('Premium Analytics Report', styles['Normal']))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Date range
+        if overall_scores:
+            dates = sorted(overall_scores.keys())
+            if dates:
+                date_str = f"{dates[0]} - {dates[-1]}"
+                elements.append(Paragraph(f'<i>Report Period: {date_str}</i>', styles['Normal']))
+        
+        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Paragraph(f'<i>Generated: {datetime.now().strftime("%B %d, %Y %I:%M %p")}</i>', styles['Normal']))
+        elements.append(PageBreak())
+        
+        # Executive Summary
+        elements.append(Paragraph('Executive Summary', heading_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        if insights.get('overall_average'):
+            avg = insights['overall_average']
+            trend = insights.get('overall_trend', '0.00')
+            trend_text = f"<b>+{trend}%</b>" if float(trend) > 0 else f"<b>{trend}%</b>"
+            elements.append(Paragraph(f'Overall Cognitive Score Average: <b>{avg}%</b>', styles['Normal']))
+            elements.append(Paragraph(f'Overall Trend: {trend_text}', styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        # Top Categories
+        if insights.get('top_categories'):
+            elements.append(Paragraph('Top Performing Categories:', subheading_style))
+            for cat in insights['top_categories']:
+                elements.append(Paragraph(f"• {cat['category']}: {cat['average']}%", styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        # Areas for Improvement
+        if insights.get('weak_categories'):
+            elements.append(Paragraph('Areas for Improvement:', subheading_style))
+            for cat in insights['weak_categories']:
+                elements.append(Paragraph(f"• {cat['category']}: {cat['average']}%", styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        # Improving/Declining Categories
+        if insights.get('improving_categories'):
+            elements.append(Paragraph('Improving Categories:', subheading_style))
+            for cat in insights['improving_categories']:
+                elements.append(Paragraph(f"• {cat['category']}: +{cat['trend']}% (avg: {cat['average']}%)", styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        if insights.get('declining_categories'):
+            elements.append(Paragraph('Categories Needing Attention:', subheading_style))
+            for cat in insights['declining_categories']:
+                elements.append(Paragraph(f"• {cat['category']}: {cat['trend']}% (avg: {cat['average']}%)", styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+        
+        elements.append(PageBreak())
+        
+        # Chart Section
+        elements.append(Paragraph('Performance Visualization', heading_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        if category:
+            elements.append(Paragraph(f'<i>Category: {category}</i>', styles['Normal']))
+        else:
+            elements.append(Paragraph('<i>All Categories Overview</i>', styles['Normal']))
+        
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Decode and add chart image
+        try:
+            chart_data = chart_image.split(',')[1] if ',' in chart_image else chart_image
+            chart_bytes = base64.b64decode(chart_data)
+            chart_img = Image(BytesIO(chart_bytes), width=7*inch, height=5*inch)
+            elements.append(chart_img)
+        except Exception as e:
+            logger.error(f"Error adding chart image: {e}")
+            elements.append(Paragraph('<i>Chart image could not be included</i>', styles['Normal']))
+        
+        elements.append(PageBreak())
+        
+        # Overall Scores Table
+        if overall_scores:
+            elements.append(Paragraph('Game-by-Game Overall Scores', heading_style))
+            elements.append(Spacer(1, 0.2*inch))
+            
+            table_data = [['Date', 'Opponent', 'Overall Score']]
+            for date in sorted(overall_scores.keys()):
+                score = overall_scores[date]
+                info = game_info.get(date, {})
+                opponent = info.get('opponent', 'Unknown')
+                date_label = info.get('date_string', date).replace('.', '/')
+                table_data.append([date_label, opponent, f"{score:.2f}%"])
+            
+            table = Table(table_data, colWidths=[2*inch, 2*inch, 2*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F9423A')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FFF5F5')])
+            ]))
+            elements.append(table)
+            elements.append(PageBreak())
+        
+        # Category Statistics Summary
+        if insights.get('stats_summary'):
+            elements.append(Paragraph('Category Performance Summary', heading_style))
+            elements.append(Spacer(1, 0.2*inch))
+            
+            table_data = [['Category', 'Average', 'Min', 'Max', 'Trend']]
+            for cat, stats in sorted(insights['stats_summary'].items(), 
+                                   key=lambda x: float(x[1]['average']), reverse=True):
+                table_data.append([
+                    cat,
+                    f"{stats['average']}%",
+                    f"{stats['min']}%",
+                    f"{stats['max']}%",
+                    f"{stats['trend']}%"
+                ])
+            
+            table = Table(table_data, colWidths=[2.5*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F9423A')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FFF5F5')]),
+                ('FONTSIZE', (0, 1), (-1, -1), 10)
+            ]))
+            elements.append(table)
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Get PDF bytes
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        
+        # Return PDF as response
+        response = make_response(pdf_bytes)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename=heat_team_statistics_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+        return response
+        
+    except Exception as e:
+        logger.exception('Error generating PDF report')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/cog-scores/reseed-from-testcases', methods=['POST'])
+def api_reseed_from_testcases():
+    """Recompute and insert/update team cog scores from the three known testcase CSVs.
+    Only inserts if the game (date + team + opponent) doesn't already exist.
+    The testcases are used to verify the calculator works correctly.
+    """
+    try:
+        # Locate test_csvs directory relative to this file
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))  # src/core
+        test_csvs_dir = os.path.abspath(os.path.join(current_file_dir, '..', '..', 'testcases', 'test_csvs'))
+
+        if not os.path.isdir(test_csvs_dir):
+            return jsonify({'success': False, 'error': f'Test CSV directory not found: {test_csvs_dir}'}), 500
+
+        # Fixed order of files to process (for testing calculator)
+        filenames = [
+            '10.04.25 Heat v Magic(team).csv',
+            '10.06.25 Heat v Bucks(team).csv',
+            '10.13.25 MIA v ATL(team).csv',
+        ]
+
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+
+        processed: list[dict] = []
+        skipped: list[dict] = []
+        errors: list[str] = []
+
+        for fname in filenames:
+            csv_path = os.path.join(test_csvs_dir, fname)
+            if not os.path.exists(csv_path):
+                errors.append(f'Missing file: {fname}')
+                continue
+
+            # Compute overall score (to verify calculator works)
+            calculator = CogScoreCalculator(csv_path)
+            scores, overall = calculator.calculate_all_scores()
+            overall_int = int(round(overall))
+
+            # Parse date/opponent from filename
+            date_string, date_iso, opponent, _ = parse_date_from_filename(fname)
+            if not date_iso:
+                errors.append(f'Could not parse date: {fname}')
+                continue
+
+            # Convert YYYY-MM-DD -> epoch seconds at midnight
+            dt = datetime.strptime(date_iso, '%Y-%m-%d')
+            ts = int(dt.timestamp())
+
+            # Check if this game already exists
+            if db_manager.team_cog_score_exists(ts, 'Heat', opponent or 'Unknown'):
+                skipped.append({
+                    'filename': fname,
+                    'date_iso': date_iso,
+                    'opponent': opponent,
+                    'overall': overall_int,
+                    'reason': 'Already exists'
+                })
+                continue
+
+            # Insert new score
+            result = db_manager.upsert_team_cog_score(
+                game_date=ts,
+                team='Heat',
+                opponent=opponent or 'Unknown',
+                score=overall_int,
+                source='csv',
+                note='Auto reseed'
+            )
+            if result is not None:
+                processed.append({
+                    'filename': fname,
+                    'date_iso': date_iso,
+                    'opponent': opponent,
+                    'overall': overall_int,
+                    'action': 'inserted' if result else 'updated'
+                })
+            else:
+                errors.append(f'Upsert failed: {fname}')
+
+        return jsonify({
+            'success': True,
+            'processed': processed,
+            'skipped': skipped,
+            'errors': errors
+        })
+    except Exception as e:
+        logger.exception('Error reseeding from testcases')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def scrape_company_data(company_name):
