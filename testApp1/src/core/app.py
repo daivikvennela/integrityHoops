@@ -223,9 +223,48 @@ def api_add_team_cog_score():
         logger.exception('Error adding team cog score')
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def parse_date_from_filename(filename: str) -> tuple:
+    """
+    Parse date and game info from CSV filename.
+    Expected format: "MM.DD.YY Team v Opponent(team).csv"
+    
+    Returns:
+        tuple: (date_string (MM.DD.YY), date_iso (YYYY-MM-DD), opponent, filename)
+    """
+    import re
+    from datetime import datetime
+    
+    # Extract date from filename (e.g., "10.04.25" from "10.04.25 Heat v Magic(team).csv")
+    date_match = re.match(r'(\d{2}\.\d{2}\.\d{2})', filename)
+    if not date_match:
+        return None, None, None, filename
+    
+    date_string = date_match.group(1)  # MM.DD.YY format
+    
+    # Parse date directly to avoid timezone issues
+    # MM.DD.YY -> YYYY-MM-DD (no timestamp conversion)
+    try:
+        dt = datetime.strptime(date_string, '%m.%d.%y')
+        date_iso = dt.strftime('%Y-%m-%d')  # Direct conversion to YYYY-MM-DD
+    except ValueError:
+        return None, None, None, filename
+    
+    # Extract opponent from filename (e.g., "Magic" from "10.04.25 Heat v Magic(team).csv")
+    # Try different patterns
+    opponent_match = re.search(r'v\s+([A-Za-z]+)', filename)
+    if opponent_match:
+        opponent = opponent_match.group(1)
+    else:
+        opponent = 'Unknown'
+    
+    return date_string, date_iso, opponent, filename
+
+
 @app.route('/api/team-statistics', methods=['GET'])
 def api_team_statistics():
     """Get team statistics over time for cognitive categories.
+    
+    Dynamically calculates data from CSV files in test_csvs folder.
     
     Query params:
       category: Optional category name (if not provided, returns all categories)
@@ -234,54 +273,104 @@ def api_team_statistics():
       JSON with statistics grouped by game date
     """
     try:
-        from src.utils.statistics_calculator import StatisticsCalculator
-        from datetime import datetime
-        
-        db_manager = DatabaseManager(app.config['DB_PATH'])
         category = request.args.get('category')  # Optional: filter by category
         
-        # Get all games ordered by date
-        games = db_manager.get_all_games()
+        # Map CSV column names to display names
+        COLUMN_NAME_MAP = {
+            'Cutting & Screeing': 'Cutting & Screening',  # Fix typo
+            'DM Catch': 'DM Catch',
+            'Driving': 'Driving',
+            'Finishing': 'Finishing',
+            'Footwork': 'Footwork',
+            'Passing': 'Passing',
+            'Positioning': 'Positioning',
+            'QB12 DM': 'QB12 DM',
+            'Relocation': 'Relocation',
+            'Space Read': 'Space Read',
+            'Transition': 'Transition'
+        }
         
-        # Build statistics data
+        # Categories we want to display (excluding Driving for now as it's not in the original list)
+        DISPLAY_CATEGORIES = [
+            'Cutting & Screening',
+            'DM Catch',
+            'Finishing',
+            'Footwork',
+            'Passing',
+            'Positioning',
+            'QB12 DM',
+            'Relocation',
+            'Space Read',
+            'Transition'
+        ]
+        
+        # Find all CSV files in test_csvs folder
+        # Use absolute path based on current file location
+        # app.py is at testApp1/src/core/app.py, test_csvs is at testApp1/testcases/test_csvs
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))  # src/core
+        test_csvs_dir = os.path.join(current_file_dir, '..', '..', 'testcases', 'test_csvs')
+        test_csvs_dir = os.path.abspath(test_csvs_dir)
+        
+        if not os.path.exists(test_csvs_dir):
+            logger.error(f"Test CSV directory not found: {test_csvs_dir}")
+            return jsonify({'success': False, 'error': 'Test CSV directory not found'}), 500
+        
+        # Get all CSV files
+        csv_files = [f for f in os.listdir(test_csvs_dir) if f.endswith('.csv')]
+        csv_files.sort()  # Sort by filename (which includes date)
+        
         statistics_data = []
+        overall_scores = {}
+        game_info = {}  # Store filename and opponent per date
         
-        for game in games:
-            # Get all scorecards for this game
-            scorecards = db_manager.get_scorecards_by_game(game.id)
+        # Process each CSV file
+        for csv_file in csv_files:
+            csv_path = os.path.join(test_csvs_dir, csv_file)
             
-            if not scorecards:
+            # Parse date and opponent from filename
+            date_string, date_iso, opponent, full_filename = parse_date_from_filename(csv_file)
+            
+            if not date_string or not date_iso:
+                logger.warning(f"Could not parse date from filename: {csv_file}")
                 continue
             
-            # Calculate statistics
-            if category:
-                # Single category view
-                percentage = StatisticsCalculator.calculate_category_percentage(scorecards, category)
-                if percentage is not None:
-                    # Convert date to YYYY-MM-DD format for frontend
-                    date_obj = datetime.fromtimestamp(game.date)
-                    statistics_data.append({
-                        'date': date_obj.strftime('%Y-%m-%d'),
-                        'date_string': game.date_string,
-                        'category': category,
-                        'percentage': percentage,
-                        'game_id': game.id,
-                        'opponent': game.opponent
-                    })
-            else:
-                # All categories view
-                all_stats = StatisticsCalculator.calculate_all_categories(scorecards)
-                date_obj = datetime.fromtimestamp(game.date)
-                for cat, percentage in all_stats.items():
-                    if percentage is not None:
+            try:
+                # Calculate statistics using CogScoreCalculator
+                calculator = CogScoreCalculator(csv_path)
+                scores, overall = calculator.calculate_all_scores()
+                
+                # Store overall score
+                overall_scores[date_iso] = overall
+                
+                # Store game info
+                game_info[date_iso] = {
+                    'filename': full_filename,
+                    'opponent': opponent,
+                    'date_string': date_string
+                }
+                
+                # Map CSV column names to display categories and build statistics
+                for csv_col, display_name in COLUMN_NAME_MAP.items():
+                    if csv_col in scores and display_name in DISPLAY_CATEGORIES:
+                        score_data = scores[csv_col]
+                        percentage = score_data['score']
+                        
                         statistics_data.append({
-                            'date': date_obj.strftime('%Y-%m-%d'),
-                            'date_string': game.date_string,
-                            'category': cat,
+                            'date': date_iso,
+                            'date_string': date_string,
+                            'category': display_name,
                             'percentage': percentage,
-                            'game_id': game.id,
-                            'opponent': game.opponent
+                            'opponent': opponent,
+                            'filename': full_filename
                         })
+                
+            except Exception as e:
+                logger.exception(f"Error processing CSV file {csv_file}: {str(e)}")
+                continue
+        
+        # Filter by category if specified
+        if category:
+            statistics_data = [s for s in statistics_data if s['category'] == category]
         
         # Sort by date
         statistics_data.sort(key=lambda x: x['date'])
@@ -289,7 +378,9 @@ def api_team_statistics():
         return jsonify({
             'success': True,
             'statistics': statistics_data,
-            'category': category
+            'category': category,
+            'overall_scores': overall_scores,  # Overall cog scores by date
+            'game_info': game_info  # Additional game metadata
         })
         
     except Exception as e:

@@ -609,19 +609,22 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
-      updateStatisticsChart(data.statistics, category);
+      updateStatisticsChart(data.statistics, category, data.overall_scores || {});
     } catch (error) {
       console.error('Error loading team statistics:', error);
     }
   }
   
-  function updateStatisticsChart(statistics, category) {
+  function updateStatisticsChart(statistics, category, overallScores = {}) {
     const ctx = chartCanvas.getContext('2d');
     
     // Destroy existing chart if it exists
     if (statisticsChart) {
       statisticsChart.destroy();
     }
+    
+    // Set canvas background to black via CSS
+    chartCanvas.style.backgroundColor = '#000000';
     
     // Group data by date
     const dates = [...new Set(statistics.map(s => s.date))].sort();
@@ -646,6 +649,8 @@ async function deleteScoreFromList(scoreId) {
         return point ? point.percentage : null;
       });
       
+      const lineColor = categoryColors[category] || '#CCCCCC';
+      
       statisticsChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -653,14 +658,14 @@ async function deleteScoreFromList(scoreId) {
           datasets: [{
             label: category,
             data: percentages,
-            borderColor: categoryColors[category] || '#CCCCCC',
-            backgroundColor: categoryColors[category] ? categoryColors[category] + '20' : 'rgba(204, 204, 204, 0.2)',
+            borderColor: lineColor,
+            backgroundColor: lineColor + '20',
             borderWidth: 3,
             fill: true,
             tension: 0.4,
             pointRadius: 5,
             pointHoverRadius: 7,
-            pointBackgroundColor: categoryColors[category] || '#CCCCCC',
+            pointBackgroundColor: lineColor,
             pointBorderColor: '#000',
             pointBorderWidth: 2
           }]
@@ -668,6 +673,7 @@ async function deleteScoreFromList(scoreId) {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          backgroundColor: '#000000',  // Black background for plot
           plugins: {
             legend: {
               display: true,
@@ -721,6 +727,36 @@ async function deleteScoreFromList(scoreId) {
               min: 0,
               max: 100
             }
+          },
+          animation: {
+            onComplete: function() {
+              // Draw overall cog scores above each game date
+              const chart = this.chart;
+              const ctx = chart.ctx;
+              const meta = chart.getDatasetMeta(0);
+              
+              ctx.save();
+              ctx.font = 'bold 12px Arial';
+              ctx.fillStyle = '#F9423A';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              
+              // Get x-axis scale for positioning
+              const xScale = chart.scales.x;
+              const chartArea = chart.chartArea;
+              
+              dates.forEach((date, index) => {
+                const overallScore = overallScores[date];
+                if (overallScore !== undefined) {
+                  const x = xScale.getPixelForValue(index);
+                  const y = chartArea.top - 15; // Position above chart area
+                  
+                  ctx.fillText(`Overall: ${overallScore.toFixed(1)}%`, x, y);
+                }
+              });
+              
+              ctx.restore();
+            }
           }
         }
       });
@@ -738,17 +774,18 @@ async function deleteScoreFromList(scoreId) {
           return point ? point.percentage : null;
         });
         
+        const lineColor = categoryColors[cat] || '#CCCCCC';
         return {
           label: cat,
           data: percentages,
-          borderColor: categoryColors[cat] || '#CCCCCC',
-          backgroundColor: categoryColors[cat] ? categoryColors[cat] + '20' : 'rgba(204, 204, 204, 0.2)',
+          borderColor: lineColor,
+          backgroundColor: lineColor + '20',
           borderWidth: 2,
           fill: false,
           tension: 0.4,
           pointRadius: 4,
           pointHoverRadius: 6,
-          pointBackgroundColor: categoryColors[cat] || '#CCCCCC',
+          pointBackgroundColor: lineColor,
           pointBorderColor: '#000',
           pointBorderWidth: 1.5
         };
@@ -817,6 +854,35 @@ async function deleteScoreFromList(scoreId) {
               },
               min: 0,
               max: 100
+            }
+          },
+          animation: {
+            onComplete: function() {
+              // Draw overall cog scores above each game date
+              const chart = this.chart;
+              const ctx = chart.ctx;
+              
+              ctx.save();
+              ctx.font = 'bold 12px Arial';
+              ctx.fillStyle = '#F9423A';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              
+              // Get x-axis scale to position labels
+              const xScale = chart.scales.x;
+              const chartArea = chart.chartArea;
+              
+              dates.forEach((date, index) => {
+                const overallScore = overallScores[date];
+                if (overallScore !== undefined) {
+                  const x = xScale.getPixelForValue(index);
+                  const y = chartArea.top - 10; // Position above chart area
+                  
+                  ctx.fillText(`Overall: ${overallScore.toFixed(1)}%`, x, y);
+                }
+              });
+              
+              ctx.restore();
             }
           }
         }
