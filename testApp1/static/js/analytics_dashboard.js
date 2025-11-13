@@ -130,7 +130,8 @@
       if (!point) return;
       const isHeatTheme = document.body.classList.contains('theme-heat');
       const accent = isHeatTheme ? '#F9423A' : '#a855f7';
-      const label = point.label + ' → ' + point.score;
+      const scoreFormatted = typeof point.score === 'number' ? point.score.toFixed(5) : point.score;
+      const label = point.label + ' → ' + scoreFormatted + '%';
       const ok = window.confirm('Delete point\n' + label + ' ?');
       if (!ok) return;
       // Team delete for now
@@ -195,50 +196,6 @@
         // For now, keep team series; future: toggle to player series
         await loadTeamSeries();
         document.querySelector('#playerModal .btn-close')?.click();
-      }
-    });
-  }
-
-  // ETL upload - calculate cog scores from CSV
-  const etlForm = document.getElementById('etlForm');
-  if (etlForm) {
-    etlForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const fileInput = document.getElementById('etlFile');
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        alert('Please select a CSV file first.');
-        return;
-      }
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      try {
-        const response = await fetch('/api/cog-scores/calculate-from-csv', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          const data = result.data;
-          console.log('Cognitive Score Report:', data);
-          
-          // Show 2K/Madden style score reveal
-          showScoreReveal(data);
-          
-          // Reset form
-          etlForm.reset();
-        } else {
-          alert(`Error: ${result.error}`);
-        }
-      } catch (error) {
-        console.error('Error uploading CSV:', error);
-        alert('Failed to process CSV file. Please try again.');
       }
     });
   }
@@ -505,6 +462,21 @@
   
   // Load scores list
   refreshScoresList();
+  
+  // Trigger team statistics API call to ensure sync runs (this will sync overall scores to analytics dashboard)
+  // This ensures games from team statistics are available in the main analytics chart
+  fetch('/api/team-statistics?use_database=true&force_recalculate=false')
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.overall_scores) {
+        console.log('Team statistics loaded, sync should have run. Games available:', Object.keys(data.overall_scores).length);
+        // Reload the analytics chart to show newly synced games
+        loadTeamSeries();
+      }
+    })
+    .catch(err => {
+      console.error('Error triggering team statistics sync:', err);
+    });
 })();
 
 // Refresh scores list (global function)
@@ -527,11 +499,12 @@ async function refreshScoresList() {
     
     tbody.innerHTML = json.points.map(point => {
       const date = new Date(point.timestamp * 1000).toLocaleDateString();
+      const scoreFormatted = typeof point.score === 'number' ? point.score.toFixed(5) : point.score;
       return `
         <tr>
           <td>${point.date}</td>
           <td>${point.label}</td>
-          <td><strong style="color: #F9423A;">${point.score}%</strong></td>
+          <td><strong style="color: #F9423A;">${scoreFormatted}%</strong></td>
           <td><span class="badge bg-secondary">${point.source || 'Manual'}</span></td>
           <td>
             <button class="btn btn-sm btn-danger" onclick="deleteScoreFromList(${point.id})">
@@ -597,6 +570,117 @@ async function deleteScoreFromList(scoreId) {
     'Transition': '#C7CEEA'
   };
   
+  const datasetToggleContainer = document.getElementById('statisticsDatasetToggles');
+  
+  function applyDatasetToggleStyle(button, dataset, isActive) {
+    const baseColor = dataset?.borderColor || '#F9423A';
+    button.dataset.active = isActive ? '1' : '0';
+    button.style.border = `1px solid ${baseColor}`;
+    if (isActive) {
+      button.style.background = baseColor;
+      button.style.color = '#000';
+      button.style.boxShadow = `0 0 12px ${baseColor}88`;
+      button.style.opacity = '1';
+    } else {
+      button.style.background = 'rgba(255,255,255,0.05)';
+      button.style.color = '#fff';
+      button.style.boxShadow = 'none';
+      button.style.opacity = '0.55';
+    }
+  }
+  
+  function renderDatasetTogglePanel(chartInstance) {
+    if (!datasetToggleContainer) return;
+    datasetToggleContainer.innerHTML = '';
+    
+    if (!chartInstance || !chartInstance.data || !chartInstance.data.datasets || chartInstance.data.datasets.length === 0) {
+      const emptyMessage = document.createElement('div');
+      emptyMessage.className = 'text-muted small fst-italic';
+      emptyMessage.textContent = 'Toggle options will appear when chart data is available.';
+      datasetToggleContainer.appendChild(emptyMessage);
+      return;
+    }
+    
+    const header = document.createElement('div');
+    header.className = 'text-uppercase small fw-bold text-muted mb-2';
+    header.textContent = 'Toggle Lines / Variables';
+    datasetToggleContainer.appendChild(header);
+    
+    const buttonGroup = document.createElement('div');
+    buttonGroup.className = 'd-flex flex-wrap gap-2';
+    datasetToggleContainer.appendChild(buttonGroup);
+    
+    chartInstance.data.datasets.forEach((dataset, idx) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn btn-sm dataset-toggle-btn';
+      button.dataset.datasetIndex = String(idx);
+      button.textContent = dataset?.label || `Dataset ${idx + 1}`;
+      button.style.borderRadius = '999px';
+      button.style.padding = '6px 12px';
+      button.style.fontWeight = '600';
+      button.style.transition = 'all .15s ease-in-out';
+      
+      const meta = chartInstance.getDatasetMeta(idx);
+      const isVisible = !(meta && meta.hidden === true);
+      applyDatasetToggleStyle(button, dataset, isVisible);
+      
+      button.addEventListener('click', () => {
+        const currentMeta = chartInstance.getDatasetMeta(idx);
+        const currentlyVisible = !(currentMeta && currentMeta.hidden === true);
+        currentMeta.hidden = currentlyVisible ? true : null;
+        chartInstance.update();
+        applyDatasetToggleStyle(button, dataset, !currentlyVisible);
+        syncDatasetToggleStates(chartInstance);
+        applyOverallScoreButtonState(chartInstance);
+      });
+      
+      buttonGroup.appendChild(button);
+    });
+    
+    applyOverallScoreButtonState(chartInstance);
+  }
+  
+  function syncDatasetToggleStates(chartInstance) {
+    if (!datasetToggleContainer || !chartInstance) return;
+    const buttons = datasetToggleContainer.querySelectorAll('.dataset-toggle-btn');
+    if (!buttons || buttons.length === 0) return;
+    buttons.forEach(btn => {
+      const idx = parseInt(btn.dataset.datasetIndex, 10);
+      if (Number.isNaN(idx)) return;
+      const dataset = chartInstance.data.datasets?.[idx];
+      if (!dataset) return;
+      const meta = chartInstance.getDatasetMeta(idx);
+      const isVisible = !(meta && meta.hidden === true);
+      applyDatasetToggleStyle(btn, dataset, isVisible);
+    });
+  }
+  
+  function setOverallScoreButtonVisualState(button, isActive) {
+    if (isActive) {
+      button.setAttribute('data-active', '1');
+      button.style.boxShadow = '0 0 12px rgba(249,66,58,0.9), 0 0 24px rgba(249,66,58,0.5)';
+      button.style.borderColor = '#F9423A';
+      button.style.color = '#FCEAE9';
+    } else {
+      button.setAttribute('data-active', '0');
+      button.style.boxShadow = 'none';
+      button.style.borderColor = 'rgba(249,66,58,0.3)';
+      button.style.color = '#fff';
+    }
+  }
+  
+  function applyOverallScoreButtonState(chartInstance) {
+    if (!chartInstance) return;
+    const buttons = document.querySelectorAll('#overallScoresList .ih-score-toggle');
+    if (!buttons || buttons.length === 0) return;
+    const overallIndex = chartInstance.data.datasets.findIndex(ds => ds.label === 'Overall Cog Score');
+    if (overallIndex === -1) return;
+    const meta = chartInstance.getDatasetMeta(overallIndex);
+    const isVisible = !(meta && meta.hidden === true);
+    buttons.forEach(btn => setOverallScoreButtonVisualState(btn, isVisible));
+  }
+
   async function loadTeamStatistics(category = '') {
     try {
       const url = category 
@@ -606,22 +690,9 @@ async function deleteScoreFromList(scoreId) {
       const response = await fetch(url);
       const data = await response.json();
       
-      if (!data.success || !data.statistics) {
-        console.error('Failed to load statistics:', data.error);
-        // Show user-friendly message if chart canvas exists
-        if (chartCanvas && chartCanvas.parentElement) {
-          // Remove any existing error messages
-          const existingErrors = chartCanvas.parentElement.querySelectorAll('.chart-error-message');
-          existingErrors.forEach(err => err.remove());
-          
-          const errorMsg = document.createElement('div');
-          errorMsg.className = 'chart-error-message alert alert-warning';
-          errorMsg.style.cssText = 'background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); color: #fff; padding: 15px; margin: 10px 0;';
-          errorMsg.textContent = 'No statistics data available. Please upload game CSV files first.';
-          chartCanvas.parentElement.insertBefore(errorMsg, chartCanvas);
-        }
-        return;
-      }
+      console.log('API Response:', data);
+      console.log('Overall scores from API:', data.overall_scores);
+      console.log('Game info from API:', data.game_info);
       
       // Remove any existing error messages
       if (chartCanvas && chartCanvas.parentElement) {
@@ -629,17 +700,68 @@ async function deleteScoreFromList(scoreId) {
         existingErrors.forEach(err => err.remove());
       }
       
+      // Check for API errors
+      if (!data.success) {
+        console.error('Failed to load statistics:', data.error);
+        if (chartCanvas && chartCanvas.parentElement) {
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'chart-error-message alert alert-danger';
+          errorMsg.style.cssText = 'background: rgba(249,66,58,0.2); border: 1px solid rgba(249,66,58,0.5); color: #fff; padding: 15px; margin: 10px 0;';
+          errorMsg.textContent = `Error loading statistics: ${data.error || 'Unknown error'}`;
+          chartCanvas.parentElement.insertBefore(errorMsg, chartCanvas);
+        }
+        return;
+      }
+      
+      // Check for warnings (files processed but no data)
+      if (data.warning) {
+        console.warn('Team statistics warning:', data.warning);
+        if (chartCanvas && chartCanvas.parentElement) {
+          const warningMsg = document.createElement('div');
+          warningMsg.className = 'chart-error-message alert alert-warning';
+          warningMsg.style.cssText = 'background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); color: #fff; padding: 15px; margin: 10px 0;';
+          warningMsg.innerHTML = `<strong>Warning:</strong> ${data.warning}<br>`;
+          if (data.diagnostics && data.diagnostics.errors && data.diagnostics.errors.length > 0) {
+            warningMsg.innerHTML += '<small>Errors: ' + data.diagnostics.errors.join('; ') + '</small>';
+          }
+          chartCanvas.parentElement.insertBefore(warningMsg, chartCanvas);
+        }
+      }
+      
+      // Log diagnostics if available
+      if (data.diagnostics) {
+        console.log('Team statistics diagnostics:', data.diagnostics);
+      }
+      
+      // Check if we have statistics data
+      if (!data.statistics || data.statistics.length === 0) {
+        console.warn('No statistics data available');
+        if (chartCanvas && chartCanvas.parentElement) {
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'chart-error-message alert alert-warning';
+          errorMsg.style.cssText = 'background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); color: #fff; padding: 15px; margin: 10px 0;';
+          let msg = 'No statistics data available. ';
+          if (data.diagnostics) {
+            msg += `Found ${data.diagnostics.files_found} CSV files, processed ${data.diagnostics.files_processed}. `;
+          }
+          msg += 'Please check that CSV files contain the expected cognitive performance columns.';
+          errorMsg.textContent = msg;
+          chartCanvas.parentElement.insertBefore(errorMsg, chartCanvas);
+        }
+        return;
+      }
+      
       // Update chart
       try {
-        updateStatisticsChart(
-          data.statistics,
-          category,
-          data.overall_scores || {},
-          data.game_info || {}
-        );
+      updateStatisticsChart(
+        data.statistics,
+        category,
+        data.overall_scores || {},
+        data.game_info || {}
+      );
 
-        // Update overall scores list under the chart
-        updateOverallScoresList(data.overall_scores || {}, data.game_info || {});
+        // Update overall scores list under the chart (pass chart instance for toggle functionality)
+        updateOverallScoresList(data.overall_scores || {}, data.game_info || {}, statisticsChart);
       } catch (chartError) {
         console.error('Error updating chart:', chartError);
         if (chartCanvas && chartCanvas.parentElement) {
@@ -669,9 +791,14 @@ async function deleteScoreFromList(scoreId) {
   }
 
   // Render overall cognitive scores list beneath the chart
-  function updateOverallScoresList(overallScores = {}, gameInfo = {}) {
+  function updateOverallScoresList(overallScores = {}, gameInfo = {}, chartInstance = null) {
+    console.log('updateOverallScoresList called with:', { overallScores, gameInfo, chartInstance });
     const container = document.getElementById('overallScoresList');
-    if (!container) return;
+    console.log('Overall scores container found:', container);
+    if (!container) {
+      console.error('overallScoresList container not found!');
+      return;
+    }
 
     const entries = Object.keys(overallScores)
       .sort() // sort by ISO date
@@ -690,11 +817,11 @@ async function deleteScoreFromList(scoreId) {
 
     // Build interactive, button-like badges with toggle state
     const html = [
-      '<div class="d-flex flex-wrap gap-2 align-items-center">',
+      '<div class="d-flex flex-wrap gap-2 align-items-center mb-2">',
       '<span style="color:#F9423A; font-weight:700; margin-right:6px;">Overall Cog Scores:</span>'
     ];
     entries.forEach(({ dateIso, dateLabel, opponent, score }) => {
-      const label = `${dateLabel}${opponent}: ${score.toFixed(2)}%`;
+      const label = `${dateLabel}${opponent}: ${score.toFixed(5)}%`;
       html.push(
         `<button type="button" class="ih-score-toggle" data-date="${dateIso}" style="
             cursor:pointer; background:#111; color:#fff; padding:8px 10px; border-radius:8px;
@@ -707,26 +834,32 @@ async function deleteScoreFromList(scoreId) {
 
     container.innerHTML = html.join('');
 
-    // Attach click handlers to toggle neon on/off
+    // Attach click handlers to toggle overall scores dataset on chart
     const buttons = container.querySelectorAll('.ih-score-toggle');
     buttons.forEach(btn => {
       btn.addEventListener('click', function() {
-        const isActive = this.getAttribute('data-active') === '1';
-        if (isActive) {
-          // Turn OFF neon
-          this.setAttribute('data-active', '0');
-          this.style.boxShadow = 'none';
-          this.style.borderColor = 'rgba(249,66,58,0.3)';
-          this.style.color = '#fff';
-        } else {
-          // Turn ON neon
-          this.setAttribute('data-active', '1');
-          this.style.boxShadow = '0 0 12px rgba(249,66,58,0.9), 0 0 24px rgba(249,66,58,0.5)';
-          this.style.borderColor = '#F9423A';
-          this.style.color = '#FCEAE9';
+        if (!chartInstance || !statisticsChart) return;
+        
+        // Find the overall scores dataset index
+        const overallDatasetIndex = statisticsChart.data.datasets.findIndex(ds => ds.label === 'Overall Cog Score');
+        if (overallDatasetIndex === -1) return;
+        
+        // Toggle the dataset visibility
+        const meta = statisticsChart.getDatasetMeta(overallDatasetIndex);
+        if (meta) {
+          const isCurrentlyHidden = meta.hidden === true;
+          meta.hidden = !isCurrentlyHidden;
+          statisticsChart.update();
+          applyOverallScoreButtonState(statisticsChart);
+          syncDatasetToggleStates(statisticsChart);
         }
       });
     });
+    
+    // Initialize button states based on chart visibility
+    if (statisticsChart && buttons.length > 0) {
+      applyOverallScoreButtonState(statisticsChart);
+    }
   }
   
   function updateStatisticsChart(statistics, category, overallScores = {}, gameInfo = {}) {
@@ -737,6 +870,7 @@ async function deleteScoreFromList(scoreId) {
     // Validate input
     if (!statistics || !Array.isArray(statistics) || statistics.length === 0) {
       console.error('No statistics data available');
+      renderDatasetTogglePanel(null);
       return;
     }
     
@@ -756,6 +890,8 @@ async function deleteScoreFromList(scoreId) {
       statisticsChart = null;
     }
     
+    renderDatasetTogglePanel(null);
+    
     // Set canvas background to black via CSS
     chartCanvas.style.backgroundColor = '#000000';
     
@@ -766,19 +902,23 @@ async function deleteScoreFromList(scoreId) {
       // Check if filtered result is empty
       if (!filteredStatistics || filteredStatistics.length === 0) {
         console.warn(`No data found for category: ${category}`);
+        renderDatasetTogglePanel(null);
         return;
       }
     }
     
     // Group data by date from filtered statistics
+    // Sort dates chronologically (ISO format YYYY-MM-DD sorts correctly as strings)
     const dates = [...new Set(filteredStatistics.map(s => s.date))].sort();
     
     // X-axis labels: dates only (prefer date_string MM.DD.YY -> MM/DD/YY)
     const formattedDates = dates.map(date => {
       const info = gameInfo[date];
       if (info && info.date_string) {
+        // Convert MM.DD.YY to MM/DD/YY format
         return String(info.date_string).replace(/\./g, '/');
       }
+      // Fallback: format from ISO date
       const d = new Date(date);
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const day = String(d.getDate()).padStart(2, '0');
@@ -812,12 +952,14 @@ async function deleteScoreFromList(scoreId) {
 
       const lineColor = categoryColors[category] || '#CCCCCC';
 
-      try {
-        statisticsChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: catFormattedDates,
-          datasets: [{
+      // Create overall scores dataset overlay
+      const overallScoresData = catDates.map(date => {
+        return overallScores[date] || null;
+      });
+
+      // Build datasets array with category and overall scores
+      const datasets = [
+        {
             label: category,
             data: percentages,
             borderColor: lineColor,
@@ -830,7 +972,40 @@ async function deleteScoreFromList(scoreId) {
             pointBackgroundColor: lineColor,
             pointBorderColor: '#000',
             pointBorderWidth: 2
-          }]
+        }
+      ];
+
+      // Add overall scores overlay if available
+      console.log('Single category - Overall scores available:', overallScores);
+      console.log('Single category - Cat dates:', catDates);
+      if (Object.keys(overallScores).length > 0) {
+        console.log('Adding overall scores to single category view');
+        datasets.push({
+          label: 'Overall Cog Score',
+          data: overallScoresData,
+          borderColor: '#F9423A',
+          backgroundColor: '#F9423A20',
+          borderWidth: 3,
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBackgroundColor: '#F9423A',
+          pointBorderColor: '#000',
+          pointBorderWidth: 2
+        });
+        console.log('Added overall scores dataset. Total datasets:', datasets.length);
+      } else {
+        console.warn('No overall scores available for single category view');
+      }
+
+      try {
+        statisticsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: catFormattedDates,
+          datasets: datasets
         },
         options: {
           responsive: true,
@@ -839,6 +1014,35 @@ async function deleteScoreFromList(scoreId) {
           plugins: {
             legend: {
               display: true,
+              onClick: function(e, legendItem, legend) {
+                // Get the chart instance
+                const chart = legend.chart;
+                
+                // Get the dataset index from the clicked legend item
+                const index = legendItem.datasetIndex;
+                
+                // Ensure index is valid
+                if (index === undefined || index < 0 || index >= chart.data.datasets.length) {
+                  console.warn('Invalid dataset index:', index);
+                  return;
+                }
+                
+                // Get the dataset metadata
+                const meta = chart.getDatasetMeta(index);
+                
+                if (!meta) {
+                  console.warn('No metadata for dataset:', index);
+                  return;
+                }
+                
+                // Toggle visibility: if hidden, show it; if visible, hide it
+                meta.hidden = meta.hidden === null ? true : null;
+                
+                // Update the chart
+                chart.update();
+                syncDatasetToggleStates(chart);
+                applyOverallScoreButtonState(chart);
+              },
               onHover: (e, legendItem, legend) => {
                 if (!overlay) return;
                 overlay.style.display = 'block';
@@ -868,7 +1072,7 @@ async function deleteScoreFromList(scoreId) {
               padding: 12,
               callbacks: {
                 label: function(context) {
-                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(4)}%`;
                 }
               }
             }
@@ -925,7 +1129,7 @@ async function deleteScoreFromList(scoreId) {
                   const x = xScale.getPixelForValue(index);
                   const y = chartArea.top - 15; // Position above chart area
                   
-                  ctx.fillText(`Overall: ${overallScore.toFixed(1)}%`, x, y);
+                  ctx.fillText(`Overall: ${overallScore.toFixed(4)}%`, x, y);
                 }
               });
               
@@ -938,6 +1142,12 @@ async function deleteScoreFromList(scoreId) {
         console.error('Error creating chart for single category:', error);
         return;
       }
+      
+      renderDatasetTogglePanel(statisticsChart);
+      syncDatasetToggleStates(statisticsChart);
+      
+      // Update overall scores list with chart instance for toggle functionality
+      updateOverallScoresList(overallScores, gameInfo, statisticsChart);
 
       // Canvas hover to show dataset label near cursor - improved for line detection
       mousemoveHandler = function(ev) {
@@ -969,11 +1179,11 @@ async function deleteScoreFromList(scoreId) {
             if (x >= chartArea.left && x <= chartArea.right && 
                 y >= chartArea.top && y <= chartArea.bottom) {
               // Show overlay for any point in the dataset
-              overlay.style.display = 'block';
-              overlay.textContent = label;
-              const rect = cardBody.getBoundingClientRect();
-              overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
-              overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
+            overlay.style.display = 'block';
+            overlay.textContent = label;
+            const rect = cardBody.getBoundingClientRect();
+            overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
+            overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
               return;
             }
           }
@@ -1033,8 +1243,39 @@ async function deleteScoreFromList(scoreId) {
         };
       });
       
+      // Add overall scores dataset overlay if available
+      console.log('Overall scores available:', overallScores);
+      console.log('Dates array:', dates);
+      if (Object.keys(overallScores).length > 0) {
+        const overallScoresData = dates.map(date => {
+          const score = overallScores[date] || null;
+          console.log(`Date ${date}: score = ${score}`);
+          return score;
+        });
+        
+        console.log('Overall scores data array:', overallScoresData);
+        datasets.push({
+          label: 'Overall Cog Score',
+          data: overallScoresData,
+          borderColor: '#F9423A',
+          backgroundColor: '#F9423A20',
+          borderWidth: 3,
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBackgroundColor: '#F9423A',
+          pointBorderColor: '#000',
+          pointBorderWidth: 2
+        });
+        console.log('Added overall scores dataset. Total datasets:', datasets.length);
+      } else {
+        console.warn('No overall scores available to add to chart');
+      }
+      
       try {
-        statisticsChart = new Chart(ctx, {
+      statisticsChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: formattedDates,
@@ -1077,6 +1318,8 @@ async function deleteScoreFromList(scoreId) {
                 
                 // Update the chart
                 chart.update();
+                syncDatasetToggleStates(chart);
+                applyOverallScoreButtonState(chart);
               },
               onHover: (e, legendItem, legend) => {
                 if (!overlay) return;
@@ -1108,7 +1351,7 @@ async function deleteScoreFromList(scoreId) {
               padding: 12,
               callbacks: {
                 label: function(context) {
-                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(4)}%`;
                 }
               }
             }
@@ -1119,10 +1362,15 @@ async function deleteScoreFromList(scoreId) {
                 color: '#fff',
                 font: {
                   size: 11
-                }
+                },
+                maxRotation: 45,
+                minRotation: 0
               },
               grid: {
                 color: 'rgba(255, 255, 255, 0.1)'
+              },
+              title: {
+                display: false
               }
             },
             y: {
@@ -1164,7 +1412,7 @@ async function deleteScoreFromList(scoreId) {
                   const x = xScale.getPixelForValue(index);
                   const y = chartArea.top - 10; // Position above chart area
                   
-                  ctx.fillText(`Overall: ${overallScore.toFixed(1)}%`, x, y);
+                  ctx.fillText(`Overall: ${overallScore.toFixed(4)}%`, x, y);
                 }
               });
               
@@ -1177,6 +1425,12 @@ async function deleteScoreFromList(scoreId) {
         console.error('Error creating chart for all categories:', error);
         return;
       }
+      
+      renderDatasetTogglePanel(statisticsChart);
+      syncDatasetToggleStates(statisticsChart);
+      
+      // Update overall scores list with chart instance for toggle functionality
+      updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
       // Add hover support for all categories view
       mousemoveHandler = function(ev) {
@@ -1242,6 +1496,96 @@ async function deleteScoreFromList(scoreId) {
     console.log('Category changed to:', selectedCategory);
     loadTeamStatistics(selectedCategory);
   });
+
+  // Games Dashboard Functions
+  async function loadGamesDashboard() {
+    const container = document.getElementById('gamesDashboardContainer');
+    if (!container) return;
+
+    try {
+      container.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i> Loading games...</div>';
+      
+      const response = await fetch('/api/games-dashboard');
+      const data = await response.json();
+      
+      if (!data.success) {
+        container.innerHTML = `<div class="alert alert-danger">Error loading games: ${data.error || 'Unknown error'}</div>`;
+        return;
+      }
+      
+      renderGamesDashboard(data.games || []);
+    } catch (error) {
+      console.error('Error loading games dashboard:', error);
+      container.innerHTML = `<div class="alert alert-danger">Error loading games dashboard. Please refresh the page.</div>`;
+    }
+  }
+
+  function renderGamesDashboard(games) {
+    const container = document.getElementById('gamesDashboardContainer');
+    if (!container) return;
+
+    if (games.length === 0) {
+      container.innerHTML = '<div class="text-center text-muted py-4">No games found in database.</div>';
+      return;
+    }
+
+    // Category colors for display
+    const categoryColors = {
+      'Space Read': '#FF6B6B',
+      'DM Catch': '#4ECDC4',
+      'Driving': '#45B7D1',
+      'Finishing': '#FFA07A',
+      'Footwork': '#98D8C8',
+      'Passing': '#F7DC6F',
+      'Positioning': '#BB8FCE',
+      'QB12 DM': '#85C1E2',
+      'Relocation': '#F8B739',
+      'Cutting & Screening': '#EC7063',
+      'Transition': '#5DADE2'
+    };
+
+    let html = '<div class="table-responsive"><table class="table table-dark table-hover">';
+    html += '<thead><tr>';
+    html += '<th>Date</th>';
+    html += '<th>Opponent</th>';
+    html += '<th>Overall Score</th>';
+    html += '<th>Categories</th>';
+    html += '</tr></thead><tbody>';
+
+    games.forEach(game => {
+      const dateStr = game.date_string || new Date(game.date * 1000).toLocaleDateString();
+      const overallScore = game.overall_score !== null && game.overall_score !== undefined 
+        ? game.overall_score.toFixed(4) + '%' 
+        : 'N/A';
+      
+      // Build category breakdown
+      let categoriesHtml = '';
+      if (game.categories && Object.keys(game.categories).length > 0) {
+        const categoryItems = Object.entries(game.categories)
+          .map(([cat, score]) => {
+            const color = categoryColors[cat] || '#CCCCCC';
+            return `<span class="badge" style="background-color: ${color}; margin: 2px; color: #000; font-weight: bold;">${cat}: ${score.toFixed(4)}%</span>`;
+          })
+          .join('');
+        categoriesHtml = `<div class="d-flex flex-wrap">${categoryItems}</div>`;
+      } else {
+        categoriesHtml = '<span class="text-muted">No category data</span>';
+      }
+
+      html += '<tr>';
+      html += `<td><strong>${dateStr}</strong></td>`;
+      html += `<td>${game.opponent || 'Unknown'}</td>`;
+      html += `<td><span class="badge" style="background-color: #F9423A; color: #fff; font-size: 1em; padding: 6px 12px;">${overallScore}</span></td>`;
+      html += `<td>${categoriesHtml}</td>`;
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  }
+
+  // Load games dashboard on page load
+  loadGamesDashboard();
   
   // Export Premium Report functionality
   const exportBtn = document.getElementById('exportPremiumReportBtn');
@@ -1403,17 +1747,17 @@ async function deleteScoreFromList(scoreId) {
       const trend = percentages.length > 1 ? percentages[percentages.length - 1] - percentages[0] : 0;
       
       insights.stats_summary[cat] = {
-        average: avg.toFixed(2),
-        min: Math.min(...percentages).toFixed(2),
-        max: Math.max(...percentages).toFixed(2),
-        trend: trend.toFixed(2),
+        average: avg.toFixed(5),
+        min: Math.min(...percentages).toFixed(5),
+        max: Math.max(...percentages).toFixed(5),
+        trend: trend.toFixed(5),
         count: percentages.length
       };
       
       if (trend > 2) {
-        insights.improving_categories.push({ category: cat, trend: trend.toFixed(2), average: avg.toFixed(2) });
+        insights.improving_categories.push({ category: cat, trend: trend.toFixed(5), average: avg.toFixed(5) });
       } else if (trend < -2) {
-        insights.declining_categories.push({ category: cat, trend: trend.toFixed(2), average: avg.toFixed(2) });
+        insights.declining_categories.push({ category: cat, trend: trend.toFixed(5), average: avg.toFixed(5) });
       }
     });
     
@@ -1425,11 +1769,11 @@ async function deleteScoreFromList(scoreId) {
     
     insights.top_categories = sortedByAvg.slice(0, 3).map(c => ({ 
       category: c.category, 
-      average: c.average.toFixed(2) 
+      average: c.average.toFixed(5) 
     }));
     insights.weak_categories = sortedByAvg.slice(-3).reverse().map(c => ({ 
       category: c.category, 
-      average: c.average.toFixed(2) 
+      average: c.average.toFixed(5) 
     }));
     
     // Overall scores trend
@@ -1437,8 +1781,8 @@ async function deleteScoreFromList(scoreId) {
     if (overallDates.length > 1) {
       const firstScore = overallScores[overallDates[0]];
       const lastScore = overallScores[overallDates[overallDates.length - 1]];
-      insights.overall_trend = (lastScore - firstScore).toFixed(2);
-      insights.overall_average = (Object.values(overallScores).reduce((a, b) => a + b, 0) / Object.values(overallScores).length).toFixed(2);
+      insights.overall_trend = (lastScore - firstScore).toFixed(5);
+      insights.overall_average = (Object.values(overallScores).reduce((a, b) => a + b, 0) / Object.values(overallScores).length).toFixed(5);
     }
     
     return insights;

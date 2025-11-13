@@ -238,6 +238,65 @@ def api_reset_cog_scores():
         logger.exception('Error resetting cog scores')
         return jsonify({'success': False, 'error': str(e)}), 500
 
+def _sync_overall_scores_to_analytics(overall_scores: dict, game_info: dict, db_manager: DatabaseManager):
+    """
+    Sync overall cognitive scores from team statistics to team_cog_scores table.
+    This ensures that games shown in Team Statistics Over Time are also available
+    in the main Analytics Dashboard.
+    
+    Args:
+        overall_scores: Dict mapping date_iso (YYYY-MM-DD) to overall score (float)
+        game_info: Dict mapping date_iso to game info dict with 'opponent', 'date_string', 'filename'
+        db_manager: DatabaseManager instance
+    """
+    if not overall_scores or not game_info:
+        return
+    
+    synced_count = 0
+    skipped_count = 0
+    
+    for date_iso, overall_score in overall_scores.items():
+        info = game_info.get(date_iso, {})
+        opponent = info.get('opponent', 'Unknown')
+        team = 'Heat'  # Default team name
+        
+        # Convert date_iso (YYYY-MM-DD) to timestamp
+        try:
+            dt = datetime.strptime(date_iso, '%Y-%m-%d')
+            game_date_timestamp = int(dt.timestamp())
+        except ValueError:
+            logger.warning(f"Invalid date format in overall_scores: {date_iso}")
+            continue
+        
+        # Check if this game already exists in team_cog_scores
+        if db_manager.team_cog_score_exists(game_date_timestamp, team, opponent):
+            skipped_count += 1
+            logger.debug(f"Skipping {date_iso} vs {opponent} - already exists in team_cog_scores")
+            continue
+        
+        # Insert new score
+        overall_int = int(round(overall_score))
+        result = db_manager.upsert_team_cog_score(
+            game_date=game_date_timestamp,
+            team=team,
+            opponent=opponent,
+            score=overall_int,
+            source='team_statistics',
+            note=f'Auto-synced from team statistics'
+        )
+        
+        if result is True:  # Inserted
+            synced_count += 1
+            logger.info(f"Synced overall score to analytics dashboard: {date_iso} vs {opponent} = {overall_int}%")
+        elif result is False:  # Updated
+            synced_count += 1
+            logger.info(f"Updated overall score in analytics dashboard: {date_iso} vs {opponent} = {overall_int}%")
+        else:  # Error
+            logger.error(f"Failed to sync overall score: {date_iso} vs {opponent}")
+    
+    if synced_count > 0:
+        logger.info(f"Synced {synced_count} overall scores to analytics dashboard (skipped {skipped_count} duplicates)")
+
 def parse_date_from_filename(filename: str) -> tuple:
     """
     Parse date and game info from CSV filename.
@@ -264,13 +323,27 @@ def parse_date_from_filename(filename: str) -> tuple:
     except ValueError:
         return None, None, None, filename
     
-    # Extract opponent from filename (e.g., "Magic" from "10.04.25 Heat v Magic(team).csv")
-    # Try different patterns
+    # Extract opponent from filename
+    # Try different patterns:
+    # 1. "10.04.25 Heat v Magic(team).csv" -> "Magic"
+    # 2. "06.21.25_KP_v_MIN_Offense.csv" -> "MIN"
+    # 3. "10.01.25_Miami_csv.csv" -> "Unknown" (no opponent pattern)
+    opponent = 'Unknown'
+    
+    # Pattern 1: " v Opponent" (space v space)
     opponent_match = re.search(r'v\s+([A-Za-z]+)', filename)
     if opponent_match:
         opponent = opponent_match.group(1)
     else:
-        opponent = 'Unknown'
+        # Pattern 2: "_v_OPPONENT" (underscore v underscore)
+        opponent_match = re.search(r'_v_([A-Z]+)', filename)
+        if opponent_match:
+            opponent = opponent_match.group(1)
+        else:
+            # Pattern 3: "_v_OPPONENT_" (underscore v underscore with trailing underscore)
+            opponent_match = re.search(r'_v_([A-Z]+)_', filename)
+            if opponent_match:
+                opponent = opponent_match.group(1)
     
     return date_string, date_iso, opponent, filename
 
@@ -279,16 +352,23 @@ def parse_date_from_filename(filename: str) -> tuple:
 def api_team_statistics():
     """Get team statistics over time for cognitive categories.
     
-    Dynamically calculates data from CSV files in test_csvs folder.
+    First checks database for stored statistics. If not found or if force_recalculate=true,
+    calculates from CSV files and stores in database for future use.
     
     Query params:
       category: Optional category name (if not provided, returns all categories)
+      force_recalculate: Optional flag to force recalculation from CSV files
+      use_database: Optional flag (default True) to use database if available
     
     Returns:
       JSON with statistics grouped by game date
     """
     try:
         category = request.args.get('category')  # Optional: filter by category
+        force_recalculate = request.args.get('force_recalculate', 'false').lower() == 'true'
+        use_database = request.args.get('use_database', 'true').lower() == 'true'
+        
+        db_manager = DatabaseManager(app.config['DB_PATH'])
         
         # Map CSV column names to display names
         COLUMN_NAME_MAP = {
@@ -305,7 +385,7 @@ def api_team_statistics():
             'Transition': 'Transition'
         }
         
-        # Categories we want to display (excluding Driving for now as it's not in the original list)
+        # Categories we want to display
         DISPLAY_CATEGORIES = [
             'Cutting & Screening',
             'DM Catch',
@@ -319,9 +399,50 @@ def api_team_statistics():
             'Transition'
         ]
         
+        # Try to get from database first (unless force_recalculate is true)
+        if use_database and not force_recalculate:
+            db_stats = db_manager.get_team_statistics(category=category, team='Heat')
+            if db_stats:
+                logger.info(f"Retrieved {len(db_stats)} statistics records from database")
+                
+                # Convert database format to API response format
+                statistics_data = []
+                overall_scores = db_manager.get_team_statistics_overall_scores(team='Heat')
+                game_info = db_manager.get_team_statistics_game_info(team='Heat')
+                
+                for stat in db_stats:
+                    statistics_data.append({
+                        'date': stat['date'],
+                        'date_string': stat['date_string'],
+                        'category': stat['category'],
+                        'percentage': stat['percentage'],
+                        'opponent': stat['opponent'],
+                        'filename': stat['filename']
+                    })
+                
+                # Filter by category if specified (already filtered in query, but double-check)
+                if category:
+                    statistics_data = [s for s in statistics_data if s['category'] == category]
+                
+                # Sort by date
+                statistics_data.sort(key=lambda x: x['date'])
+                
+                # Sync overall scores to team_cog_scores table (for analytics dashboard)
+                _sync_overall_scores_to_analytics(overall_scores, game_info, db_manager)
+                
+                return jsonify({
+                    'success': True,
+                    'statistics': statistics_data,
+                    'category': category,
+                    'overall_scores': overall_scores,
+                    'game_info': game_info,
+                    'source': 'database'
+                })
+        
+        # If not in database or force_recalculate, calculate from CSV files
+        logger.info("Calculating team statistics from CSV files...")
+        
         # Find all CSV files in test_csvs folder
-        # Use absolute path based on current file location
-        # app.py is at testApp1/src/core/app.py, test_csvs is at testApp1/testcases/test_csvs
         current_file_dir = os.path.dirname(os.path.abspath(__file__))  # src/core
         test_csvs_dir = os.path.join(current_file_dir, '..', '..', 'testcases', 'test_csvs')
         test_csvs_dir = os.path.abspath(test_csvs_dir)
@@ -370,6 +491,10 @@ def api_team_statistics():
                 
                 logger.info(f"Successfully processed {csv_file}: overall={overall:.2f}%, scores keys={list(scores.keys())}")
                 
+                # Convert date_iso to timestamp for database
+                dt = datetime.strptime(date_iso, '%Y-%m-%d')
+                game_date_timestamp = int(dt.timestamp())
+                
                 # Store overall score
                 overall_scores[date_iso] = overall
                 
@@ -386,6 +511,25 @@ def api_team_statistics():
                     if csv_col in scores and display_name in DISPLAY_CATEGORIES:
                         score_data = scores[csv_col]
                         percentage = score_data['score']
+                        positive_count = score_data.get('positive', 0)
+                        negative_count = score_data.get('negative', 0)
+                        total_count = score_data.get('total', 0)
+                        
+                        # Store in database
+                        db_manager.insert_team_statistics(
+                            game_date_iso=date_iso,
+                            game_date_timestamp=game_date_timestamp,
+                            date_string=date_string,
+                            team='Heat',
+                            opponent=opponent or 'Unknown',
+                            category=display_name,
+                            percentage=percentage,
+                            positive_count=positive_count,
+                            negative_count=negative_count,
+                            total_count=total_count,
+                            overall_score=overall,
+                            csv_filename=full_filename
+                        )
                         
                         statistics_data.append({
                             'date': date_iso,
@@ -397,7 +541,7 @@ def api_team_statistics():
                         })
                         categories_found += 1
                 
-                logger.info(f"Added {categories_found} categories from {csv_file}")
+                logger.info(f"Added {categories_found} categories from {csv_file} to database")
                 processed_files.append(csv_file)
                 
             except Exception as e:
@@ -427,6 +571,7 @@ def api_team_statistics():
             'category': category,
             'overall_scores': overall_scores,  # Overall cog scores by date
             'game_info': game_info,  # Additional game metadata
+            'source': 'csv_calculated',
             'diagnostics': {
                 'files_found': len(csv_files),
                 'files_processed': len(processed_files),
@@ -440,10 +585,102 @@ def api_team_statistics():
             logger.warning(f"Found {len(csv_files)} CSV files but generated 0 statistics data points. This may indicate a data processing issue.")
             response_data['warning'] = f'Processed {len(processed_files)} files but found no statistics data. Check logs for errors.'
         
+        # Sync overall scores to team_cog_scores table (for analytics dashboard)
+        _sync_overall_scores_to_analytics(overall_scores, game_info, db_manager)
+        
         return jsonify(response_data)
         
     except Exception as e:
         logger.exception('Error fetching team statistics')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/games-dashboard', methods=['GET'])
+def api_games_dashboard():
+    """
+    Get all games with their statistics from the database.
+    Returns games with overall scores and category breakdowns.
+    """
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        
+        # Get games with statistics from database
+        games = db_manager.get_games_with_statistics()
+        
+        # Also get category statistics from CSV files (similar to team-statistics)
+        # This will help populate category breakdowns
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        test_csvs_dir = os.path.join(current_file_dir, '..', '..', 'testcases', 'test_csvs')
+        test_csvs_dir = os.path.abspath(test_csvs_dir)
+        
+        # Create a mapping of date -> category statistics
+        date_to_stats = {}
+        
+        if os.path.exists(test_csvs_dir):
+            csv_files = [f for f in os.listdir(test_csvs_dir) if f.endswith('.csv') and not f.endswith('.numbers')]
+            
+            for csv_file in csv_files:
+                csv_path = os.path.join(test_csvs_dir, csv_file)
+                date_string, date_iso, opponent, full_filename = parse_date_from_filename(csv_file)
+                
+                if not date_iso:
+                    continue
+                
+                try:
+                    calculator = CogScoreCalculator(csv_path)
+                    scores, overall = calculator.calculate_all_scores()
+                    
+                    # Map CSV column names to display categories
+                    COLUMN_NAME_MAP = {
+                        'Space Read': 'Space Read',
+                        'DM Catch': 'DM Catch',
+                        'Driving': 'Driving',
+                        'Finishing': 'Finishing',
+                        'Footwork': 'Footwork',
+                        'Passing': 'Passing',
+                        'Positioning': 'Positioning',
+                        'QB12 DM': 'QB12 DM',
+                        'Relocation': 'Relocation',
+                        'Cutting & Screeing': 'Cutting & Screening',
+                        'Transition': 'Transition'
+                    }
+                    
+                    categories = {}
+                    for csv_col, display_name in COLUMN_NAME_MAP.items():
+                        if csv_col in scores:
+                            score_data = scores[csv_col]
+                            categories[display_name] = score_data['score']
+                    
+                    date_to_stats[date_iso] = {
+                        'overall': overall,
+                        'categories': categories
+                    }
+                except Exception as e:
+                    logger.warning(f"Error processing {csv_file} for games dashboard: {e}")
+                    continue
+        
+        # Merge database games with CSV statistics
+        games_with_full_stats = []
+        for game in games:
+            game_date_iso = datetime.fromtimestamp(game['date']).strftime('%Y-%m-%d')
+            
+            # If we have CSV stats for this date, merge them
+            if game_date_iso in date_to_stats:
+                game['overall_score'] = game['overall_score'] or date_to_stats[game_date_iso]['overall']
+                game['categories'] = date_to_stats[game_date_iso]['categories']
+            else:
+                # If no CSV stats, keep what we have from DB
+                if not game.get('categories'):
+                    game['categories'] = {}
+            
+            games_with_full_stats.append(game)
+        
+        return jsonify({
+            'success': True,
+            'games': games_with_full_stats
+        })
+        
+    except Exception as e:
+        logger.exception('Error fetching games dashboard')
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/cog-scores/player', methods=['POST'])
@@ -682,7 +919,7 @@ def api_export_team_statistics_pdf():
                 info = game_info.get(date, {})
                 opponent = info.get('opponent', 'Unknown')
                 date_label = info.get('date_string', date).replace('.', '/')
-                table_data.append([date_label, opponent, f"{score:.2f}%"])
+                table_data.append([date_label, opponent, f"{score:.5f}%"])
             
             table = Table(table_data, colWidths=[2*inch, 2*inch, 2*inch])
             table.setStyle(TableStyle([

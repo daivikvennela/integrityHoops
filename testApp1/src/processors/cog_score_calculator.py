@@ -46,13 +46,23 @@ class CogScoreCalculator:
         
     def load_csv(self) -> pd.DataFrame:
         """Load and return the CSV data."""
+        # Check if first line is "Table 1" and skip it if so
+        skip_rows = 0
+        try:
+            with open(self.csv_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline().strip()
+                if first_line == 'Table 1':
+                    skip_rows = 1
+        except:
+            pass  # If we can't read, just proceed normally
+        
         # Simple approach - let pandas handle it
         try:
-            self.df = pd.read_csv(self.csv_path, low_memory=False)
+            self.df = pd.read_csv(self.csv_path, skiprows=skip_rows, low_memory=False)
         except Exception as e:
             # If that fails, try with different encoding
             try:
-                self.df = pd.read_csv(self.csv_path, encoding='latin-1', low_memory=False)
+                self.df = pd.read_csv(self.csv_path, skiprows=skip_rows, encoding='latin-1', low_memory=False)
             except Exception as e2:
                 raise Exception(f"Failed to read CSV file: {str(e2)}")
         

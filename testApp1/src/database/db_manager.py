@@ -178,6 +178,41 @@ class DatabaseManager:
                 )
             ''')
             
+            # Create team_statistics table for storing calculated category statistics
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS team_statistics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game_date_iso TEXT NOT NULL,
+                    game_date_timestamp INTEGER NOT NULL,
+                    date_string TEXT NOT NULL,
+                    team TEXT NOT NULL,
+                    opponent TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    percentage REAL NOT NULL,
+                    positive_count INTEGER DEFAULT 0,
+                    negative_count INTEGER DEFAULT 0,
+                    total_count INTEGER DEFAULT 0,
+                    overall_score REAL NOT NULL,
+                    csv_filename TEXT,
+                    calculated_at INTEGER NOT NULL,
+                    UNIQUE(game_date_iso, team, opponent, category)
+                )
+            ''')
+            
+            # Create index for faster queries
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_team_statistics_date 
+                ON team_statistics(game_date_iso)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_team_statistics_category 
+                ON team_statistics(category)
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_team_statistics_date_category 
+                ON team_statistics(game_date_iso, category)
+            ''')
+            
             # Ensure any missing columns are added (handles upgrades)
             self._ensure_scorecard_columns(conn)
             # Ensure game_id column exists in scorecards
@@ -432,6 +467,64 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error deleting player cog score: {e}")
             return False
+
+    def team_cog_score_exists(self, game_date: int, team: str, opponent: str) -> bool:
+        """Check if a team cog score already exists for the given game_date, team, and opponent."""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT COUNT(*) FROM team_cog_scores WHERE game_date = ? AND team = ? AND opponent = ?',
+                    (game_date, team, opponent)
+                )
+                count = cursor.fetchone()[0]
+                return count > 0
+        except Exception as e:
+            print(f"Error checking team cog score existence: {e}")
+            return False
+
+    def upsert_team_cog_score(
+        self,
+        game_date: int,
+        team: str,
+        opponent: str,
+        score: int,
+        source: str | None = None,
+        note: str | None = None,
+    ) -> bool | None:
+        """
+        Insert or update a team cog score.
+        Returns True if inserted, False if updated, None on error.
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                # Check if exists
+                cursor.execute(
+                    'SELECT id FROM team_cog_scores WHERE game_date = ? AND team = ? AND opponent = ?',
+                    (game_date, team, opponent)
+                )
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # Update existing
+                    cursor.execute(
+                        'UPDATE team_cog_scores SET score = ?, source = ?, note = ? WHERE id = ?',
+                        (score, source, note, existing[0])
+                    )
+                    conn.commit()
+                    return False  # Updated
+                else:
+                    # Insert new
+                    cursor.execute(
+                        'INSERT INTO team_cog_scores (game_date, team, opponent, score, source, note) VALUES (?, ?, ?, ?, ?, ?)',
+                        (game_date, team, opponent, score, source, note)
+                    )
+                    conn.commit()
+                    return True  # Inserted
+        except Exception as e:
+            print(f"Error upserting team cog score: {e}")
+            return None
     
     def create_player(self, player: Player) -> bool:
         """
@@ -897,6 +990,48 @@ class DatabaseManager:
             print(f"Error getting all games: {e}")
             return []
     
+    def get_games_with_statistics(self) -> List[Dict[str, Any]]:
+        """
+        Get all games with their statistics (overall cog scores and category breakdowns).
+        
+        Returns:
+            List[Dict]: List of games with statistics
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get all games
+                cursor.execute(
+                    '''SELECT g.id, g.date, g.date_string, g.opponent, g.team, g.created_at,
+                              tcs.score as overall_score, tcs.source, tcs.note
+                       FROM games g
+                       LEFT JOIN team_cog_scores tcs ON g.date = tcs.game_date AND g.team = tcs.team
+                       ORDER BY g.date DESC'''
+                )
+                rows = cursor.fetchall()
+                
+                games_with_stats = []
+                for row in rows:
+                    game_data = {
+                        'id': row[0],
+                        'date': row[1],
+                        'date_string': row[2],
+                        'opponent': row[3],
+                        'team': row[4],
+                        'created_at': row[5],
+                        'overall_score': row[6] if row[6] is not None else None,
+                        'source': row[7],
+                        'note': row[8],
+                        'categories': {}  # Will be populated from CSV processing if needed
+                    }
+                    games_with_stats.append(game_data)
+                
+                return games_with_stats
+        except Exception as e:
+            print(f"Error getting games with statistics: {e}")
+            return []
+    
     def get_database_stats(self) -> Dict[str, Any]:
         """
         Get database statistics.
@@ -916,11 +1051,258 @@ class DatabaseManager:
                 cursor.execute('SELECT COUNT(*) FROM scorecards')
                 scorecard_count = cursor.fetchone()[0]
                 
+                # Count team statistics
+                cursor.execute('SELECT COUNT(*) FROM team_statistics')
+                team_stats_count = cursor.fetchone()[0]
+                
                 return {
                     'player_count': player_count,
                     'scorecard_count': scorecard_count,
+                    'team_statistics_count': team_stats_count,
                     'database_path': self.db_path
                 }
         except Exception as e:
             print(f"Error getting database stats: {e}")
-            return {'error': str(e)} 
+            return {'error': str(e)}
+    
+    # ----------------------
+    # Team Statistics Methods
+    # ----------------------
+    
+    def insert_team_statistics(
+        self,
+        game_date_iso: str,
+        game_date_timestamp: int,
+        date_string: str,
+        team: str,
+        opponent: str,
+        category: str,
+        percentage: float,
+        positive_count: int,
+        negative_count: int,
+        total_count: int,
+        overall_score: float,
+        csv_filename: str
+    ) -> bool:
+        """
+        Insert or update team statistics for a specific game and category.
+        Uses INSERT OR REPLACE to handle duplicates.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                calculated_at = int(datetime.now().timestamp())
+                
+                cursor.execute('''
+                    INSERT OR REPLACE INTO team_statistics 
+                    (game_date_iso, game_date_timestamp, date_string, team, opponent, 
+                     category, percentage, positive_count, negative_count, total_count, 
+                     overall_score, csv_filename, calculated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    game_date_iso, game_date_timestamp, date_string, team, opponent,
+                    category, percentage, positive_count, negative_count, total_count,
+                    overall_score, csv_filename, calculated_at
+                ))
+                conn.commit()
+                return True
+        except Exception as e:
+            print(f"Error inserting team statistics: {e}")
+            return False
+    
+    def get_team_statistics(
+        self,
+        category: Optional[str] = None,
+        game_date_iso: Optional[str] = None,
+        team: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get team statistics from database.
+        
+        Args:
+            category: Optional category filter
+            game_date_iso: Optional date filter (YYYY-MM-DD)
+            team: Optional team filter
+            
+        Returns:
+            List of dictionaries with statistics data
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                query = '''
+                    SELECT game_date_iso, date_string, team, opponent, category, 
+                           percentage, positive_count, negative_count, total_count,
+                           overall_score, csv_filename, calculated_at
+                    FROM team_statistics
+                    WHERE 1=1
+                '''
+                params = []
+                
+                if category:
+                    query += ' AND category = ?'
+                    params.append(category)
+                
+                if game_date_iso:
+                    query += ' AND game_date_iso = ?'
+                    params.append(game_date_iso)
+                
+                if team:
+                    query += ' AND team = ?'
+                    params.append(team)
+                
+                query += ' ORDER BY game_date_iso ASC, category ASC'
+                
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                
+                results = []
+                for row in rows:
+                    results.append({
+                        'date': row[0],
+                        'date_string': row[1],
+                        'team': row[2],
+                        'opponent': row[3],
+                        'category': row[4],
+                        'percentage': row[5],
+                        'positive_count': row[6],
+                        'negative_count': row[7],
+                        'total_count': row[8],
+                        'overall_score': row[9],
+                        'filename': row[10],
+                        'calculated_at': row[11]
+                    })
+                
+                return results
+        except Exception as e:
+            print(f"Error getting team statistics: {e}")
+            return []
+    
+    def get_team_statistics_overall_scores(self, team: Optional[str] = None) -> Dict[str, float]:
+        """
+        Get overall scores grouped by game date.
+        
+        Args:
+            team: Optional team filter
+            
+        Returns:
+            Dictionary mapping date_iso -> overall_score
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                if team:
+                    cursor.execute('''
+                        SELECT DISTINCT game_date_iso, overall_score
+                        FROM team_statistics
+                        WHERE team = ?
+                        ORDER BY game_date_iso ASC
+                    ''', (team,))
+                else:
+                    cursor.execute('''
+                        SELECT DISTINCT game_date_iso, overall_score
+                        FROM team_statistics
+                        ORDER BY game_date_iso ASC
+                    ''')
+                
+                rows = cursor.fetchall()
+                return {row[0]: row[1] for row in rows}
+        except Exception as e:
+            print(f"Error getting overall scores: {e}")
+            return {}
+    
+    def get_team_statistics_game_info(self, team: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Get game info (date_string, opponent, filename) grouped by game date.
+        
+        Args:
+            team: Optional team filter
+            
+        Returns:
+            Dictionary mapping date_iso -> game_info dict
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                if team:
+                    cursor.execute('''
+                        SELECT DISTINCT game_date_iso, date_string, opponent, csv_filename
+                        FROM team_statistics
+                        WHERE team = ?
+                        ORDER BY game_date_iso ASC
+                    ''', (team,))
+                else:
+                    cursor.execute('''
+                        SELECT DISTINCT game_date_iso, date_string, opponent, csv_filename
+                        FROM team_statistics
+                        ORDER BY game_date_iso ASC
+                    ''')
+                
+                rows = cursor.fetchall()
+                return {
+                    row[0]: {
+                        'date_string': row[1],
+                        'opponent': row[2],
+                        'filename': row[3]
+                    }
+                    for row in rows
+                }
+        except Exception as e:
+            print(f"Error getting game info: {e}")
+            return {}
+    
+    def team_statistics_exists(self, game_date_iso: str, team: str, opponent: str) -> bool:
+        """
+        Check if team statistics already exist for a game.
+        
+        Args:
+            game_date_iso: Date in YYYY-MM-DD format
+            team: Team name
+            opponent: Opponent name
+            
+        Returns:
+            bool: True if statistics exist, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT COUNT(*) FROM team_statistics
+                    WHERE game_date_iso = ? AND team = ? AND opponent = ?
+                ''', (game_date_iso, team, opponent))
+                count = cursor.fetchone()[0]
+                return count > 0
+        except Exception as e:
+            print(f"Error checking team statistics existence: {e}")
+            return False
+    
+    def delete_team_statistics(self, game_date_iso: str, team: str, opponent: str) -> bool:
+        """
+        Delete all team statistics for a specific game.
+        
+        Args:
+            game_date_iso: Date in YYYY-MM-DD format
+            team: Team name
+            opponent: Opponent name
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    DELETE FROM team_statistics
+                    WHERE game_date_iso = ? AND team = ? AND opponent = ?
+                ''', (game_date_iso, team, opponent))
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception as e:
+            print(f"Error deleting team statistics: {e}")
+            return False 
