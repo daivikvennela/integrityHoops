@@ -64,6 +64,11 @@
         }
         
         /* Increase font sizes by 10% from current size */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+        
         body {
             font-size: 0.77em;
             background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
@@ -74,10 +79,12 @@
         .container-fluid {
             max-width: 95%;
             margin: 0 auto;
+            overflow-x: hidden;
         }
         
         .container {
             max-width: 95%;
+            overflow-x: hidden;
         }
         
         /* Scale up form elements and buttons by 10% */
