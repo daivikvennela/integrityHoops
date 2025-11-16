@@ -556,131 +556,20 @@ async function deleteScoreFromList(scoreId) {
   let mousemoveHandler = null;
   let mouseleaveHandler = null;
   
-  // Category colors
+  // Category colors - High contrast palette for better visibility
   const categoryColors = {
-    'Cutting & Screening': '#FF6B6B',
-    'DM Catch': '#4ECDC4',
-    'Finishing': '#FFE66D',
-    'Footwork': '#95E1D3',
-    'Passing': '#F38181',
-    'Positioning': '#AA96DA',
-    'QB12 DM': '#FCBAD3',
-    'Relocation': '#A8E6CF',
-    'Space Read': '#FFD3A5',
-    'Transition': '#C7CEEA'
+    'Cutting & Screening': '#FF1744',      // Bright red
+    'DM Catch': '#00E5FF',                  // Bright cyan
+    'Finishing': '#FFD700',                 // Gold
+    'Footwork': '#00FF88',                  // Bright green
+    'Passing': '#FF6B00',                   // Bright orange
+    'Positioning': '#9C27B0',               // Bright purple
+    'QB12 DM': '#FF00FF',                   // Magenta
+    'Relocation': '#00BCD4',                // Cyan-blue
+    'Space Read': '#FF9800',                 // Orange
+    'Transition': '#2196F3'                 // Bright blue
   };
   
-  const datasetToggleContainer = document.getElementById('statisticsDatasetToggles');
-  
-  function applyDatasetToggleStyle(button, dataset, isActive) {
-    const baseColor = dataset?.borderColor || '#F9423A';
-    button.dataset.active = isActive ? '1' : '0';
-    button.style.border = `1px solid ${baseColor}`;
-    if (isActive) {
-      button.style.background = baseColor;
-      button.style.color = '#000';
-      button.style.boxShadow = `0 0 12px ${baseColor}88`;
-      button.style.opacity = '1';
-    } else {
-      button.style.background = 'rgba(255,255,255,0.05)';
-      button.style.color = '#fff';
-      button.style.boxShadow = 'none';
-      button.style.opacity = '0.55';
-    }
-  }
-  
-  function renderDatasetTogglePanel(chartInstance) {
-    if (!datasetToggleContainer) return;
-    datasetToggleContainer.innerHTML = '';
-    
-    if (!chartInstance || !chartInstance.data || !chartInstance.data.datasets || chartInstance.data.datasets.length === 0) {
-      const emptyMessage = document.createElement('div');
-      emptyMessage.className = 'text-muted small fst-italic';
-      emptyMessage.textContent = 'Toggle options will appear when chart data is available.';
-      datasetToggleContainer.appendChild(emptyMessage);
-      return;
-    }
-    
-    const header = document.createElement('div');
-    header.className = 'text-uppercase small fw-bold text-muted mb-2';
-    header.textContent = 'Toggle Lines / Variables';
-    datasetToggleContainer.appendChild(header);
-    
-    const buttonGroup = document.createElement('div');
-    buttonGroup.className = 'd-flex flex-wrap gap-2';
-    datasetToggleContainer.appendChild(buttonGroup);
-    
-    chartInstance.data.datasets.forEach((dataset, idx) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn btn-sm dataset-toggle-btn';
-      button.dataset.datasetIndex = String(idx);
-      button.textContent = dataset?.label || `Dataset ${idx + 1}`;
-      button.style.borderRadius = '999px';
-      button.style.padding = '6px 12px';
-      button.style.fontWeight = '600';
-      button.style.transition = 'all .15s ease-in-out';
-      
-      const meta = chartInstance.getDatasetMeta(idx);
-      const isVisible = !(meta && meta.hidden === true);
-      applyDatasetToggleStyle(button, dataset, isVisible);
-      
-      button.addEventListener('click', () => {
-        const currentMeta = chartInstance.getDatasetMeta(idx);
-        const currentlyVisible = !(currentMeta && currentMeta.hidden === true);
-        currentMeta.hidden = currentlyVisible ? true : null;
-        chartInstance.update();
-        applyDatasetToggleStyle(button, dataset, !currentlyVisible);
-        syncDatasetToggleStates(chartInstance);
-        applyOverallScoreButtonState(chartInstance);
-      });
-      
-      buttonGroup.appendChild(button);
-    });
-    
-    applyOverallScoreButtonState(chartInstance);
-  }
-  
-  function syncDatasetToggleStates(chartInstance) {
-    if (!datasetToggleContainer || !chartInstance) return;
-    const buttons = datasetToggleContainer.querySelectorAll('.dataset-toggle-btn');
-    if (!buttons || buttons.length === 0) return;
-    buttons.forEach(btn => {
-      const idx = parseInt(btn.dataset.datasetIndex, 10);
-      if (Number.isNaN(idx)) return;
-      const dataset = chartInstance.data.datasets?.[idx];
-      if (!dataset) return;
-      const meta = chartInstance.getDatasetMeta(idx);
-      const isVisible = !(meta && meta.hidden === true);
-      applyDatasetToggleStyle(btn, dataset, isVisible);
-    });
-  }
-  
-  function setOverallScoreButtonVisualState(button, isActive) {
-    if (isActive) {
-      button.setAttribute('data-active', '1');
-      button.style.boxShadow = '0 0 12px rgba(249,66,58,0.9), 0 0 24px rgba(249,66,58,0.5)';
-      button.style.borderColor = '#F9423A';
-      button.style.color = '#FCEAE9';
-    } else {
-      button.setAttribute('data-active', '0');
-      button.style.boxShadow = 'none';
-      button.style.borderColor = 'rgba(249,66,58,0.3)';
-      button.style.color = '#fff';
-    }
-  }
-  
-  function applyOverallScoreButtonState(chartInstance) {
-    if (!chartInstance) return;
-    const buttons = document.querySelectorAll('#overallScoresList .ih-score-toggle');
-    if (!buttons || buttons.length === 0) return;
-    const overallIndex = chartInstance.data.datasets.findIndex(ds => ds.label === 'Overall Cog Score');
-    if (overallIndex === -1) return;
-    const meta = chartInstance.getDatasetMeta(overallIndex);
-    const isVisible = !(meta && meta.hidden === true);
-    buttons.forEach(btn => setOverallScoreButtonVisualState(btn, isVisible));
-  }
-
   async function loadTeamStatistics(category = '') {
     try {
       const url = category 
@@ -850,16 +739,155 @@ async function deleteScoreFromList(scoreId) {
           const isCurrentlyHidden = meta.hidden === true;
           meta.hidden = !isCurrentlyHidden;
           statisticsChart.update();
-          applyOverallScoreButtonState(statisticsChart);
-          syncDatasetToggleStates(statisticsChart);
+          
+          // Update button visual state
+          if (isCurrentlyHidden) {
+            // Show - turn ON neon
+          this.setAttribute('data-active', '1');
+          this.style.boxShadow = '0 0 12px rgba(249,66,58,0.9), 0 0 24px rgba(249,66,58,0.5)';
+          this.style.borderColor = '#F9423A';
+          this.style.color = '#FCEAE9';
+          } else {
+            // Hide - turn OFF neon
+            this.setAttribute('data-active', '0');
+            this.style.boxShadow = 'none';
+            this.style.borderColor = 'rgba(249,66,58,0.3)';
+            this.style.color = '#fff';
+          }
         }
       });
     });
     
     // Initialize button states based on chart visibility
     if (statisticsChart && buttons.length > 0) {
-      applyOverallScoreButtonState(statisticsChart);
+      const overallDatasetIndex = statisticsChart.data.datasets.findIndex(ds => ds.label === 'Overall Cog Score');
+      if (overallDatasetIndex !== -1) {
+        const meta = statisticsChart.getDatasetMeta(overallDatasetIndex);
+        const isHidden = meta && meta.hidden === true;
+        buttons.forEach(btn => {
+          if (!isHidden) {
+            btn.setAttribute('data-active', '1');
+            btn.style.boxShadow = '0 0 12px rgba(249,66,58,0.9), 0 0 24px rgba(249,66,58,0.5)';
+            btn.style.borderColor = '#F9423A';
+            btn.style.color = '#FCEAE9';
+          }
+        });
+      }
     }
+  }
+  
+  // Render custom toggle buttons for chart datasets
+  function renderCategoryToggleButtons(chartInstance) {
+    // Check if chartInstance exists
+    if (!chartInstance) {
+      console.warn('renderCategoryToggleButtons: chartInstance is null');
+      return;
+    }
+    
+    // Get container
+    const container = document.getElementById('statisticsDatasetToggles');
+    if (!container) {
+      console.warn('renderCategoryToggleButtons: container not found');
+      return;
+    }
+    
+    // Check if datasets exist
+    if (!chartInstance.data || !chartInstance.data.datasets || chartInstance.data.datasets.length === 0) {
+      console.warn('renderCategoryToggleButtons: no datasets found');
+      return;
+    }
+    
+    console.log('renderCategoryToggleButtons: rendering buttons for', chartInstance.data.datasets.length, 'datasets');
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Iterate through datasets
+    chartInstance.data.datasets.forEach((dataset, index) => {
+      try {
+        // Get visibility state
+        const meta = chartInstance.getDatasetMeta(index);
+        const isVisible = meta.hidden !== true;
+      
+      // Get color
+      const color = dataset.borderColor || '#CCCCCC';
+      
+      // Check theme
+      const isHeatTheme = document.body.classList.contains('theme-heat');
+      
+      // Create button element
+      const button = document.createElement('button');
+      button.className = 'btn btn-sm';
+      button.setAttribute('data-dataset-index', index);
+      
+      // Set button styles based on visibility state
+      const borderColor = isVisible 
+        ? (isHeatTheme ? '#F9423A' : 'rgba(168, 85, 247, 0.8)')
+        : 'rgba(255,255,255,0.3)';
+      const borderWidth = isVisible ? '2px' : '1px';
+      const opacity = isVisible ? '1' : '0.4';
+      
+      button.style.cssText = `
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        border: ${borderWidth} solid ${borderColor};
+        opacity: ${opacity};
+        margin: 4px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+      
+      // Add color indicator span
+      const colorIndicator = document.createElement('span');
+      colorIndicator.style.cssText = `
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background: ${color};
+        border-radius: 2px;
+        margin-right: 6px;
+        vertical-align: middle;
+      `;
+      button.appendChild(colorIndicator);
+      
+      // Add label text
+      const label = document.createTextNode(dataset.label);
+      button.appendChild(label);
+      
+      // Add click handler
+      button.addEventListener('click', function() {
+        const idx = parseInt(this.getAttribute('data-dataset-index'));
+        const meta = chartInstance.getDatasetMeta(idx);
+        meta.hidden = meta.hidden === null ? true : null;
+        chartInstance.update('none');
+        // Re-render buttons to update visual state
+        renderCategoryToggleButtons(chartInstance);
+      });
+      
+      // Add hover effect
+      button.addEventListener('mouseenter', function() {
+        this.style.opacity = '0.8';
+        this.style.transform = 'scale(1.05)';
+      });
+      
+      button.addEventListener('mouseleave', function() {
+        const idx = parseInt(this.getAttribute('data-dataset-index'));
+        const meta = chartInstance.getDatasetMeta(idx);
+        const isVisible = meta.hidden !== true;
+        this.style.opacity = isVisible ? '1' : '0.4';
+        this.style.transform = 'scale(1)';
+      });
+      
+      // Append button to container
+      container.appendChild(button);
+      } catch (error) {
+        console.error('Error creating button for dataset', index, ':', error);
+      }
+    });
+    
+    console.log('renderCategoryToggleButtons: created', container.children.length, 'buttons');
   }
   
   function updateStatisticsChart(statistics, category, overallScores = {}, gameInfo = {}) {
@@ -870,7 +898,6 @@ async function deleteScoreFromList(scoreId) {
     // Validate input
     if (!statistics || !Array.isArray(statistics) || statistics.length === 0) {
       console.error('No statistics data available');
-      renderDatasetTogglePanel(null);
       return;
     }
     
@@ -890,21 +917,36 @@ async function deleteScoreFromList(scoreId) {
       statisticsChart = null;
     }
     
-    renderDatasetTogglePanel(null);
-    
     // Set canvas background to black via CSS
     chartCanvas.style.backgroundColor = '#000000';
     
     // Filter statistics by category if one is selected
     let filteredStatistics = statistics;
     if (category && category.trim() !== '') {
+      // Filter to only show the selected category
       filteredStatistics = statistics.filter(s => s.category === category);
+      console.log(`Filtering for category "${category}": ${filteredStatistics.length} records found out of ${statistics.length} total`);
+      
       // Check if filtered result is empty
       if (!filteredStatistics || filteredStatistics.length === 0) {
         console.warn(`No data found for category: ${category}`);
-        renderDatasetTogglePanel(null);
+        if (chartCanvas && chartCanvas.parentElement) {
+          const errorMsg = document.createElement('div');
+          errorMsg.className = 'chart-error-message alert alert-warning';
+          errorMsg.style.cssText = 'background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); color: #fff; padding: 15px; margin: 10px 0;';
+          errorMsg.textContent = `No data found for category: ${category}`;
+          chartCanvas.parentElement.insertBefore(errorMsg, chartCanvas);
+        }
         return;
       }
+      
+      // Verify all filtered statistics belong to the selected category
+      const invalidCategories = filteredStatistics.filter(s => s.category !== category);
+      if (invalidCategories.length > 0) {
+        console.warn(`Warning: Found ${invalidCategories.length} records with incorrect category`);
+      }
+    } else {
+      console.log(`Showing all categories: ${filteredStatistics.length} total records`);
     }
     
     // Group data by date from filtered statistics
@@ -928,8 +970,12 @@ async function deleteScoreFromList(scoreId) {
     
     if (category && category.trim() !== '') {
       // Single category view - use already filtered statistics
+      // Double-check that we only have data for the selected category
       const categoryData = filteredStatistics
+        .filter(s => s.category === category) // Ensure we only have the selected category
         .sort((a, b) => a.date.localeCompare(b.date));
+      
+      console.log(`Single category view for "${category}": ${categoryData.length} data points`);
 
       // Use dates from the selected category only
       const catDates = [...new Set(categoryData.map(s => s.date))].sort();
@@ -964,14 +1010,14 @@ async function deleteScoreFromList(scoreId) {
             data: percentages,
             borderColor: lineColor,
             backgroundColor: lineColor + '20',
-            borderWidth: 3,
+            borderWidth: 4,
             fill: true,
             tension: 0.4,
-            pointRadius: 5,
-            pointHoverRadius: 7,
+            pointRadius: 6,
+            pointHoverRadius: 9,
             pointBackgroundColor: lineColor,
             pointBorderColor: '#000',
-            pointBorderWidth: 2
+            pointBorderWidth: 2.5
         }
       ];
 
@@ -1013,55 +1059,7 @@ async function deleteScoreFromList(scoreId) {
           backgroundColor: '#000000',  // Black background for plot
           plugins: {
             legend: {
-              display: true,
-              onClick: function(e, legendItem, legend) {
-                // Get the chart instance
-                const chart = legend.chart;
-                
-                // Get the dataset index from the clicked legend item
-                const index = legendItem.datasetIndex;
-                
-                // Ensure index is valid
-                if (index === undefined || index < 0 || index >= chart.data.datasets.length) {
-                  console.warn('Invalid dataset index:', index);
-                  return;
-                }
-                
-                // Get the dataset metadata
-                const meta = chart.getDatasetMeta(index);
-                
-                if (!meta) {
-                  console.warn('No metadata for dataset:', index);
-                  return;
-                }
-                
-                // Toggle visibility: if hidden, show it; if visible, hide it
-                meta.hidden = meta.hidden === null ? true : null;
-                
-                // Update the chart
-                chart.update();
-                syncDatasetToggleStates(chart);
-                applyOverallScoreButtonState(chart);
-              },
-              onHover: (e, legendItem, legend) => {
-                if (!overlay) return;
-                overlay.style.display = 'block';
-                overlay.textContent = legendItem.text;
-                const rect = cardBody.getBoundingClientRect();
-                overlay.style.left = (e.native.clientX - rect.left + 12) + 'px';
-                overlay.style.top = (e.native.clientY - rect.top + 12) + 'px';
-              },
-              onLeave: () => {
-                if (!overlay) return;
-                overlay.style.display = 'none';
-              },
-              labels: {
-                color: '#fff',
-                font: {
-                  size: 14,
-                  weight: 'bold'
-                }
-              }
+              display: false
             },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -1143,11 +1141,13 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
-      renderDatasetTogglePanel(statisticsChart);
-      syncDatasetToggleStates(statisticsChart);
-      
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
+      
+      // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
+      setTimeout(() => {
+        renderCategoryToggleButtons(statisticsChart);
+      }, 100);
 
       // Canvas hover to show dataset label near cursor - improved for line detection
       mousemoveHandler = function(ev) {
@@ -1232,14 +1232,14 @@ async function deleteScoreFromList(scoreId) {
           data: percentages,
           borderColor: lineColor,
           backgroundColor: lineColor + '20',
-          borderWidth: 2,
+          borderWidth: 3,
           fill: false,
           tension: 0.4,
-          pointRadius: 4,
-          pointHoverRadius: 6,
+          pointRadius: 5,
+          pointHoverRadius: 8,
           pointBackgroundColor: lineColor,
           pointBorderColor: '#000',
-          pointBorderWidth: 1.5
+          pointBorderWidth: 2
         };
       });
       
@@ -1290,57 +1290,7 @@ async function deleteScoreFromList(scoreId) {
           },
           plugins: {
             legend: {
-              display: true,
-              position: 'bottom',
-              onClick: function(e, legendItem, legend) {
-                // Get the chart instance
-                const chart = legend.chart;
-                
-                // Get the dataset index from the clicked legend item
-                const index = legendItem.datasetIndex;
-                
-                // Ensure index is valid
-                if (index === undefined || index < 0 || index >= chart.data.datasets.length) {
-                  console.warn('Invalid dataset index:', index);
-                  return;
-                }
-                
-                // Get the dataset metadata
-                const meta = chart.getDatasetMeta(index);
-                
-                if (!meta) {
-                  console.warn('No metadata for dataset:', index);
-                  return;
-                }
-                
-                // Toggle visibility: if hidden, show it; if visible, hide it
-                meta.hidden = meta.hidden === null ? true : null;
-                
-                // Update the chart
-                chart.update();
-                syncDatasetToggleStates(chart);
-                applyOverallScoreButtonState(chart);
-              },
-              onHover: (e, legendItem, legend) => {
-                if (!overlay) return;
-                overlay.style.display = 'block';
-                overlay.textContent = legendItem.text;
-                const rect = cardBody.getBoundingClientRect();
-                overlay.style.left = (e.native.clientX - rect.left + 12) + 'px';
-                overlay.style.top = (e.native.clientY - rect.top + 12) + 'px';
-              },
-              onLeave: () => {
-                if (!overlay) return;
-                overlay.style.display = 'none';
-              },
-              labels: {
-                color: '#fff',
-                font: {
-                  size: 12
-                },
-                padding: 15,
-                usePointStyle: true
-              }
+              display: false
             },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.9)',
@@ -1426,11 +1376,13 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
-      renderDatasetTogglePanel(statisticsChart);
-      syncDatasetToggleStates(statisticsChart);
-      
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
+      
+      // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
+      setTimeout(() => {
+        renderCategoryToggleButtons(statisticsChart);
+      }, 100);
       
       // Add hover support for all categories view
       mousemoveHandler = function(ev) {
@@ -1493,8 +1445,28 @@ async function deleteScoreFromList(scoreId) {
   // Handle category selector change - ensure it works properly
   categorySelect.addEventListener('change', function() {
     const selectedCategory = this.value;
-    console.log('Category changed to:', selectedCategory);
-    loadTeamStatistics(selectedCategory);
+    console.log('Category changed to:', selectedCategory || 'All Categories');
+    
+    // Clear any existing chart and buttons before loading new data
+    if (statisticsChart) {
+      statisticsChart.destroy();
+      statisticsChart = null;
+    }
+    
+    // Clear toggle buttons container
+    const toggleContainer = document.getElementById('statisticsDatasetToggles');
+    if (toggleContainer) {
+      toggleContainer.innerHTML = '';
+    }
+    
+    // Clear overall scores list
+    const scoresList = document.getElementById('overallScoresList');
+    if (scoresList) {
+      scoresList.innerHTML = '';
+    }
+    
+    // Load statistics for the selected category (empty string = all categories)
+    loadTeamStatistics(selectedCategory || '');
   });
 
   // Games Dashboard Functions
@@ -1531,17 +1503,17 @@ async function deleteScoreFromList(scoreId) {
 
     // Category colors for display
     const categoryColors = {
-      'Space Read': '#FF6B6B',
-      'DM Catch': '#4ECDC4',
-      'Driving': '#45B7D1',
-      'Finishing': '#FFA07A',
-      'Footwork': '#98D8C8',
-      'Passing': '#F7DC6F',
-      'Positioning': '#BB8FCE',
-      'QB12 DM': '#85C1E2',
-      'Relocation': '#F8B739',
-      'Cutting & Screening': '#EC7063',
-      'Transition': '#5DADE2'
+      'Space Read': '#FF9800',                 // Orange
+      'DM Catch': '#00E5FF',                   // Bright cyan
+      'Driving': '#2196F3',                    // Bright blue
+      'Finishing': '#FFD700',                  // Gold
+      'Footwork': '#00FF88',                   // Bright green
+      'Passing': '#FF6B00',                    // Bright orange
+      'Positioning': '#9C27B0',                // Bright purple
+      'QB12 DM': '#FF00FF',                    // Magenta
+      'Relocation': '#00BCD4',                 // Cyan-blue
+      'Cutting & Screening': '#FF1744',        // Bright red
+      'Transition': '#2196F3'                 // Bright blue
     };
 
     let html = '<div class="table-responsive"><table class="table table-dark table-hover">';

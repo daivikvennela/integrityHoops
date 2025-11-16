@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Column Toggle Test Suite</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .test-case {
+            background: #1a1a1a;
+            border-left: 3px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .test-case.pass { border-left-color: #0f0; }
+        .test-case.fail { border-left-color: #f00; }
+        .test-case.skip { border-left-color: #ff0; }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #0a0; }
+        .result { margin-top: 10px; padding: 10px; }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        pre { background: #000; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Column/Line Toggle Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Test Instructions</h2>
+        <ol>
+            <li>Navigate to the page you want to test:
+                <ul>
+                    <li><strong>Table Toggle:</strong> <code>/smartdash-results/&lt;filename&gt;</code></li>
+                    <li><strong>Chart Toggle:</strong> <code>/analytics-dashboard</code></li>
+                </ul>
+            </li>
+            <li>Open browser console (F12)</li>
+            <li>Copy the test code below and paste into console</li>
+            <li>Run the test functions</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Cases</h2>
+        
+        <div class="test-case">
+            <h3>TC-01: Toggle Button Exists</h3>
+            <p><strong>Expected:</strong> Toggle button is present in DOM</p>
+            <pre>const btn = document.querySelector('button[onclick*="columnMenu"]');
+console.assert(btn !== null, "Toggle button not found");</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-02: Menu Opens on Click</h3>
+            <p><strong>Expected:</strong> Menu becomes visible when button clicked</p>
+            <pre>const btn = document.querySelector('button[onclick*="columnMenu"]');
+btn.click();
+const menu = document.getElementById('columnMenu');
+console.assert(menu.classList.contains('show'), "Menu should have 'show' class");</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-03: Checkboxes Exist</h3>
+            <p><strong>Expected:</strong> Checkboxes exist for each column</p>
+            <pre>const checkboxes = document.querySelectorAll('.col-toggle');
+console.assert(checkboxes.length > 0, "No checkboxes found");
+console.log(`Found ${checkboxes.length} checkboxes`);</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-04: Individual Toggle Works</h3>
+            <p><strong>Expected:</strong> Clicking checkbox hides/shows column</p>
+            <pre>const table = document.getElementById('dataTable');
+const firstCol = table.querySelector('th[data-column-index="1"]');
+const initialHidden = firstCol.classList.contains('hidden-column');
+toggleColumn(1, false);
+console.assert(firstCol.classList.contains('hidden-column'), "Column should be hidden");
+toggleColumn(1, true);
+console.assert(!firstCol.classList.contains('hidden-column'), "Column should be visible");</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-05: Toggle All Works</h3>
+            <p><strong>Expected:</strong> Toggle All updates all checkboxes</p>
+            <pre>const toggleAll = document.getElementById('toggleAll');
+const checkboxes = document.querySelectorAll('.col-toggle');
+toggleAllColumns(false);
+const allUnchecked = Array.from(checkboxes).every(cb => !cb.checked);
+console.assert(allUnchecked, "All should be unchecked");
+toggleAllColumns(true);
+const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+console.assert(allChecked, "All should be checked");</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-06: Chart Toggle Button Exists</h3>
+            <p><strong>Expected:</strong> Chart toggle button exists on analytics dashboard</p>
+            <pre>const btn = document.querySelector('button[onclick*="chartLineMenu"]');
+console.assert(btn !== null, "Chart toggle button not found");</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-07: Chart Menu Populates</h3>
+            <p><strong>Expected:</strong> Chart menu populates with dataset checkboxes</p>
+            <pre>const chart = getChartInstance();
+if (chart) {
+    const checkboxes = document.querySelectorAll('.chart-line-toggle');
+    console.assert(checkboxes.length === chart.data.datasets.length, 
+                   "Checkbox count should match dataset count");
+}</pre>
+        </div>
+
+        <div class="test-case">
+            <h3>TC-08: Chart Line Toggle Works</h3>
+            <p><strong>Expected:</strong> Toggling checkbox hides/shows chart line</p>
+            <pre>const chart = getChartInstance();
+if (chart && chart.data.datasets.length > 0) {
+    const meta = chart.getDatasetMeta(0);
+    const initialHidden = meta.hidden === true;
+    toggleChartLine(0, false);
+    console.assert(chart.getDatasetMeta(0).hidden === true, "Line should be hidden");
+    toggleChartLine(0, true);
+    console.assert(chart.getDatasetMeta(0).hidden !== true, "Line should be visible");
+}</pre>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Quick Test Functions</h2>
+        <p>Copy and paste these into browser console:</p>
+        
+        <h3>Table Toggle Tests</h3>
+        <pre id="tableTests">
+function testTableToggle() {
+    console.log("🧪 Testing Table Column Toggle...");
+    const results = [];
+    
+    // TC-01: Button exists
+    const btn = document.querySelector('button[onclick*="columnMenu"]');
+    results.push({test: "TC-01: Button exists", pass: btn !== null});
+    
+    // TC-02: Menu exists
+    const menu = document.getElementById('columnMenu');
+    results.push({test: "TC-02: Menu exists", pass: menu !== null});
+    
+    // TC-03: Checkboxes exist
+    const checkboxes = document.querySelectorAll('.col-toggle');
+    results.push({test: "TC-03: Checkboxes exist", pass: checkboxes.length > 0});
+    
+    // TC-04: Functions exist
+    results.push({test: "TC-04: toggleColumn exists", pass: typeof toggleColumn === 'function'});
+    results.push({test: "TC-05: toggleAllColumns exists", pass: typeof toggleAllColumns === 'function'});
+    
+    // TC-06: Table has data attributes
+    const table = document.getElementById('dataTable');
+    if (table) {
+        const headers = table.querySelectorAll('th[data-column-index]');
+        results.push({test: "TC-06: Columns have data attributes", pass: headers.length > 0});
+    }
+    
+    // Print results
+    results.forEach(r => console.log(r.pass ? `✅ ${r.test}` : `❌ ${r.test}`));
+    const passed = results.filter(r => r.pass).length;
+    console.log(`\\n📊 Results: ${passed}/${results.length} tests passed`);
+    return results;
+}
+        </pre>
+
+        <h3>Chart Toggle Tests</h3>
+        <pre id="chartTests">
+function testChartToggle() {
+    console.log("🧪 Testing Chart Line Toggle...");
+    const results = [];
+    
+    // TC-01: Button exists
+    const btn = document.querySelector('button[onclick*="chartLineMenu"]');
+    results.push({test: "TC-01: Button exists", pass: btn !== null});
+    
+    // TC-02: Menu exists
+    const menu = document.getElementById('chartLineMenu');
+    results.push({test: "TC-02: Menu exists", pass: menu !== null});
+    
+    // TC-03: Chart exists
+    const chartCanvas = document.getElementById('teamStatisticsChart');
+    results.push({test: "TC-03: Chart canvas exists", pass: chartCanvas !== null});
+    
+    // TC-04: Functions exist
+    results.push({test: "TC-04: getChartInstance exists", pass: typeof getChartInstance === 'function'});
+    results.push({test: "TC-05: toggleChartLine exists", pass: typeof toggleChartLine === 'function'});
+    results.push({test: "TC-06: toggleAllChartLines exists", pass: typeof toggleAllChartLines === 'function'});
+    
+    // TC-07: Chart instance accessible
+    const chart = getChartInstance();
+    if (chart) {
+        results.push({test: "TC-07: Chart instance accessible", pass: true});
+        results.push({test: "TC-08: Chart has datasets", pass: chart.data.datasets.length > 0});
+    } else {
+        results.push({test: "TC-07: Chart instance accessible", pass: false});
+        results.push({test: "TC-08: Chart has datasets", pass: false});
+    }
+    
+    // Print results
+    results.forEach(r => console.log(r.pass ? `✅ ${r.test}` : `❌ ${r.test}`));
+    const passed = results.filter(r => r.pass).length;
+    console.log(`\\n📊 Results: ${passed}/${results.length} tests passed`);
+    return results;
+}
+        </pre>
+
+        <h3>Integration Tests</h3>
+        <pre id="integrationTests">
+function testToggleIntegration() {
+    console.log("🧪 Testing Toggle Integration...");
+    const results = [];
+    
+    // Test table toggle integration
+    const table = document.getElementById('dataTable');
+    if (table) {
+        const firstCol = table.querySelector('th[data-column-index="1"]');
+        if (firstCol) {
+            toggleColumn(1, false);
+            results.push({test: "Table: Column hides", pass: firstCol.classList.contains('hidden-column')});
+            toggleColumn(1, true);
+            results.push({test: "Table: Column shows", pass: !firstCol.classList.contains('hidden-column')});
+        }
+    }
+    
+    // Test toggle all integration
+    const toggleAll = document.getElementById('toggleAll');
+    if (toggleAll) {
+        const checkboxes = document.querySelectorAll('.col-toggle');
+        if (checkboxes.length > 0) {
+            toggleAllColumns(false);
+            const allUnchecked = Array.from(checkboxes).every(cb => !cb.checked);
+            results.push({test: "Table: Toggle All (off)", pass: allUnchecked});
+            
+            toggleAllColumns(true);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            results.push({test: "Table: Toggle All (on)", pass: allChecked});
+        }
+    }
+    
+    // Test chart toggle integration
+    const chart = getChartInstance();
+    if (chart && chart.data.datasets.length > 0) {
+        const meta = chart.getDatasetMeta(0);
+        toggleChartLine(0, false);
+        results.push({test: "Chart: Line hides", pass: chart.getDatasetMeta(0).hidden === true});
+        toggleChartLine(0, true);
+        results.push({test: "Chart: Line shows", pass: chart.getDatasetMeta(0).hidden !== true});
+    }
+    
+    // Print results
+    results.forEach(r => console.log(r.pass ? `✅ ${r.test}` : `❌ ${r.test}`));
+    const passed = results.filter(r => r.pass).length;
+    console.log(`\\n📊 Results: ${passed}/${results.length} tests passed`);
+    return results;
+}
+        </pre>
+
+        <h3>Edge Case: Toggle All Then Individual Toggle</h3>
+        <pre id="edgeCaseTests">
+function testToggleAllThenIndividual() {
+    console.log("🧪 Testing Edge Case: Individual Toggle After Toggle All...");
+    const results = [];
+    
+    // Test table toggle
+    const toggleAll = document.getElementById('toggleAll');
+    const checkboxes = document.querySelectorAll('.col-toggle');
+    const table = document.getElementById('dataTable');
+    
+    if (toggleAll && checkboxes.length > 0 && table) {
+        // Step 1: Toggle All OFF
+        toggleAllColumns(false);
+        const allUnchecked = Array.from(checkboxes).every(cb => !cb.checked);
+        results.push({test: "Step 1: Toggle All OFF", pass: allUnchecked});
+        
+        // Step 2: Toggle individual column ON
+        const firstCheckbox = document.getElementById('col-toggle-1');
+        const firstHeader = table.querySelector('th[data-column-index="1"]');
+        if (firstCheckbox && firstHeader) {
+            toggleColumn(1, true);
+            results.push({test: "Step 2: Individual toggle ON works", 
+                         pass: firstCheckbox.checked && !firstHeader.classList.contains('hidden-column')});
+            
+            // Step 3: Toggle All ON
+            toggleAllColumns(true);
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            results.push({test: "Step 3: Toggle All ON", pass: allChecked});
+            
+            // Step 4: Toggle individual column OFF
+            toggleColumn(1, false);
+            results.push({test: "Step 4: Individual toggle OFF works after Toggle All", 
+                         pass: !firstCheckbox.checked && firstHeader.classList.contains('hidden-column')});
+            
+            // Step 5: Verify toggle all is indeterminate
+            results.push({test: "Step 5: Toggle All shows indeterminate state", 
+                         pass: toggleAll.indeterminate === true});
+        }
+    }
+    
+    // Test chart toggle
+    const chartToggleAll = document.getElementById('toggleAllLines');
+    const chartCheckboxes = document.querySelectorAll('.chart-line-toggle');
+    const chart = getChartInstance();
+    
+    if (chartToggleAll && chartCheckboxes.length > 0 && chart) {
+        // Step 1: Toggle All OFF
+        toggleAllChartLines(false);
+        const chartAllUnchecked = Array.from(chartCheckboxes).every(cb => !cb.checked);
+        results.push({test: "Chart Step 1: Toggle All OFF", pass: chartAllUnchecked});
+        
+        // Step 2: Toggle individual line ON
+        const firstChartCheckbox = document.getElementById('chartLine-0');
+        if (firstChartCheckbox) {
+            toggleChartLine(0, true);
+            const meta = chart.getDatasetMeta(0);
+            results.push({test: "Chart Step 2: Individual toggle ON works", 
+                         pass: firstChartCheckbox.checked && meta.hidden !== true});
+            
+            // Step 3: Toggle All ON
+            toggleAllChartLines(true);
+            const chartAllChecked = Array.from(chartCheckboxes).every(cb => cb.checked);
+            results.push({test: "Chart Step 3: Toggle All ON", pass: chartAllChecked});
+            
+            // Step 4: Toggle individual line OFF
+            toggleChartLine(0, false);
+            const metaAfter = chart.getDatasetMeta(0);
+            results.push({test: "Chart Step 4: Individual toggle OFF works after Toggle All", 
+                         pass: !firstChartCheckbox.checked && metaAfter.hidden === true});
+        }
+    }
+    
+    // Print results
+    results.forEach(r => console.log(r.pass ? `✅ ${r.test}` : `❌ ${r.test}`));
+    const passed = results.filter(r => r.pass).length;
+    console.log(`\\n📊 Results: ${passed}/${results.length} tests passed`);
+    
+    if (passed === results.length) {
+        console.log("\\n🎉 All edge case tests passed! Individual toggles work correctly after Toggle All.");
+    } else {
+        console.log("\\n⚠️  Some tests failed. Individual toggles may not work after Toggle All.");
+    }
+    
+    return results;
+}
+        </pre>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Test Checklist</h2>
+        <ul>
+            <li>□ Toggle button appears on page</li>
+            <li>□ Clicking button opens/closes menu</li>
+            <li>□ Checkboxes exist for all columns/lines</li>
+            <li>□ Individual checkbox toggles column/line visibility</li>
+            <li>□ "Toggle All" checkbox works</li>
+            <li>□ Checkbox states sync with visibility</li>
+            <li>□ Menu closes when clicking outside</li>
+            <li>□ Chart menu populates after chart loads</li>
+            <li>□ Chart lines toggle correctly</li>
+            <li>□ No console errors</li>
+        </ul>
+    </div>
+
+</body>
+</html>
+

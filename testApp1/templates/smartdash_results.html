@@ -191,6 +191,70 @@
         font-size: 0.75rem;
     }
     
+    /* Column Menu */
+    .column-menu {
+        display: none;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    .column-menu.show {
+        display: block;
+    }
+    
+    .column-menu-header {
+        padding: 12px 16px;
+        border-bottom: 2px solid #e9ecef;
+        background: #f8f9fa;
+    }
+    
+    .column-toggle-all {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        margin: 0;
+    }
+    
+    .column-menu-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 8px 0;
+    }
+    
+    .column-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        cursor: pointer;
+        margin: 0;
+        transition: background 0.2s;
+    }
+    
+    .column-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .column-item input[type="checkbox"] {
+        cursor: pointer;
+    }
+    
+    .column-item span {
+        font-size: 0.9rem;
+        user-select: none;
+    }
+    
+    /* Hidden column styling */
+    .table th[data-column-index].hidden-column,
+    .table td[data-column-index].hidden-column {
+        display: none !important;
+    }
+    
     .table-info-card {
         background: white;
         border-radius: 12px;
@@ -399,26 +463,51 @@
         <div class="row mb-5">
             <div class="col-12">
                 <div class="table-container">
-                    <h5 class="mb-3">
-                        <i class="fas fa-table me-2"></i>
-                        Processed Data Table (5 Rows Visible)
-                    </h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            Processed Data Table (5 Rows Visible)
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="document.getElementById('columnMenu').classList.toggle('show')">
+                            <i class="fas fa-eye me-1"></i>Toggle Columns
+                        </button>
+                    </div>
+                    <div id="columnMenu" class="column-menu">
+                        <div class="column-menu-header">
+                            <label class="column-toggle-all">
+                                <input type="checkbox" id="toggleAll" checked>
+                                <span class="fw-bold">Toggle All</span>
+                            </label>
+                        </div>
+                        <div class="column-menu-list">
+                            <label class="column-item">
+                                <input type="checkbox" class="col-toggle" data-col="0" checked>
+                                <span># (Row Number)</span>
+                            </label>
+                            {% for column in columns %}
+                            <label class="column-item">
+                                <input type="checkbox" class="col-toggle" data-col="{{ loop.index }}" checked>
+                                <span>{{ column }} <small>(Col {{ loop.index }})</small></span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <div class="table-responsive" style="max-height: 300px; overflow: auto;">
                         <table class="table table-hover" id="dataTable">
                             <thead style="position: sticky; top: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; z-index: 1;">
                                 <tr>
-                                    <th style="width: 50px; min-width: 50px; text-align: center;">#</th>
+                                    <th data-column-index="0" style="width: 50px; min-width: 50px; text-align: center;">#</th>
                                     {% for column in columns %}
-                                    <th>{{ column }} <small class="d-block">(Col {{ loop.index }})</small></th>
+                                    <th data-column-index="{{ loop.index }}">{{ column }} <small class="d-block">(Col {{ loop.index }})</small></th>
                                     {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for row in data %}
-                                <tr>
-                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa; border-right: 2px solid #dee2e6;">{{ loop.index }}</td>
+                                <tr data-row-index="{{ loop.index }}">
+                                    <td data-column-index="0" style="text-align: center; font-weight: bold; background-color: #f8f9fa; border-right: 2px solid #dee2e6;">{{ loop.index }}</td>
                                     {% for column in columns %}
-                                    <td>
+                                    <td data-column-index="{{ loop.index }}">
                                         {% if row[column] is string and row[column].startswith('http') %}
                                             <a href="{{ row[column] }}" target="_blank" class="text-decoration-none">
                                                 <i class="fas fa-external-link-alt me-1"></i>
@@ -2742,6 +2831,100 @@ function autofillRelocation() {
         `Reverse Direction (+): ${rdPos} (-): ${rdNeg}`;
     alert(summaryRel);
 }
+
+// Column Visibility Functions
+function toggleColumn(colIndex, visible, skipUpdateToggleAll = false, skipCheckboxUpdate = false) {
+    const table = document.getElementById('dataTable');
+    if (!table) return;
+    
+    const selector = `[data-column-index="${colIndex}"]`;
+    const elements = table.querySelectorAll(`th${selector}, td${selector}`);
+    
+    // Toggle visibility
+    if (visible) {
+        elements.forEach(el => el.classList.remove('hidden-column'));
+    } else {
+        elements.forEach(el => el.classList.add('hidden-column'));
+    }
+    
+    // Update checkbox state only if not called from checkbox's own onchange event
+    if (!skipCheckboxUpdate) {
+        const checkbox = document.getElementById(`col-toggle-${colIndex}`);
+        if (checkbox) {
+            // Use a flag to prevent infinite loop
+            checkbox.dataset.updating = 'true';
+            checkbox.checked = visible;
+            delete checkbox.dataset.updating;
+        }
+    }
+    
+    // Update toggle all state unless we're in the middle of toggleAll
+    if (!skipUpdateToggleAll) {
+        updateToggleAll();
+    }
+}
+
+function toggleAllColumns(visible) {
+    const checkboxes = document.querySelectorAll('.col-toggle');
+    if (!checkboxes.length) return;
+    
+    // Update all columns without triggering individual updateToggleAll calls
+    checkboxes.forEach(cb => {
+        const colIndex = parseInt(cb.dataset.col);
+        // Set updating flag to prevent onchange from firing
+        cb.dataset.updating = 'true';
+        cb.checked = visible;
+        toggleColumn(colIndex, visible, true, false); // Skip updateToggleAll, but update checkbox
+        delete cb.dataset.updating;
+    });
+    
+    // Update toggle all state once at the end
+    updateToggleAll();
+}
+
+function updateToggleAll() {
+    const toggles = document.querySelectorAll('.col-toggle');
+    const toggleAll = document.getElementById('toggleAll');
+    if (!toggles.length || !toggleAll) return;
+    
+    const allChecked = Array.from(toggles).every(cb => cb.checked);
+    const allUnchecked = Array.from(toggles).every(cb => !cb.checked);
+    toggleAll.checked = allChecked;
+    toggleAll.indeterminate = !allChecked && !allUnchecked;
+}
+
+// Setup checkbox event listeners using event delegation
+document.addEventListener('DOMContentLoaded', function() {
+    // Use event delegation for column checkboxes (works even if menu is created dynamically)
+    const columnMenu = document.getElementById('columnMenu');
+    if (columnMenu) {
+        columnMenu.addEventListener('change', function(e) {
+            const checkbox = e.target;
+            
+            // Handle toggle all checkbox
+            if (checkbox.id === 'toggleAll') {
+                toggleAllColumns(checkbox.checked);
+                return;
+            }
+            
+            // Handle individual column checkboxes
+            if (checkbox.classList.contains('col-toggle') && !checkbox.dataset.updating) {
+                const colIndex = parseInt(checkbox.dataset.col);
+                if (!isNaN(colIndex)) {
+                    toggleColumn(colIndex, checkbox.checked, false, true);
+                }
+            }
+        });
+    }
+});
+
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('columnMenu');
+    if (menu && !menu.contains(e.target) && !e.target.closest('button')) {
+        menu.classList.remove('show');
+    }
+});
 
 </script>
 {% endblock %} 
