@@ -479,7 +479,7 @@
         <div id="chartLineMenu" class="chart-line-menu">
             <div class="chart-menu-header">
                 <label class="chart-toggle-all">
-                    <input type="checkbox" id="toggleAllLines" checked onchange="toggleAllChartLines(this.checked)">
+                    <input type="checkbox" id="toggleAllLines" checked>
                     <span class="fw-bold">Toggle All</span>
                 </label>
             </div>
@@ -724,58 +724,78 @@ function getChartInstance() {
     return null;
 }
 
-function toggleChartLine(datasetIndex, visible, skipSync = false, skipCheckboxUpdate = false) {
+function toggleChartLine(datasetIndex, visible) {
     const chart = getChartInstance();
-    if (!chart || !chart.data || !chart.data.datasets) return;
+    if (!chart || !chart.data || !chart.data.datasets) {
+        console.warn('toggleChartLine: Chart not available');
+        return;
+    }
     
-    if (datasetIndex >= chart.data.datasets.length) return;
+    if (datasetIndex >= chart.data.datasets.length) {
+        console.warn(`toggleChartLine: Invalid index ${datasetIndex}`);
+        return;
+    }
     
     const meta = chart.getDatasetMeta(datasetIndex);
-    if (meta) {
-        meta.hidden = !visible;
-        
-        // Update checkbox state only if not called from checkbox's own change event
-        if (!skipCheckboxUpdate) {
-            const checkbox = document.getElementById(`chartLine-${datasetIndex}`);
-            if (checkbox) {
-                checkbox.dataset.updating = 'true';
-                checkbox.checked = visible;
-                delete checkbox.dataset.updating;
-            }
-        }
-        
-        // Update chart and sync state unless we're in batch operation
-        if (!skipSync) {
-            chart.update('none');
-            syncCheckboxState();
-        }
+    if (!meta) {
+        console.warn(`toggleChartLine: No meta for index ${datasetIndex}`);
+        return;
     }
+    
+    // Update chart visibility
+    meta.hidden = !visible;
+    
+    // Update checkbox
+    const checkbox = document.getElementById(`chartLine-${datasetIndex}`);
+    if (checkbox) {
+        checkbox.checked = visible;
+    }
+    
+    // Update chart
+    chart.update('none');
+    
+    // Update toggle all state
+    updateToggleAllState();
 }
 
 function toggleAllChartLines(visible) {
     const chart = getChartInstance();
-    if (!chart || !chart.data || !chart.data.datasets) return;
+    if (!chart || !chart.data || !chart.data.datasets) {
+        console.warn('toggleAllChartLines: Chart not available');
+        return;
+    }
     
-    // Update all datasets without triggering individual syncs
+    // Update all datasets and checkboxes
     chart.data.datasets.forEach((dataset, index) => {
         const meta = chart.getDatasetMeta(index);
         if (meta) {
             meta.hidden = !visible;
         }
         
-        // Update checkbox state with flag to prevent onchange
         const checkbox = document.getElementById(`chartLine-${index}`);
         if (checkbox) {
-            checkbox.dataset.updating = 'true';
             checkbox.checked = visible;
-            toggleChartLine(index, visible, true, false); // Skip sync, but update checkbox
-            delete checkbox.dataset.updating;
         }
     });
     
-    // Update chart once and sync state once at the end
+    // Update chart once
     chart.update('none');
-    syncCheckboxState();
+    
+    // Update toggle all state
+    updateToggleAllState();
+}
+
+function updateToggleAllState() {
+    const checkboxes = document.querySelectorAll('.chart-line-toggle');
+    const toggleAll = document.getElementById('toggleAllLines');
+    
+    if (!checkboxes.length || !toggleAll) return;
+    
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const allUnchecked = Array.from(checkboxes).every(cb => !cb.checked);
+    
+    toggleAll.checked = allChecked;
+    toggleAll.indeterminate = !allChecked && !allUnchecked;
 }
 
 function syncCheckboxState() {
@@ -792,14 +812,7 @@ function syncCheckboxState() {
     });
     
     // Update toggle all state
-    const checkboxes = document.querySelectorAll('.chart-line-toggle');
-    const toggleAll = document.getElementById('toggleAllLines');
-    if (!checkboxes.length || !toggleAll) return;
-    
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    const allUnchecked = Array.from(checkboxes).every(cb => !cb.checked);
-    toggleAll.checked = allChecked;
-    toggleAll.indeterminate = !allChecked && !allUnchecked;
+    updateToggleAllState();
 }
 
 function populateChartLineMenu() {
@@ -821,9 +834,11 @@ function populateChartLineMenu() {
         checkbox.className = 'chart-line-toggle';
         checkbox.id = `chartLine-${index}`;
         checkbox.checked = isVisible;
-        checkbox.addEventListener('change', function() {
-            if (!this.dataset.updating) {
-                toggleChartLine(index, this.checked, false, true);
+        checkbox.addEventListener('change', function(e) {
+            e.stopPropagation();
+            const idx = parseInt(this.id.replace('chartLine-', ''));
+            if (!isNaN(idx)) {
+                toggleChartLine(idx, this.checked);
             }
         });
         
@@ -867,8 +882,17 @@ function startChartWatcher() {
     }, 300);
 }
 
-// Start watcher when page loads
+// Setup event listeners when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup toggle all checkbox
+    const toggleAll = document.getElementById('toggleAllLines');
+    if (toggleAll) {
+        toggleAll.addEventListener('change', function() {
+            toggleAllChartLines(this.checked);
+        });
+    }
+    
+    // Start watcher
     setTimeout(startChartWatcher, 1000);
 });
 
