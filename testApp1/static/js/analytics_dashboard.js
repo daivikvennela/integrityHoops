@@ -1144,6 +1144,13 @@ async function deleteScoreFromList(scoreId) {
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
+      // Populate chart line menu for toggle functionality
+      if (typeof populateChartLineMenu === 'function') {
+        setTimeout(() => {
+          populateChartLineMenu();
+        }, 200);
+      }
+      
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
         renderCategoryToggleButtons(statisticsChart);
@@ -1378,6 +1385,13 @@ async function deleteScoreFromList(scoreId) {
       
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
+      
+      // Populate chart line menu for toggle functionality
+      if (typeof populateChartLineMenu === 'function') {
+        setTimeout(() => {
+          populateChartLineMenu();
+        }, 200);
+      }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {

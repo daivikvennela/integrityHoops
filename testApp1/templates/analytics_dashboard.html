@@ -728,24 +728,24 @@ function toggleChartLine(datasetIndex, visible) {
     const chart = getChartInstance();
     if (!chart || !chart.data || !chart.data.datasets) {
         console.warn('toggleChartLine: Chart not available');
-        return;
+        return false;
     }
     
     if (datasetIndex >= chart.data.datasets.length) {
-        console.warn(`toggleChartLine: Invalid index ${datasetIndex}`);
-        return;
+        console.warn(`toggleChartLine: Invalid index ${datasetIndex}, max is ${chart.data.datasets.length - 1}`);
+        return false;
     }
     
     const meta = chart.getDatasetMeta(datasetIndex);
     if (!meta) {
         console.warn(`toggleChartLine: No meta for index ${datasetIndex}`);
-        return;
+        return false;
     }
     
     // Update chart visibility
     meta.hidden = !visible;
     
-    // Update checkbox
+    // Update checkbox state to match
     const checkbox = document.getElementById(`chartLine-${datasetIndex}`);
     if (checkbox) {
         checkbox.checked = visible;
@@ -756,22 +756,25 @@ function toggleChartLine(datasetIndex, visible) {
     
     // Update toggle all state
     updateToggleAllState();
+    
+    return true;
 }
 
 function toggleAllChartLines(visible) {
     const chart = getChartInstance();
     if (!chart || !chart.data || !chart.data.datasets) {
         console.warn('toggleAllChartLines: Chart not available');
-        return;
+        return false;
     }
     
-    // Update all datasets and checkboxes
+    // Update all datasets and checkboxes directly (no recursion)
     chart.data.datasets.forEach((dataset, index) => {
         const meta = chart.getDatasetMeta(index);
         if (meta) {
             meta.hidden = !visible;
         }
         
+        // Update checkbox state
         const checkbox = document.getElementById(`chartLine-${index}`);
         if (checkbox) {
             checkbox.checked = visible;
@@ -783,6 +786,8 @@ function toggleAllChartLines(visible) {
     
     // Update toggle all state
     updateToggleAllState();
+    
+    return true;
 }
 
 function updateToggleAllState() {
@@ -860,10 +865,17 @@ function populateChartLineMenu() {
 
 // Watch for chart updates and refresh menu
 let chartWatchInterval = null;
+let isUpdatingMenu = false;
+
 function startChartWatcher() {
-    if (chartWatchInterval) return;
+    if (chartWatchInterval) {
+        clearInterval(chartWatchInterval);
+    }
     
     chartWatchInterval = setInterval(() => {
+        // Prevent concurrent updates
+        if (isUpdatingMenu) return;
+        
         const chart = getChartInstance();
         const container = document.getElementById('chartLineList');
         
@@ -872,14 +884,16 @@ function startChartWatcher() {
             const currentCount = container.children.length;
             const chartCount = chart.data.datasets.length;
             
-            if (currentCount !== chartCount) {
+            if (currentCount !== chartCount && chartCount > 0) {
+                isUpdatingMenu = true;
                 populateChartLineMenu();
-            } else {
-                // Just sync state
+                setTimeout(() => { isUpdatingMenu = false; }, 100);
+            } else if (currentCount === chartCount && chartCount > 0) {
+                // Just sync state without recreating checkboxes
                 syncCheckboxState();
             }
         }
-    }, 300);
+    }, 500);
 }
 
 // Setup event listeners when page loads
