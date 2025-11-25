@@ -985,6 +985,27 @@ document.addEventListener('click', (e) => {
         menu.classList.remove('show');
     }
 });
+
+// Make functions globally available for tests
+window.getChartInstance = getChartInstance;
+window.toggleChartLine = toggleChartLine;
+window.toggleAllChartLines = toggleAllChartLines;
+window.populateChartLineMenu = populateChartLineMenu;
+window.updateToggleAllState = updateToggleAllState;
+window.syncCheckboxState = syncCheckboxState;
+</script>
+
+<!-- Chart Toggle Tests -->
+<script>
+// Load chart toggle tests inline since they need to run in browser context
+(function() {
+    const script = document.createElement('script');
+    script.src = '/tests/test_chart_toggle.js';
+    script.onerror = function() {
+        console.warn('Chart toggle test script not found at /tests/test_chart_toggle.js');
+    };
+    document.head.appendChild(script);
+})();
 </script>
 {% endblock %}
 
