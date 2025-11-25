@@ -1161,20 +1161,42 @@ async function deleteScoreFromList(scoreId) {
           responsive: true,
           maintainAspectRatio: false,
           backgroundColor: '#000000',  // Black background for plot
+          interaction: {
+            mode: 'nearest',
+            intersect: false,
+            axis: 'x'
+          },
           plugins: {
             legend: {
               display: false
             },
             tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
               titleColor: '#F9423A',
               bodyColor: '#fff',
               borderColor: '#F9423A',
               borderWidth: 2,
-              padding: 12,
+              padding: 15,
+              displayColors: true,
+              boxWidth: 10,
+              boxHeight: 10,
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 13
+              },
               callbacks: {
+                title: function(context) {
+                  // Show the category name as the title
+                  return context[0].dataset.label || 'Category';
+                },
                 label: function(context) {
-                  return `${context.dataset.label}: ${context.parsed.y.toFixed(4)}%`;
+                  // Show the value and date
+                  const value = context.parsed.y.toFixed(2);
+                  const date = context.label;
+                  return `Score: ${value}% (${date})`;
                 }
               }
             }
@@ -1467,23 +1489,45 @@ async function deleteScoreFromList(scoreId) {
           responsive: true,
           maintainAspectRatio: false,
           interaction: {
-            mode: 'index',
-            intersect: false
+            mode: 'nearest',
+            intersect: false,
+            axis: 'x'
           },
           plugins: {
             legend: {
               display: false
             },
             tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              backgroundColor: 'rgba(0, 0, 0, 0.95)',
               titleColor: '#F9423A',
               bodyColor: '#fff',
               borderColor: '#F9423A',
               borderWidth: 2,
-              padding: 12,
+              padding: 15,
+              displayColors: true,
+              boxWidth: 10,
+              boxHeight: 10,
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 13
+              },
               callbacks: {
+                title: function(context) {
+                  // Show the date as the title
+                  return context[0].label || 'Date';
+                },
                 label: function(context) {
-                  return `${context.dataset.label}: ${context.parsed.y.toFixed(4)}%`;
+                  // Show category name and value prominently
+                  const categoryName = context.dataset.label;
+                  const value = context.parsed.y.toFixed(2);
+                  return `${categoryName}: ${value}%`;
+                },
+                afterLabel: function(context) {
+                  // Add color indicator matching the line
+                  return '';
                 }
               }
             }
