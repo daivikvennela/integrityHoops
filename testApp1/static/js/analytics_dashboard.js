@@ -1245,6 +1245,19 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
+      // Initialize slider after first chart paint
+      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
+        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+          chart: statisticsChart,
+          container: sliderContainer,
+          initialPrecision,
+          anchor: 'end'
+        });
+        sliderContainer.dataset.bound = '1';
+      }
+      
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
@@ -1258,19 +1271,6 @@ async function deleteScoreFromList(scoreId) {
             console.error('Error populating chart line menu:', error);
           }
         }, 300);
-      }
-      
-      // Initialize slider after first chart paint
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
-        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-          chart: statisticsChart,
-          container: sliderContainer,
-          initialPrecision,
-          anchor: 'end'
-        });
-        sliderContainer.dataset.bound = '1';
       }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
@@ -1527,6 +1527,19 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
+      // Initialize slider after first chart paint
+      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
+        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+          chart: statisticsChart,
+          container: sliderContainer,
+          initialPrecision,
+          anchor: 'end'
+        });
+        sliderContainer.dataset.bound = '1';
+      }
+      
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
@@ -1540,19 +1553,6 @@ async function deleteScoreFromList(scoreId) {
             console.error('Error populating chart line menu:', error);
           }
         }, 300);
-      }
-      
-      // Initialize slider after first chart paint
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
-        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-          chart: statisticsChart,
-          container: sliderContainer,
-          initialPrecision,
-          anchor: 'end'
-        });
-        sliderContainer.dataset.bound = '1';
       }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
