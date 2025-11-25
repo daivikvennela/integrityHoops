@@ -430,13 +430,18 @@ def api_team_statistics():
                 # Sync overall scores to team_cog_scores table (for analytics dashboard)
                 _sync_overall_scores_to_analytics(overall_scores, game_info, db_manager)
                 
+                # Log how many unique games we have
+                unique_dates = set(stat['date'] for stat in statistics_data)
+                logger.info(f"Retrieved {len(unique_dates)} unique game dates from database")
+                
                 return jsonify({
                     'success': True,
                     'statistics': statistics_data,
                     'category': category,
                     'overall_scores': overall_scores,
                     'game_info': game_info,
-                    'source': 'database'
+                    'source': 'database',
+                    'unique_games': len(unique_dates)
                 })
         
         # If not in database or force_recalculate, calculate from CSV files
