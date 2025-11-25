@@ -1162,15 +1162,19 @@ async function deleteScoreFromList(scoreId) {
           maintainAspectRatio: false,
           backgroundColor: '#000000',  // Black background for plot
           interaction: {
-            mode: 'nearest',
-            intersect: false,
-            axis: 'x'
+            mode: 'point',
+            intersect: false
+          },
+          hover: {
+            mode: 'point',
+            intersect: false
           },
           plugins: {
             legend: {
               display: false
             },
             tooltip: {
+              enabled: true,
               backgroundColor: 'rgba(0, 0, 0, 0.95)',
               titleColor: '#F9423A',
               bodyColor: '#fff',
@@ -1181,22 +1185,23 @@ async function deleteScoreFromList(scoreId) {
               boxWidth: 10,
               boxHeight: 10,
               titleFont: {
-                size: 14,
+                size: 16,
                 weight: 'bold'
               },
               bodyFont: {
-                size: 13
+                size: 14
               },
               callbacks: {
                 title: function(context) {
-                  // Show the category name as the title
-                  return context[0].dataset.label || 'Category';
+                  // Show the category name prominently as the title
+                  const categoryName = context[0].dataset.label || 'Category';
+                  return '📊 ' + categoryName;
                 },
                 label: function(context) {
                   // Show the value and date
                   const value = context.parsed.y.toFixed(2);
                   const date = context.label;
-                  return `Score: ${value}% (${date})`;
+                  return `Score: ${value}% on ${date}`;
                 }
               }
             }
@@ -1489,15 +1494,19 @@ async function deleteScoreFromList(scoreId) {
           responsive: true,
           maintainAspectRatio: false,
           interaction: {
-            mode: 'nearest',
-            intersect: false,
-            axis: 'x'
+            mode: 'point',
+            intersect: false
+          },
+          hover: {
+            mode: 'point',
+            intersect: false
           },
           plugins: {
             legend: {
               display: false
             },
             tooltip: {
+              enabled: true,
               backgroundColor: 'rgba(0, 0, 0, 0.95)',
               titleColor: '#F9423A',
               bodyColor: '#fff',
@@ -1508,22 +1517,22 @@ async function deleteScoreFromList(scoreId) {
               boxWidth: 10,
               boxHeight: 10,
               titleFont: {
-                size: 14,
+                size: 16,
                 weight: 'bold'
               },
               bodyFont: {
-                size: 13
+                size: 14
               },
               callbacks: {
                 title: function(context) {
                   // Show the date as the title
-                  return context[0].label || 'Date';
+                  return '📅 ' + (context[0].label || 'Date');
                 },
                 label: function(context) {
                   // Show category name and value prominently
                   const categoryName = context.dataset.label;
                   const value = context.parsed.y.toFixed(2);
-                  return `${categoryName}: ${value}%`;
+                  return `📊 ${categoryName}: ${value}%`;
                 },
                 afterLabel: function(context) {
                   // Add color indicator matching the line
