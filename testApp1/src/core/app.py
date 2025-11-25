@@ -218,16 +218,15 @@ def api_cog_scores():
         game_results = {}
         if level == 'team' and points:
             from src.core.game_results import fetch_multiple_game_results
-            # Extract dates from points (points have 'timestamp' field)
+            # Extract dates from points (points now have 'date_iso' field)
             dates = []
             for point in points:
-                if 'timestamp' in point:
+                if 'date_iso' in point and point['date_iso']:
+                    dates.append(point['date_iso'])
+                elif 'timestamp' in point:
                     dt = datetime.fromtimestamp(point['timestamp'])
                     date_iso = dt.strftime('%Y-%m-%d')
                     dates.append(date_iso)
-                elif 'date' in point:
-                    # If point has date field directly (YYYY-MM-DD format)
-                    dates.append(point['date'])
             
             if dates:
                 game_results = fetch_multiple_game_results(dates)

@@ -13,23 +13,22 @@
     const accentColorLight = isHeatTheme ? '#FF5349' : '#c084fc';
     const accentColorFaded = isHeatTheme ? 'rgba(249,66,58,0.06)' : 'rgba(168,85,247,0.06)';
     
-    // Create data array with individual item styles for win/loss coloring
-    // Extract dates from labels (format: "MM/DD/YY Team v Opponent")
-    const dataWithColors = scores.map((score, index) => {
-      const label = labels[index];
-      // Try to extract date from label or use point data
-      let dateIso = null;
-      
-      // Try to get date from stored points
-      if (window.__cogPoints__ && window.__cogPoints__[index]) {
-        const point = window.__cogPoints__[index];
-        if (point.timestamp) {
-          const dt = new Date(point.timestamp * 1000);
-          dateIso = dt.toISOString().split('T')[0]; // YYYY-MM-DD
-        } else if (point.date) {
-          dateIso = point.date;
+      // Create data array with individual item styles for win/loss coloring
+      const dataWithColors = scores.map((score, index) => {
+        const label = labels[index];
+        // Try to get date from stored points
+        let dateIso = null;
+        
+        if (window.__cogPoints__ && window.__cogPoints__[index]) {
+          const point = window.__cogPoints__[index];
+          // Use date_iso if available (preferred), otherwise extract from timestamp
+          if (point.date_iso) {
+            dateIso = point.date_iso;
+          } else if (point.timestamp) {
+            const dt = new Date(point.timestamp * 1000);
+            dateIso = dt.toISOString().split('T')[0]; // YYYY-MM-DD
+          }
         }
-      }
       
       // Determine color based on win/loss
       let pointColor = accentColor;  // Default
@@ -77,11 +76,12 @@
           if (window.__cogPoints__ && window.__cogPoints__[index]) {
             const point = window.__cogPoints__[index];
             let dateIso = null;
-            if (point.timestamp) {
+            // Use date_iso if available (preferred), otherwise extract from timestamp
+            if (point.date_iso) {
+              dateIso = point.date_iso;
+            } else if (point.timestamp) {
               const dt = new Date(point.timestamp * 1000);
               dateIso = dt.toISOString().split('T')[0];
-            } else if (point.date) {
-              dateIso = point.date;
             }
             
             if (dateIso && gameResults[dateIso]) {

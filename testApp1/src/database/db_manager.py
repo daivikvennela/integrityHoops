@@ -435,10 +435,18 @@ class DatabaseManager:
                 title = f"{label} {row.get('team') or ''} v {row.get('opponent') or ''}".strip()
             else:
                 title = f"{label} {row.get('team')} v {row.get('opponent')}"
+            # Convert timestamp to ISO date (YYYY-MM-DD) for game results matching
+            try:
+                dt = datetime.fromtimestamp(ts)
+                date_iso = dt.strftime('%Y-%m-%d')
+            except Exception:
+                date_iso = None
+            
             points.append({
                 'id': row.get('id'),
                 'label': title,
                 'date': label,
+                'date_iso': date_iso,  # Add ISO date for game results matching
                 'timestamp': ts,
                 'score': row['score'],
                 'source': row.get('source', 'Manual'),
