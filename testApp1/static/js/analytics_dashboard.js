@@ -1814,6 +1814,13 @@ async function deleteScoreFromList(scoreId) {
       statisticsChart = null;
     }
     
+    // Reset slider binding so it can be reinitialized
+    const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+    if (sliderContainer) {
+      sliderContainer.dataset.bound = '0';
+      sliderContainer.innerHTML = '';
+    }
+    
     // Clear toggle buttons container
     const toggleContainer = document.getElementById('statisticsDatasetToggles');
     if (toggleContainer) {
