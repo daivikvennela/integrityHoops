@@ -570,12 +570,16 @@ async function deleteScoreFromList(scoreId) {
     'Transition': '#2196F3'                 // Bright blue
   };
   
-  async function loadTeamStatistics(category = '') {
+  async function loadTeamStatistics(category = '', forceRefresh = false) {
     try {
+      // Add timestamp to prevent caching, and force_recalculate if needed
+      const timestamp = new Date().getTime();
+      const forceParam = forceRefresh ? '&force_recalculate=true' : '';
       const url = category 
-        ? `/api/team-statistics?category=${encodeURIComponent(category)}`
-        : '/api/team-statistics';
+        ? `/api/team-statistics?category=${encodeURIComponent(category)}&_t=${timestamp}${forceParam}`
+        : `/api/team-statistics?_t=${timestamp}${forceParam}`;
       
+      console.log('Loading team statistics from:', url);
       const response = await fetch(url);
       const data = await response.json();
       
@@ -620,6 +624,17 @@ async function deleteScoreFromList(scoreId) {
       // Log diagnostics if available
       if (data.diagnostics) {
         console.log('Team statistics diagnostics:', data.diagnostics);
+      }
+      
+      // Log unique games count
+      if (data.overall_scores) {
+        const uniqueGames = Object.keys(data.overall_scores).length;
+        console.log(`📊 Found ${uniqueGames} unique games in overall_scores:`, Object.keys(data.overall_scores));
+        if (uniqueGames !== 6) {
+          console.warn(`⚠️ Expected 6 games but found ${uniqueGames}. Games:`, Object.keys(data.overall_scores));
+        } else {
+          console.log('✅ All 6 games found!');
+        }
       }
       
       // Check if we have statistics data
@@ -1452,6 +1467,13 @@ async function deleteScoreFromList(scoreId) {
       chartCanvas.addEventListener('mouseleave', mouseleaveHandler);
     }
   }
+  
+  // Global function to refresh team statistics (called from HTML button)
+  window.refreshTeamStatistics = function() {
+    console.log('🔄 Refreshing team statistics with force recalculation...');
+    const selectedCategory = categorySelect.value || '';
+    loadTeamStatistics(selectedCategory, true); // true = force refresh
+  };
   
   // Load statistics on page load
   loadTeamStatistics();
