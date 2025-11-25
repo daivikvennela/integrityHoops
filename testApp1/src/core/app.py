@@ -199,6 +199,13 @@ def api_scorecard_data(filename):
         logger.exception("Error generating scorecard data API response")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/tests/<path:filename>')
+def serve_test_file(filename):
+    """Serve test files for browser-based testing"""
+    import os
+    test_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'tests')
+    return send_from_directory(test_dir, filename)
+
 @app.route('/api/cog-scores')
 def api_cog_scores():
     """Return cog scores over games for charting.

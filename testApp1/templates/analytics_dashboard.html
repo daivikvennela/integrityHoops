@@ -752,12 +752,18 @@
 <script>
 // Chart Line Toggle Functions
 function getChartInstance() {
+    // Try to get from global variable first (set in analytics_dashboard.js)
+    if (typeof statisticsChart !== 'undefined' && statisticsChart !== null) {
+        return statisticsChart;
+    }
+    
     const canvas = document.getElementById('teamStatisticsChart');
     if (!canvas) return null;
     
     // Chart.js stores instance on canvas, accessible via Chart.getChart()
     if (typeof Chart !== 'undefined' && Chart.getChart) {
-        return Chart.getChart(canvas);
+        const chart = Chart.getChart(canvas);
+        if (chart) return chart;
     }
     
     return null;
@@ -862,44 +868,67 @@ function syncCheckboxState() {
 function populateChartLineMenu() {
     const chart = getChartInstance();
     const container = document.getElementById('chartLineList');
-    if (!chart || !container || !chart.data || !chart.data.datasets) return;
+    if (!chart || !container || !chart.data || !chart.data.datasets) {
+        console.warn('populateChartLineMenu: Chart or container not available', {
+            chart: !!chart,
+            container: !!container,
+            hasData: chart ? !!chart.data : false,
+            hasDatasets: chart && chart.data ? !!chart.data.datasets : false
+        });
+        return;
+    }
     
+    // Prevent concurrent updates
+    if (isUpdatingMenu) {
+        console.log('populateChartLineMenu: Already updating, skipping');
+        return;
+    }
+    
+    isUpdatingMenu = true;
     container.innerHTML = '';
     
-    chart.data.datasets.forEach((dataset, index) => {
-        const meta = chart.getDatasetMeta(index);
-        const isVisible = meta ? (meta.hidden !== true) : true;
-        
-        const label = document.createElement('label');
-        label.className = 'chart-line-item';
-        
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'chart-line-toggle';
-        checkbox.id = `chartLine-${index}`;
-        checkbox.checked = isVisible;
-        checkbox.addEventListener('change', function(e) {
-            e.stopPropagation();
-            const idx = parseInt(this.id.replace('chartLine-', ''));
-            if (!isNaN(idx)) {
-                toggleChartLine(idx, this.checked);
-            }
+    try {
+        chart.data.datasets.forEach((dataset, index) => {
+            const meta = chart.getDatasetMeta(index);
+            const isVisible = meta ? (meta.hidden !== true) : true;
+            
+            const label = document.createElement('label');
+            label.className = 'chart-line-item';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'chart-line-toggle';
+            checkbox.id = `chartLine-${index}`;
+            checkbox.checked = isVisible;
+            
+            // Remove any existing listeners and add new one
+            checkbox.removeEventListener('change', checkbox._toggleHandler);
+            checkbox._toggleHandler = function(e) {
+                e.stopPropagation();
+                const idx = parseInt(this.id.replace('chartLine-', ''));
+                if (!isNaN(idx)) {
+                    toggleChartLine(idx, this.checked);
+                }
+            };
+            checkbox.addEventListener('change', checkbox._toggleHandler);
+            
+            const colorBar = document.createElement('span');
+            colorBar.className = 'line-color';
+            colorBar.style.background = dataset.borderColor || '#CCCCCC';
+            
+            const text = document.createElement('span');
+            text.textContent = dataset.label || `Dataset ${index + 1}`;
+            
+            label.appendChild(checkbox);
+            label.appendChild(colorBar);
+            label.appendChild(text);
+            container.appendChild(label);
         });
         
-        const colorBar = document.createElement('span');
-        colorBar.className = 'line-color';
-        colorBar.style.background = dataset.borderColor || '#CCCCCC';
-        
-        const text = document.createElement('span');
-        text.textContent = dataset.label || `Dataset ${index + 1}`;
-        
-        label.appendChild(checkbox);
-        label.appendChild(colorBar);
-        label.appendChild(text);
-        container.appendChild(label);
-    });
-    
-    syncCheckboxState();
+        syncCheckboxState();
+    } finally {
+        setTimeout(() => { isUpdatingMenu = false; }, 50);
+    }
 }
 
 // Watch for chart updates and refresh menu
