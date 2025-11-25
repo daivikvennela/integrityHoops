@@ -1144,6 +1144,12 @@ async function deleteScoreFromList(scoreId) {
         console.warn('No overall scores available for single category view');
       }
 
+      // Update slider if it exists
+      if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
+        // Store reference to update after chart creation
+        const updateSliderAfterCreation = true;
+      }
+      
       try {
         statisticsChart = new Chart(ctx, {
         type: 'line',
