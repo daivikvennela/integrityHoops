@@ -1478,6 +1478,128 @@ async function deleteScoreFromList(scoreId) {
   // Load statistics on page load
   loadTeamStatistics();
   
+  // Systems Check Functions
+  async function runSystemsCheck() {
+    const container = document.getElementById('systemsCheckContainer');
+    if (!container) return;
+    
+    container.innerHTML = '<div class="text-center text-muted py-2"><i class="fas fa-spinner fa-spin"></i> Running systems check...</div>';
+    
+    try {
+      const response = await fetch('/systems-check/api/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ base_url: window.location.origin })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        displaySystemsCheck(data.data);
+      } else {
+        container.innerHTML = `<div class="alert alert-danger">Error: ${data.error || 'Unknown error'}</div>`;
+      }
+    } catch (error) {
+      container.innerHTML = `<div class="alert alert-danger">Error running systems check: ${error.message}</div>`;
+    }
+  }
+  
+  function displaySystemsCheck(results) {
+    const container = document.getElementById('systemsCheckContainer');
+    if (!container) return;
+    
+    // Determine status color
+    let statusColor = '#F9423A'; // unhealthy
+    let statusClass = 'status-unhealthy';
+    if (results.score >= 80) {
+      statusColor = '#00ff00';
+      statusClass = 'status-healthy';
+    } else if (results.score >= 50) {
+      statusColor = '#ffa500';
+      statusClass = 'status-degraded';
+    }
+    
+    let html = `
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 0.9rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">System Health Score</div>
+        <div style="font-size: 3rem; font-weight: 900; color: ${statusColor}; text-shadow: 0 0 20px ${statusColor}80; margin: 10px 0;">
+          ${results.score}%
+        </div>
+        <span class="status-badge ${statusClass}" style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase;">
+          ${results.status}
+        </span>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px;">
+        <div style="background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #F9423A;">${results.total_checks}</div>
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Total</div>
+        </div>
+        <div style="background: rgba(0,255,0,0.1); border: 1px solid rgba(0,255,0,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #00ff00;">${results.passed}</div>
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Passed</div>
+        </div>
+        <div style="background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #ffa500;">${results.warnings}</div>
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Warnings</div>
+        </div>
+        <div style="background: rgba(249,66,58,0.1); border: 1px solid rgba(249,66,58,0.3); border-radius: 8px; padding: 10px; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 700; color: #F9423A;">${results.failed + results.errors}</div>
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">Failed</div>
+        </div>
+      </div>
+      
+      <div style="max-height: 400px; overflow-y: auto;">
+    `;
+    
+    results.checks.forEach(check => {
+      let statusColor = '#F9423A';
+      let statusBg = 'rgba(249,66,58,0.1)';
+      let statusBorder = 'rgba(249,66,58,0.3)';
+      
+      if (check.status === 'pass') {
+        statusColor = '#00ff00';
+        statusBg = 'rgba(0,255,0,0.1)';
+        statusBorder = 'rgba(0,255,0,0.3)';
+      } else if (check.status === 'warn') {
+        statusColor = '#ffa500';
+        statusBg = 'rgba(255,165,0,0.1)';
+        statusBorder = 'rgba(255,165,0,0.3)';
+      } else if (check.status === 'error') {
+        statusColor = '#808080';
+        statusBg = 'rgba(128,128,128,0.1)';
+        statusBorder = 'rgba(128,128,128,0.3)';
+      }
+      
+      html += `
+        <div style="background: #000; border: 1px solid ${statusBorder}; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-weight: 600; color: #fff;">${check.name}</div>
+            <span style="padding: 4px 12px; border-radius: 15px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; background: ${statusBg}; color: ${statusColor}; border: 1px solid ${statusBorder};">
+              ${check.status}
+            </span>
+          </div>
+          <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: ${check.details && check.details.length > 0 ? '8px' : '0'};">
+            ${check.message}
+          </div>
+          ${check.details && check.details.length > 0 ? `
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1);">
+              ${check.details.map(detail => `<div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; font-family: monospace; padding: 2px 0;">${detail}</div>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+  }
+  
+  // Run systems check on page load
+  if (document.getElementById('systemsCheckContainer')) {
+    runSystemsCheck();
+  }
+  
   // Handle category selector change - ensure it works properly
   categorySelect.addEventListener('change', function() {
     const selectedCategory = this.value;
