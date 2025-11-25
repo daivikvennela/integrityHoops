@@ -1243,10 +1243,15 @@ async function deleteScoreFromList(scoreId) {
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
       // Populate chart line menu for toggle functionality
+      // Ensure populateChartLineMenu is called after chart is fully initialized
       if (typeof populateChartLineMenu === 'function') {
         setTimeout(() => {
-          populateChartLineMenu();
-        }, 200);
+          try {
+            populateChartLineMenu();
+          } catch (error) {
+            console.error('Error populating chart line menu:', error);
+          }
+        }, 300);
       }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
@@ -1507,10 +1512,15 @@ async function deleteScoreFromList(scoreId) {
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
       
       // Populate chart line menu for toggle functionality
+      // Ensure populateChartLineMenu is called after chart is fully initialized
       if (typeof populateChartLineMenu === 'function') {
         setTimeout(() => {
-          populateChartLineMenu();
-        }, 200);
+          try {
+            populateChartLineMenu();
+          } catch (error) {
+            console.error('Error populating chart line menu:', error);
+          }
+        }, 300);
       }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
