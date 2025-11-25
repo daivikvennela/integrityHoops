@@ -960,6 +960,24 @@ document.addEventListener('click', (e) => {
         menu.classList.remove('show');
     }
 });
+
+// Debug: Test slider container on page load
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(() => {
+    const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+    console.log('=== SLIDER DEBUG TEST ===');
+    console.log('Container exists:', !!sliderContainer);
+    if (sliderContainer) {
+      console.log('Container HTML:', sliderContainer.innerHTML);
+      console.log('Container style:', window.getComputedStyle(sliderContainer).display);
+      console.log('Container visibility:', window.getComputedStyle(sliderContainer).visibility);
+      console.log('Container height:', window.getComputedStyle(sliderContainer).height);
+    }
+    console.log('IntegrityHoopsSlider:', window.IntegrityHoopsSlider);
+    console.log('createForChartJS function:', typeof window.IntegrityHoopsSlider?.createForChartJS);
+    console.log('========================');
+  }, 2000);
+});
 </script>
 {% endblock %}
 
