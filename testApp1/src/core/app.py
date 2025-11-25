@@ -1073,6 +1073,138 @@ def api_reseed_from_testcases():
         logger.exception('Error reseeding from testcases')
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/cog-scores/process-all-csvs', methods=['POST'])
+def api_process_all_csvs():
+    """Process all CSV files in testcases/test_csvs and add scores to database.
+    This will calculate scores and store them in team_cog_scores and team_statistics tables.
+    """
+    try:
+        # Locate test_csvs directory
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))  # src/core
+        test_csvs_dir = os.path.abspath(os.path.join(current_file_dir, '..', '..', 'testcases', 'test_csvs'))
+
+        if not os.path.isdir(test_csvs_dir):
+            return jsonify({'success': False, 'error': f'Test CSV directory not found: {test_csvs_dir}'}), 500
+
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+
+        # Get all CSV files
+        csv_files = [f for f in os.listdir(test_csvs_dir) if f.endswith('.csv') and not f.endswith('.numbers')]
+        csv_files.sort()
+
+        processed: list[dict] = []
+        skipped: list[dict] = []
+        errors: list[str] = []
+
+        COLUMN_NAME_MAP = {
+            'Space Read': 'Space Read',
+            'DM Catch': 'DM Catch',
+            'Driving': 'Driving',
+            'Finishing': 'Finishing',
+            'Footwork': 'Footwork',
+            'Passing': 'Passing',
+            'Positioning': 'Positioning',
+            'QB12 DM': 'QB12 DM',
+            'Relocation': 'Relocation',
+            'Cutting & Screeing': 'Cutting & Screening',
+            'Transition': 'Transition'
+        }
+        
+        DISPLAY_CATEGORIES = [
+            'Space Read', 'DM Catch', 'Driving', 'Finishing', 'Footwork',
+            'Passing', 'Positioning', 'QB12 DM', 'Relocation',
+            'Cutting & Screening', 'Transition'
+        ]
+
+        for csv_file in csv_files:
+            csv_path = os.path.join(test_csvs_dir, csv_file)
+            
+            try:
+                # Parse date and opponent from filename
+                date_string, date_iso, opponent, full_filename = parse_date_from_filename(csv_file)
+                
+                if not date_string or not date_iso:
+                    errors.append(f'Could not parse date from filename: {csv_file}')
+                    continue
+
+                # Calculate statistics using CogScoreCalculator
+                calculator = CogScoreCalculator(csv_path)
+                scores, overall = calculator.calculate_all_scores()
+                overall_int = int(round(overall))
+
+                # Convert date_iso to timestamp for database
+                dt = datetime.strptime(date_iso, '%Y-%m-%d')
+                game_date_timestamp = int(dt.timestamp())
+
+                # Check if already exists
+                team = 'Heat'
+                already_exists = db_manager.team_cog_score_exists(game_date_timestamp, team, opponent or 'Unknown')
+                
+                # Store team cog score
+                result = db_manager.upsert_team_cog_score(
+                    game_date=game_date_timestamp,
+                    team=team,
+                    opponent=opponent or 'Unknown',
+                    score=overall_int,
+                    source='csv',
+                    note=f'Processed from {csv_file}'
+                )
+
+                # Store category statistics
+                categories_stored = 0
+                for csv_col, display_name in COLUMN_NAME_MAP.items():
+                    if csv_col in scores and display_name in DISPLAY_CATEGORIES:
+                        score_data = scores[csv_col]
+                        percentage = score_data['score']
+                        positive_count = score_data.get('positive', 0)
+                        negative_count = score_data.get('negative', 0)
+                        total_count = score_data.get('total', 0)
+                        
+                        db_manager.insert_team_statistics(
+                            game_date_iso=date_iso,
+                            game_date_timestamp=game_date_timestamp,
+                            date_string=date_string,
+                            team=team,
+                            opponent=opponent or 'Unknown',
+                            category=display_name,
+                            percentage=percentage,
+                            positive_count=positive_count,
+                            negative_count=negative_count,
+                            total_count=total_count,
+                            overall_score=overall,
+                            csv_filename=csv_file
+                        )
+                        categories_stored += 1
+
+                if result is not None:
+                    processed.append({
+                        'filename': csv_file,
+                        'date_iso': date_iso,
+                        'opponent': opponent,
+                        'overall': overall_int,
+                        'categories': categories_stored,
+                        'action': 'updated' if already_exists else 'inserted'
+                    })
+                else:
+                    errors.append(f'Failed to store score for: {csv_file}')
+
+            except Exception as e:
+                error_msg = str(e)
+                errors.append(f'Error processing {csv_file}: {error_msg}')
+                logger.error(f'Error processing CSV file {csv_file}: {error_msg}', exc_info=True)
+                continue
+
+        return jsonify({
+            'success': True,
+            'processed': processed,
+            'skipped': skipped,
+            'errors': errors,
+            'total_files': len(csv_files)
+        })
+    except Exception as e:
+        logger.exception('Error processing all CSVs')
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def scrape_company_data(company_name):
     """Scrape additional data for a company (example function)"""
     try:
