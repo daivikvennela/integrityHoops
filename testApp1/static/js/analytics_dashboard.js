@@ -1260,6 +1260,27 @@ async function deleteScoreFromList(scoreId) {
         }, 300);
       }
       
+      // Initialize or update precision slider for Chart.js
+      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS) {
+        if (!sliderContainer.dataset.bound) {
+          // First time initialization
+          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+            chart: statisticsChart,
+            container: sliderContainer,
+            initialPrecision,
+            anchor: 'end'
+          });
+          sliderContainer.dataset.bound = '1';
+        } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
+          // Update slider with new chart data
+          setTimeout(() => {
+            window.teamStatsSlider.updateOriginalData();
+          }, 100);
+        }
+      }
+      
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
         renderCategoryToggleButtons(statisticsChart);
@@ -1527,6 +1548,27 @@ async function deleteScoreFromList(scoreId) {
             console.error('Error populating chart line menu:', error);
           }
         }, 300);
+      }
+      
+      // Initialize or update precision slider for Chart.js
+      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS) {
+        if (!sliderContainer.dataset.bound) {
+          // First time initialization
+          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+            chart: statisticsChart,
+            container: sliderContainer,
+            initialPrecision,
+            anchor: 'end'
+          });
+          sliderContainer.dataset.bound = '1';
+        } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
+          // Update slider with new chart data
+          setTimeout(() => {
+            window.teamStatsSlider.updateOriginalData();
+          }, 100);
+        }
       }
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
