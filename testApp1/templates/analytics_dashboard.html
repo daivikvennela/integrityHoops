@@ -757,13 +757,7 @@ function getChartInstance() {
     
     // Chart.js stores instance on canvas, accessible via Chart.getChart()
     if (typeof Chart !== 'undefined' && Chart.getChart) {
-        const chart = Chart.getChart(canvas);
-        if (chart) return chart;
-    }
-    
-    // Fallback: try to get from global variable (set in analytics_dashboard.js)
-    if (typeof window.statisticsChart !== 'undefined' && window.statisticsChart !== null) {
-        return window.statisticsChart;
+        return Chart.getChart(canvas);
     }
     
     return null;
@@ -868,9 +862,7 @@ function syncCheckboxState() {
 function populateChartLineMenu() {
     const chart = getChartInstance();
     const container = document.getElementById('chartLineList');
-    if (!chart || !container || !chart.data || !chart.data.datasets) {
-        return;
-    }
+    if (!chart || !container || !chart.data || !chart.data.datasets) return;
     
     container.innerHTML = '';
     
@@ -912,6 +904,7 @@ function populateChartLineMenu() {
 
 // Watch for chart updates and refresh menu
 let chartWatchInterval = null;
+let isUpdatingMenu = false;
 
 function startChartWatcher() {
     if (chartWatchInterval) {
@@ -919,6 +912,9 @@ function startChartWatcher() {
     }
     
     chartWatchInterval = setInterval(() => {
+        // Prevent concurrent updates
+        if (isUpdatingMenu) return;
+        
         const chart = getChartInstance();
         const container = document.getElementById('chartLineList');
         
@@ -928,7 +924,9 @@ function startChartWatcher() {
             const chartCount = chart.data.datasets.length;
             
             if (currentCount !== chartCount && chartCount > 0) {
+                isUpdatingMenu = true;
                 populateChartLineMenu();
+                setTimeout(() => { isUpdatingMenu = false; }, 100);
             } else if (currentCount === chartCount && chartCount > 0) {
                 // Just sync state without recreating checkboxes
                 syncCheckboxState();
@@ -958,27 +956,6 @@ document.addEventListener('click', (e) => {
         menu.classList.remove('show');
     }
 });
-
-// Make functions globally available for tests
-window.getChartInstance = getChartInstance;
-window.toggleChartLine = toggleChartLine;
-window.toggleAllChartLines = toggleAllChartLines;
-window.populateChartLineMenu = populateChartLineMenu;
-window.updateToggleAllState = updateToggleAllState;
-window.syncCheckboxState = syncCheckboxState;
-</script>
-
-<!-- Chart Toggle Tests -->
-<script>
-// Load chart toggle tests inline since they need to run in browser context
-(function() {
-    const script = document.createElement('script');
-    script.src = '/tests/test_chart_toggle.js';
-    script.onerror = function() {
-        console.warn('Chart toggle test script not found at /tests/test_chart_toggle.js');
-    };
-    document.head.appendChild(script);
-})();
 </script>
 {% endblock %}
 
