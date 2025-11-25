@@ -263,8 +263,8 @@ class SystemsCheckRunner:
             
         return check
     
-    def check_chart_toggle(self, base_url: str = 'http://localhost:5000') -> Dict[str, Any]:
-        """Check that chart toggle functionality is available"""
+    def check_chart_toggle_functionality(self, base_url: str = 'http://localhost:5000') -> Dict[str, Any]:
+        """Check that chart toggle functionality is available and working"""
         check = {
             'name': 'Chart Toggle Functionality',
             'status': 'unknown',
@@ -275,13 +275,20 @@ class SystemsCheckRunner:
         try:
             import requests
             
-            # Check if test file exists
-            test_file_path = os.path.join(self.base_dir, 'tests', 'test_chart_toggle.js')
-            if not os.path.exists(test_file_path):
-                check['status'] = 'warn'
-                check['message'] = 'Chart toggle test file not found'
-                check['details'].append('Test file missing: tests/test_chart_toggle.js')
-                return check
+            # Check if test files exist
+            test_files = [
+                'tests/test_chart_toggle.js',
+                'tests/test_chart_toggle_integration.js',
+            ]
+            
+            missing_tests = []
+            for test_file in test_files:
+                test_file_path = os.path.join(self.base_dir, test_file)
+                if os.path.exists(test_file_path):
+                    check['details'].append(f'  ✓ Test file exists: {test_file}')
+                else:
+                    missing_tests.append(test_file)
+                    check['details'].append(f'  ✗ Test file missing: {test_file}')
             
             # Check if analytics dashboard page exists and loads
             try:
@@ -294,19 +301,40 @@ class SystemsCheckRunner:
                     
                     has_toggle_menu = 'chartLineMenu' in html_content
                     has_toggle_functions = 'toggleChartLine' in html_content or 'getChartInstance' in html_content
-                    has_test_script = 'test_chart_toggle.js' in html_content
+                    has_populate_function = 'populateChartLineMenu' in html_content
+                    has_toggle_all = 'toggleAllChartLines' in html_content
+                    has_sync_function = 'syncCheckboxState' in html_content
+                    has_menu_elements = 'chartLineList' in html_content
                     
                     check['details'].append(f'Analytics dashboard accessible: ✓')
-                    check['details'].append(f'Toggle menu element: {"✓" if has_toggle_menu else "✗"}')
-                    check['details'].append(f'Toggle functions: {"✓" if has_toggle_functions else "✗"}')
-                    check['details'].append(f'Test script included: {"✓" if has_test_script else "✗"}')
+                    check['details'].append(f'Toggle menu HTML: {"✓" if has_toggle_menu else "✗"}')
+                    check['details'].append(f'Toggle functions defined: {"✓" if has_toggle_functions else "✗"}')
+                    check['details'].append(f'populateChartLineMenu function: {"✓" if has_populate_function else "✗"}')
+                    check['details'].append(f'toggleAllChartLines function: {"✓" if has_toggle_all else "✗"}')
+                    check['details'].append(f'syncCheckboxState function: {"✓" if has_sync_function else "✗"}')
+                    check['details'].append(f'Menu container elements: {"✓" if has_menu_elements else "✗"}')
                     
-                    if has_toggle_menu and has_toggle_functions:
+                    # Count how many required elements are present
+                    required_elements = [
+                        has_toggle_menu,
+                        has_toggle_functions,
+                        has_populate_function,
+                        has_toggle_all,
+                        has_sync_function,
+                        has_menu_elements
+                    ]
+                    present_count = sum(required_elements)
+                    total_required = len(required_elements)
+                    
+                    if present_count == total_required:
                         check['status'] = 'pass'
-                        check['message'] = 'Chart toggle functionality available on analytics dashboard'
-                    else:
+                        check['message'] = f'Chart toggle fully functional ({present_count}/{total_required} elements present)'
+                    elif present_count >= total_required * 0.75:
                         check['status'] = 'warn'
-                        check['message'] = 'Analytics dashboard accessible but toggle elements may be missing'
+                        check['message'] = f'Chart toggle partially functional ({present_count}/{total_required} elements present)'
+                    else:
+                        check['status'] = 'fail'
+                        check['message'] = f'Chart toggle missing critical elements ({present_count}/{total_required} elements present)'
                 else:
                     check['status'] = 'fail'
                     check['message'] = f'Analytics dashboard returned status {response.status_code}'
@@ -314,18 +342,36 @@ class SystemsCheckRunner:
             except requests.exceptions.ConnectionError:
                 check['status'] = 'warn'
                 check['message'] = 'Cannot connect to analytics dashboard (is Flask app running?)'
+                check['details'].append('Flask application may not be running')
             except Exception as e:
                 check['status'] = 'warn'
                 check['message'] = f'Error checking analytics dashboard: {str(e)}'
                 
+            # Add note about running JavaScript tests manually
+            if check['status'] in ['pass', 'warn']:
+                check['details'].append('')
+                check['details'].append('To run full JavaScript tests:')
+                check['details'].append('  1. Open browser to /analytics-dashboard')
+                check['details'].append('  2. Open browser console (F12)')
+                check['details'].append('  3. Load test scripts:')
+                check['details'].append('     - tests/test_chart_toggle.js')
+                check['details'].append('     - tests/test_chart_toggle_integration.js')
+                check['details'].append('  4. Check window.chartToggleTestResults')
+                
         except ImportError:
             check['status'] = 'warn'
             check['message'] = 'requests library not available for HTTP check'
+            check['details'].append('Install requests: pip install requests')
         except Exception as e:
             check['status'] = 'error'
             check['message'] = f'Error checking chart toggle: {str(e)}'
             
         return check
+    
+    # Alias for backward compatibility
+    def check_chart_toggle(self, base_url: str = 'http://localhost:5000') -> Dict[str, Any]:
+        """Alias for check_chart_toggle_functionality (backward compatibility)"""
+        return self.check_chart_toggle_functionality(base_url)
     
     def run_all_checks(self, base_url: str = 'http://localhost:5000') -> Dict[str, Any]:
         """Run all system checks"""
@@ -335,7 +381,7 @@ class SystemsCheckRunner:
             self.check_csv_processing(),
             self.check_database(),
             self.check_api_endpoint(base_url),
-            self.check_chart_toggle(base_url),
+            self.check_chart_toggle_functionality(base_url),
         ]
         
         # Calculate score

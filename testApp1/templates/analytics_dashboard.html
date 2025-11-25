@@ -761,76 +761,147 @@ function getChartInstance() {
     
     // Chart.js stores instance on canvas, accessible via Chart.getChart()
     if (typeof Chart !== 'undefined' && Chart.getChart) {
-        return Chart.getChart(canvas);
+        const chart = Chart.getChart(canvas);
+        if (chart) return chart;
+    }
+    
+    // Fallback to global statisticsChart variable if Chart.getChart doesn't work
+    if (typeof statisticsChart !== 'undefined' && statisticsChart) {
+        return statisticsChart;
     }
     
     return null;
 }
 
 function toggleChartLine(datasetIndex, visible) {
-    const chart = getChartInstance();
-    if (!chart || !chart.data || !chart.data.datasets) {
-        console.warn('toggleChartLine: Chart not available');
+    try {
+        const chart = getChartInstance();
+        if (!chart) {
+            console.warn('toggleChartLine: Chart instance not found');
+            return false;
+        }
+        
+        if (!chart.data || !chart.data.datasets) {
+            console.warn('toggleChartLine: Chart has no data or datasets');
+            return false;
+        }
+        
+        if (typeof datasetIndex !== 'number' || datasetIndex < 0) {
+            console.warn(`toggleChartLine: Invalid datasetIndex ${datasetIndex}`);
+            return false;
+        }
+        
+        if (datasetIndex >= chart.data.datasets.length) {
+            console.warn(`toggleChartLine: Index ${datasetIndex} out of bounds, max is ${chart.data.datasets.length - 1}`);
+            return false;
+        }
+        
+        const meta = chart.getDatasetMeta(datasetIndex);
+        if (!meta) {
+            console.warn(`toggleChartLine: No meta for index ${datasetIndex}`);
+            return false;
+        }
+        
+        // Update chart visibility
+        meta.hidden = !visible;
+        
+        // Update checkbox state to match
+        const checkbox = document.getElementById(`chartLine-${datasetIndex}`);
+        if (checkbox) {
+            checkbox.checked = visible;
+        } else {
+            console.warn(`toggleChartLine: Checkbox not found for index ${datasetIndex}`);
+        }
+        
+        // Update chart with error handling
+        try {
+            chart.update('none');
+        } catch (updateError) {
+            console.error('toggleChartLine: Chart update failed', updateError);
+            return false;
+        }
+        
+        // Update toggle all state
+        updateToggleAllState();
+        
+        return true;
+    } catch (error) {
+        console.error('toggleChartLine: Unexpected error', error);
         return false;
     }
-    
-    if (datasetIndex >= chart.data.datasets.length) {
-        console.warn(`toggleChartLine: Invalid index ${datasetIndex}, max is ${chart.data.datasets.length - 1}`);
-        return false;
-    }
-    
-    const meta = chart.getDatasetMeta(datasetIndex);
-    if (!meta) {
-        console.warn(`toggleChartLine: No meta for index ${datasetIndex}`);
-        return false;
-    }
-    
-    // Update chart visibility
-    meta.hidden = !visible;
-    
-    // Update checkbox state to match
-    const checkbox = document.getElementById(`chartLine-${datasetIndex}`);
-    if (checkbox) {
-        checkbox.checked = visible;
-    }
-    
-    // Update chart
-    chart.update('none');
-    
-    // Update toggle all state
-    updateToggleAllState();
-    
-    return true;
 }
 
 function toggleAllChartLines(visible) {
-    const chart = getChartInstance();
-    if (!chart || !chart.data || !chart.data.datasets) {
-        console.warn('toggleAllChartLines: Chart not available');
-        return false;
-    }
-    
-    // Update all datasets and checkboxes directly (no recursion)
-    chart.data.datasets.forEach((dataset, index) => {
-        const meta = chart.getDatasetMeta(index);
-        if (meta) {
-            meta.hidden = !visible;
+    try {
+        const chart = getChartInstance();
+        if (!chart) {
+            console.warn('toggleAllChartLines: Chart instance not found');
+            return false;
         }
         
-        // Update checkbox state
-        const checkbox = document.getElementById(`chartLine-${index}`);
-        if (checkbox) {
-            checkbox.checked = visible;
+        if (!chart.data || !chart.data.datasets) {
+            console.warn('toggleAllChartLines: Chart has no data or datasets');
+            return false;
         }
-    });
-    
-    // Update chart once
-    chart.update('none');
-    
-    // Update toggle all state
-    updateToggleAllState();
-    
-    return true;
+        
+        if (chart.data.datasets.length === 0) {
+            console.warn('toggleAllChartLines: No datasets to toggle');
+            return false;
+        }
+        
+        let successCount = 0;
+        let failureCount = 0;
+        
+        // Update all datasets and checkboxes directly (no recursion)
+        chart.data.datasets.forEach((dataset, index) => {
+            try {
+                const meta = chart.getDatasetMeta(index);
+                if (meta) {
+                    meta.hidden = !visible;
+                    successCount++;
+                } else {
+                    console.warn(`toggleAllChartLines: No meta for dataset ${index}`);
+                    failureCount++;
+                }
+                
+                // Update checkbox state
+                const checkbox = document.getElementById(`chartLine-${index}`);
+                if (checkbox) {
+                    checkbox.checked = visible;
+                } else {
+                    console.warn(`toggleAllChartLines: Checkbox not found for index ${index}`);
+                }
+            } catch (datasetError) {
+                console.error(`toggleAllChartLines: Error toggling dataset ${index}`, datasetError);
+                failureCount++;
+            }
+        });
+        
+        if (successCount === 0) {
+            console.warn('toggleAllChartLines: Failed to toggle any datasets');
+            return false;
+        }
+        
+        // Update chart once with error handling
+        try {
+            chart.update('none');
+        } catch (updateError) {
+            console.error('toggleAllChartLines: Chart update failed', updateError);
+            return false;
+        }
+        
+        // Update toggle all state
+        updateToggleAllState();
+        
+        if (failureCount > 0) {
+            console.warn(`toggleAllChartLines: ${successCount} succeeded, ${failureCount} failed`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('toggleAllChartLines: Unexpected error', error);
+        return false;
+    }
 }
 
 function updateToggleAllState() {
@@ -863,52 +934,114 @@ function syncCheckboxState() {
     updateToggleAllState();
 }
 
-function populateChartLineMenu() {
-    const chart = getChartInstance();
-    const container = document.getElementById('chartLineList');
-    if (!chart || !container || !chart.data || !chart.data.datasets) return;
-    
-    container.innerHTML = '';
-    
-    chart.data.datasets.forEach((dataset, index) => {
-        const meta = chart.getDatasetMeta(index);
-        const isVisible = meta ? (meta.hidden !== true) : true;
+// Flag to prevent concurrent menu updates
+let isPopulatingMenu = false;
+let lastMenuPopulationTime = 0;
+
+function populateChartLineMenu(forceUpdate = false) {
+    try {
+        // Prevent concurrent updates unless forced
+        if (isPopulatingMenu && !forceUpdate) {
+            console.log('populateChartLineMenu: Already populating, skipping');
+            return false;
+        }
         
-        const label = document.createElement('label');
-        label.className = 'chart-line-item';
+        // Throttle updates - don't update more than once per 100ms unless forced
+        const now = Date.now();
+        if (!forceUpdate && (now - lastMenuPopulationTime) < 100) {
+            console.log('populateChartLineMenu: Throttled, too soon since last update');
+            return false;
+        }
         
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.className = 'chart-line-toggle';
-        checkbox.id = `chartLine-${index}`;
-        checkbox.checked = isVisible;
-        checkbox.addEventListener('change', function(e) {
-            e.stopPropagation();
-            const idx = parseInt(this.id.replace('chartLine-', ''));
-            if (!isNaN(idx)) {
-                toggleChartLine(idx, this.checked);
+        isPopulatingMenu = true;
+        lastMenuPopulationTime = now;
+        
+        const chart = getChartInstance();
+        const container = document.getElementById('chartLineList');
+        
+        if (!chart) {
+            console.warn('populateChartLineMenu: Chart not available');
+            isPopulatingMenu = false;
+            return false;
+        }
+        
+        if (!container) {
+            console.warn('populateChartLineMenu: Container not found');
+            isPopulatingMenu = false;
+            return false;
+        }
+        
+        if (!chart.data || !chart.data.datasets) {
+            console.warn('populateChartLineMenu: Chart has no data or datasets');
+            isPopulatingMenu = false;
+            return false;
+        }
+        
+        if (chart.data.datasets.length === 0) {
+            console.log('populateChartLineMenu: No datasets to display');
+            container.innerHTML = '<div style="padding: 10px; color: rgba(255,255,255,0.5);">No data available</div>';
+            isPopulatingMenu = false;
+            return false;
+        }
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        // Create menu items for each dataset
+        chart.data.datasets.forEach((dataset, index) => {
+            try {
+                const meta = chart.getDatasetMeta(index);
+                const isVisible = meta ? (meta.hidden !== true) : true;
+                
+                const label = document.createElement('label');
+                label.className = 'chart-line-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'chart-line-toggle';
+                checkbox.id = `chartLine-${index}`;
+                checkbox.checked = isVisible;
+                checkbox.dataset.index = index; // Store index as data attribute
+                
+                // Use event listener with proper cleanup
+                checkbox.addEventListener('change', function(e) {
+                    e.stopPropagation();
+                    const idx = parseInt(this.dataset.index);
+                    if (!isNaN(idx)) {
+                        toggleChartLine(idx, this.checked);
+                    }
+                });
+                
+                const colorBar = document.createElement('span');
+                colorBar.className = 'line-color';
+                colorBar.style.background = dataset.borderColor || '#CCCCCC';
+                
+                const text = document.createElement('span');
+                text.textContent = dataset.label || `Dataset ${index + 1}`;
+                
+                label.appendChild(checkbox);
+                label.appendChild(colorBar);
+                label.appendChild(text);
+                container.appendChild(label);
+            } catch (itemError) {
+                console.error(`populateChartLineMenu: Error creating item ${index}`, itemError);
             }
         });
         
-        const colorBar = document.createElement('span');
-        colorBar.className = 'line-color';
-        colorBar.style.background = dataset.borderColor || '#CCCCCC';
+        // Sync checkbox states with current chart state
+        syncCheckboxState();
         
-        const text = document.createElement('span');
-        text.textContent = dataset.label || `Dataset ${index + 1}`;
-        
-        label.appendChild(checkbox);
-        label.appendChild(colorBar);
-        label.appendChild(text);
-        container.appendChild(label);
-    });
-    
-    syncCheckboxState();
+        isPopulatingMenu = false;
+        return true;
+    } catch (error) {
+        console.error('populateChartLineMenu: Unexpected error', error);
+        isPopulatingMenu = false;
+        return false;
+    }
 }
 
 // Watch for chart updates and refresh menu
 let chartWatchInterval = null;
-let isUpdatingMenu = false;
 
 function startChartWatcher() {
     if (chartWatchInterval) {
@@ -916,9 +1049,6 @@ function startChartWatcher() {
     }
     
     chartWatchInterval = setInterval(() => {
-        // Prevent concurrent updates
-        if (isUpdatingMenu) return;
-        
         const chart = getChartInstance();
         const container = document.getElementById('chartLineList');
         
@@ -928,15 +1058,21 @@ function startChartWatcher() {
             const chartCount = chart.data.datasets.length;
             
             if (currentCount !== chartCount && chartCount > 0) {
-                isUpdatingMenu = true;
-                populateChartLineMenu();
-                setTimeout(() => { isUpdatingMenu = false; }, 100);
+                // Dataset count changed, force update menu
+                populateChartLineMenu(true);
             } else if (currentCount === chartCount && chartCount > 0) {
                 // Just sync state without recreating checkboxes
                 syncCheckboxState();
             }
         }
     }, 500);
+}
+
+function stopChartWatcher() {
+    if (chartWatchInterval) {
+        clearInterval(chartWatchInterval);
+        chartWatchInterval = null;
+    }
 }
 
 // Setup event listeners when page loads
