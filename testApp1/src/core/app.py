@@ -586,8 +586,17 @@ def api_team_statistics():
         # Sort by date
         statistics_data.sort(key=lambda x: x['date'])
         
+        # Sync overall scores to team_cog_scores table (for analytics dashboard)
+        _sync_overall_scores_to_analytics(overall_scores, game_info, db_manager)
+        
+        # Fetch game results (win/loss) for all dates
+        from src.core.game_results import fetch_multiple_game_results
+        unique_dates = list(set(stat['date'] for stat in statistics_data))
+        game_results = fetch_multiple_game_results(unique_dates)
+        
         # Log summary
-        logger.info(f"Team statistics summary: {len(processed_files)} files processed, {len(statistics_data)} data points, {len(processing_errors)} errors")
+        logger.info(f"Team statistics summary: {len(processed_files)} files processed, {len(unique_dates)} unique games, {len(statistics_data)} data points, {len(processing_errors)} errors")
+        logger.info(f"Found game results for {len(game_results)} games")
         
         # Build response with diagnostic info
         response_data = {
