@@ -496,6 +496,9 @@
                 <button class="btn btn-sm btn-black-red" onclick="document.getElementById('chartLineMenu').classList.toggle('show')">
                     <i class="fas fa-eye me-1"></i>Toggle Lines
                 </button>
+                <button class="btn btn-sm btn-outline-light" onclick="runTooltipDiagnostic()" title="Test why tooltips aren't showing">
+                    <i class="fas fa-bug me-1"></i>Test Tooltips
+                </button>
             </div>
         </div>
         <!-- Precision Slider for Team Statistics -->
@@ -1116,8 +1119,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<!-- Load tooltip test script for diagnostics -->
+<!-- Load tooltip test scripts for diagnostics -->
 <script src="{{ url_for('static', filename='tests/test_chart_tooltips.js') }}"></script>
+<script src="{{ url_for('static', filename='tests/test_tooltips_live.js') }}"></script>
+
+<script>
+// Function to run tooltip diagnostic
+function runTooltipDiagnostic() {
+    console.clear();
+    console.log('%c🔍 RUNNING TOOLTIP DIAGNOSTIC...', 'font-size: 16px; font-weight: bold; color: #F9423A;');
+    console.log('%cOpen the browser console (F12) to see results', 'font-size: 12px; color: #999;');
+    
+    // Run the diagnostic function
+    if (typeof runLiveTooltipDiagnostic === 'function') {
+        runLiveTooltipDiagnostic();
+    } else {
+        console.error('Diagnostic script not loaded!');
+    }
+    
+    alert('Tooltip Diagnostic running...\n\nCheck the browser console (press F12) for detailed results.\n\nLook for "🔍 === TOOLTIP DIAGNOSTIC START ===" in the console.');
+}
+</script>
 
 {% endblock %}
 
