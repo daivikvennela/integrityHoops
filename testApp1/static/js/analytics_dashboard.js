@@ -1300,31 +1300,42 @@ async function deleteScoreFromList(scoreId) {
       });
       
       // Add overall scores dataset overlay if available
-      console.log('Overall scores available:', overallScores);
-      console.log('Dates array:', dates);
-      if (Object.keys(overallScores).length > 0) {
-        const overallScoresData = dates.map(date => {
-          const score = overallScores[date] || null;
-          console.log(`Date ${date}: score = ${score}`);
-          return score;
-        });
-        
-        console.log('Overall scores data array:', overallScoresData);
-        datasets.push({
-          label: 'Overall Cog Score',
-          data: overallScoresData,
-          borderColor: '#F9423A',
-          backgroundColor: '#F9423A20',
-          borderWidth: 3,
-          borderDash: [5, 5],
-          fill: false,
-          tension: 0.4,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          pointBackgroundColor: '#F9423A',
-          pointBorderColor: '#000',
-          pointBorderWidth: 2
-        });
+        console.log('Overall scores available:', overallScores);
+        console.log('Dates array:', dates);
+        if (Object.keys(overallScores).length > 0) {
+          const overallScoresData = dates.map(date => {
+            const score = overallScores[date] || null;
+            console.log(`Date ${date}: score = ${score}`);
+            return score;
+          });
+          
+          // Color code overall scores points based on win/loss
+          const overallPointColors = dates.map(date => {
+            const result = gameResults[date];
+            if (result === 'win') {
+              return '#00ff00';  // Green for win
+            } else if (result === 'loss') {
+              return '#F9423A';  // Red for loss
+            }
+            return '#F9423A';  // Default red if result unknown
+          });
+          
+          console.log('Overall scores data array:', overallScoresData);
+          datasets.push({
+            label: 'Overall Cog Score',
+            data: overallScoresData,
+            borderColor: '#F9423A',
+            backgroundColor: '#F9423A20',
+            borderWidth: 3,
+            borderDash: [5, 5],
+            fill: false,
+            tension: 0.4,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            pointBackgroundColor: overallPointColors,  // Array of colors for each point
+            pointBorderColor: '#000',
+            pointBorderWidth: 2
+          });
         console.log('Added overall scores dataset. Total datasets:', datasets.length);
       } else {
         console.warn('No overall scores available to add to chart');
