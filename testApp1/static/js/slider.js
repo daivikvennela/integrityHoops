@@ -113,7 +113,13 @@
       anchor = 'end',
       minWindow = 8
     } = opts || {};
-    if (!chart || !container) return null;
+    
+    console.log('createForChartJS called with:', { chart: !!chart, container: !!container, initialPrecision });
+    
+    if (!chart || !container) {
+      console.warn('createForChartJS: Missing chart or container', { chart: !!chart, container: !!container });
+      return null;
+    }
 
     // Store original data
     const originalData = {
