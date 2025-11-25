@@ -1247,15 +1247,37 @@ async function deleteScoreFromList(scoreId) {
       
       // Initialize slider after first chart paint
       const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
+      console.log('Attempting to initialize slider:', {
+        container: !!sliderContainer,
+        sliderLib: !!window.IntegrityHoopsSlider,
+        createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+        chart: !!statisticsChart,
+        bound: sliderContainer?.dataset.bound
+      });
+      
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && !sliderContainer.dataset.bound) {
         const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-          chart: statisticsChart,
-          container: sliderContainer,
-          initialPrecision,
-          anchor: 'end'
+        console.log('Creating slider with precision:', initialPrecision);
+        try {
+          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+            chart: statisticsChart,
+            container: sliderContainer,
+            initialPrecision,
+            anchor: 'end'
+          });
+          sliderContainer.dataset.bound = '1';
+          console.log('Slider created successfully:', window.teamStatsSlider);
+        } catch (error) {
+          console.error('Error creating slider:', error);
+        }
+      } else {
+        console.warn('Slider initialization skipped:', {
+          container: !!sliderContainer,
+          sliderLib: !!window.IntegrityHoopsSlider,
+          createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+          chart: !!statisticsChart,
+          bound: sliderContainer?.dataset.bound
         });
-        sliderContainer.dataset.bound = '1';
       }
       
       // Update overall scores list with chart instance for toggle functionality
@@ -1529,15 +1551,37 @@ async function deleteScoreFromList(scoreId) {
       
       // Initialize slider after first chart paint
       const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && !sliderContainer.dataset.bound) {
+      console.log('Attempting to initialize slider:', {
+        container: !!sliderContainer,
+        sliderLib: !!window.IntegrityHoopsSlider,
+        createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+        chart: !!statisticsChart,
+        bound: sliderContainer?.dataset.bound
+      });
+      
+      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && !sliderContainer.dataset.bound) {
         const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-          chart: statisticsChart,
-          container: sliderContainer,
-          initialPrecision,
-          anchor: 'end'
+        console.log('Creating slider with precision:', initialPrecision);
+        try {
+          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+            chart: statisticsChart,
+            container: sliderContainer,
+            initialPrecision,
+            anchor: 'end'
+          });
+          sliderContainer.dataset.bound = '1';
+          console.log('Slider created successfully:', window.teamStatsSlider);
+        } catch (error) {
+          console.error('Error creating slider:', error);
+        }
+      } else {
+        console.warn('Slider initialization skipped:', {
+          container: !!sliderContainer,
+          sliderLib: !!window.IntegrityHoopsSlider,
+          createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+          chart: !!statisticsChart,
+          bound: sliderContainer?.dataset.bound
         });
-        sliderContainer.dataset.bound = '1';
       }
       
       // Update overall scores list with chart instance for toggle functionality
