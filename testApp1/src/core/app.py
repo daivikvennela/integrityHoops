@@ -15,6 +15,18 @@ from src.api.player_management_dashboard import player_dashboard
 from src.core.dashboard import dashboard_bp
 from src.database.db_manager import DatabaseManager
 from src.api.notebook_api import notebook_api, notebook_bp
+try:
+    import sys
+    import os
+    # Add testApp1 to path for systems_check module
+    testapp1_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    if testapp1_path not in sys.path:
+        sys.path.insert(0, testapp1_path)
+    from systems_check.api import systems_check_bp
+except ImportError as e:
+    # Systems check is optional, don't fail if it's not available
+    logger.warning(f"Systems check module not available: {e}")
+    systems_check_bp = None
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +53,8 @@ app.register_blueprint(player_dashboard)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(notebook_api)
 app.register_blueprint(notebook_bp)
+if systems_check_bp:
+    app.register_blueprint(systems_check_bp)
 
 # Configuration (use absolute paths based on app.root_path)
 DATA_ROOT = os.path.join(app.root_path, 'data')

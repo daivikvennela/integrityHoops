@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Systems Check - Integrity Hoops{% endblock %}
+
+{% block extra_css %}
+<style>
+    .systems-check-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .score-display {
+        text-align: center;
+        padding: 40px;
+        background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+        border: 2px solid rgba(249, 66, 58, 0.5);
+        border-radius: 16px;
+        margin-bottom: 30px;
+        box-shadow: 0 0 30px rgba(249, 66, 58, 0.2);
+    }
+    
+    .score-value {
+        font-size: 5rem;
+        font-weight: 900;
+        color: #F9423A;
+        text-shadow: 0 0 30px rgba(249, 66, 58, 0.8);
+        margin: 20px 0;
+        font-family: 'Arial Black', sans-serif;
+    }
+    
+    .score-label {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.7);
+        text-transform: uppercase;
+        letter-spacing: 3px;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px;
+    }
+    
+    .status-healthy {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.5);
+    }
+    
+    .status-degraded {
+        background: rgba(255, 165, 0, 0.2);
+        color: #ffa500;
+        border: 1px solid rgba(255, 165, 0, 0.5);
+    }
+    
+    .status-unhealthy {
+        background: rgba(249, 66, 58, 0.2);
+        color: #F9423A;
+        border: 1px solid rgba(249, 66, 58, 0.5);
+    }
+    
+    .check-card {
+        background: #000;
+        border: 1px solid rgba(249, 66, 58, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .check-card:hover {
+        border-color: rgba(249, 66, 58, 0.6);
+        box-shadow: 0 0 20px rgba(249, 66, 58, 0.2);
+    }
+    
+    .check-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .check-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .check-status {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .check-status.pass {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.5);
+    }
+    
+    .check-status.warn {
+        background: rgba(255, 165, 0, 0.2);
+        color: #ffa500;
+        border: 1px solid rgba(255, 165, 0, 0.5);
+    }
+    
+    .check-status.fail {
+        background: rgba(249, 66, 58, 0.2);
+        color: #F9423A;
+        border: 1px solid rgba(249, 66, 58, 0.5);
+    }
+    
+    .check-status.error {
+        background: rgba(128, 128, 128, 0.2);
+        color: #808080;
+        border: 1px solid rgba(128, 128, 128, 0.5);
+    }
+    
+    .check-message {
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 10px;
+        font-size: 0.95rem;
+    }
+    
+    .check-details {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .check-details ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .check-details li {
+        padding: 5px 0;
+        color: rgba(255, 255, 255, 0.6);
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+    }
+    
+    .refresh-btn {
+        background: #000;
+        color: #fff;
+        border: 2px solid #F9423A;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+    
+    .refresh-btn:hover {
+        background: rgba(249, 66, 58, 0.1);
+        box-shadow: 0 0 20px rgba(249, 66, 58, 0.3);
+    }
+    
+    .refresh-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-box {
+        background: rgba(249, 66, 58, 0.1);
+        border: 1px solid rgba(249, 66, 58, 0.3);
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #F9423A;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="systems-check-container">
+    <h1 style="color: #F9423A; text-align: center; margin-bottom: 30px;">
+        <i class="fas fa-shield-alt"></i> Systems Check
+    </h1>
+    
+    <div class="score-display" id="scoreDisplay">
+        <div class="score-label">System Health Score</div>
+        <div class="score-value" id="scoreValue">--</div>
+        <div class="status-badge" id="statusBadge">Loading...</div>
+    </div>
+    
+    <div class="summary-stats" id="summaryStats" style="display: none;">
+        <div class="stat-box">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Checks</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="statPassed" style="color: #00ff00;">0</div>
+            <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="statWarnings" style="color: #ffa500;">0</div>
+            <div class="stat-label">Warnings</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="statFailed" style="color: #F9423A;">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-bottom: 30px;">
+        <button class="refresh-btn" id="refreshBtn" onclick="runChecks()">
+            <i class="fas fa-sync-alt"></i> Run Systems Check
+        </button>
+    </div>
+    
+    <div id="checksContainer">
+        <div class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Loading checks...
+        </div>
+    </div>
+</div>
+
+<script>
+let checkResults = null;
+
+async function runChecks() {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const checksContainer = document.getElementById('checksContainer');
+    const summaryStats = document.getElementById('summaryStats');
+    
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Checks...';
+    
+    checksContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Running system checks...</div>';
+    summaryStats.style.display = 'none';
+    
+    try {
+        const response = await fetch('/systems-check/api/run', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                base_url: window.location.origin
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            checkResults = data.data;
+            displayResults(data.data);
+        } else {
+            checksContainer.innerHTML = `<div class="check-card"><div class="check-message" style="color: #F9423A;">Error: ${data.error || 'Unknown error'}</div></div>`;
+        }
+    } catch (error) {
+        checksContainer.innerHTML = `<div class="check-card"><div class="check-message" style="color: #F9423A;">Error running checks: ${error.message}</div></div>`;
+    } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Run Systems Check';
+    }
+}
+
+function displayResults(results) {
+    // Update score display
+    const scoreValue = document.getElementById('scoreValue');
+    const statusBadge = document.getElementById('statusBadge');
+    
+    scoreValue.textContent = `${results.score}%`;
+    statusBadge.textContent = results.status;
+    statusBadge.className = `status-badge status-${results.status}`;
+    
+    // Update summary stats
+    document.getElementById('statTotal').textContent = results.total_checks;
+    document.getElementById('statPassed').textContent = results.passed;
+    document.getElementById('statWarnings').textContent = results.warnings;
+    document.getElementById('statFailed').textContent = results.failed + results.errors;
+    document.getElementById('summaryStats').style.display = 'grid';
+    
+    // Display checks
+    const checksContainer = document.getElementById('checksContainer');
+    checksContainer.innerHTML = '';
+    
+    results.checks.forEach(check => {
+        const checkCard = document.createElement('div');
+        checkCard.className = 'check-card';
+        
+        checkCard.innerHTML = `
+            <div class="check-header">
+                <div class="check-name">${check.name}</div>
+                <div class="check-status ${check.status}">${check.status}</div>
+            </div>
+            <div class="check-message">${check.message}</div>
+            ${check.details && check.details.length > 0 ? `
+                <div class="check-details">
+                    <ul>
+                        ${check.details.map(detail => `<li>${detail}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+        `;
+        
+        checksContainer.appendChild(checkCard);
+    });
+    
+    // Animate score
+    animateScore(results.score);
+}
+
+function animateScore(targetScore) {
+    const scoreElement = document.getElementById('scoreValue');
+    const startScore = 0;
+    const duration = 1000;
+    const startTime = Date.now();
+    
+    function update() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const currentScore = startScore + (targetScore - startScore) * progress;
+        
+        scoreElement.textContent = `${Math.round(currentScore)}%`;
+        
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+    
+    update();
+}
+
+// Run checks on page load
+document.addEventListener('DOMContentLoaded', function() {
+    runChecks();
+});
+</script>
+{% endblock %}
+
