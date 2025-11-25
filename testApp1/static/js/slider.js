@@ -151,6 +151,14 @@
     wrapper.appendChild(input);
     container.innerHTML = '';
     container.appendChild(wrapper);
+    
+    console.log('Slider DOM created and appended to container:', {
+      container: container.id,
+      wrapper: wrapper.className,
+      hasLabel: !!label,
+      hasInput: !!input,
+      containerHTML: container.innerHTML.substring(0, 100)
+    });
 
     function recomputeAndApply(val) {
       const precision = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
