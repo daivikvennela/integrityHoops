@@ -661,7 +661,8 @@ async function deleteScoreFromList(scoreId) {
         data.statistics,
         category,
         data.overall_scores || {},
-        data.game_info || {}
+        data.game_info || {},
+        data.game_results || {}  // Add game results (win/loss)
       );
 
         // Update overall scores list under the chart (pass chart instance for toggle functionality)
@@ -905,7 +906,7 @@ async function deleteScoreFromList(scoreId) {
     console.log('renderCategoryToggleButtons: created', container.children.length, 'buttons');
   }
   
-  function updateStatisticsChart(statistics, category, overallScores = {}, gameInfo = {}) {
+  function updateStatisticsChart(statistics, category, overallScores = {}, gameInfo = {}, gameResults = {}) {
     const ctx = chartCanvas.getContext('2d');
     const overlay = document.getElementById('categoryHoverOverlay');
     const cardBody = chartCanvas.parentElement;
@@ -1013,9 +1014,31 @@ async function deleteScoreFromList(scoreId) {
 
       const lineColor = categoryColors[category] || '#CCCCCC';
 
+      // Color code points based on win/loss
+      const pointColors = catDates.map(date => {
+        const result = gameResults[date];
+        if (result === 'win') {
+          return '#00ff00';  // Green for win
+        } else if (result === 'loss') {
+          return '#F9423A';  // Red for loss
+        }
+        return lineColor;  // Default color if result unknown
+      });
+
       // Create overall scores dataset overlay
       const overallScoresData = catDates.map(date => {
         return overallScores[date] || null;
+      });
+      
+      // Color code overall scores points based on win/loss
+      const overallPointColors = catDates.map(date => {
+        const result = gameResults[date];
+        if (result === 'win') {
+          return '#00ff00';  // Green for win
+        } else if (result === 'loss') {
+          return '#F9423A';  // Red for loss
+        }
+        return '#F9423A';  // Default red if result unknown
       });
 
       // Build datasets array with category and overall scores
@@ -1030,7 +1053,7 @@ async function deleteScoreFromList(scoreId) {
             tension: 0.4,
             pointRadius: 6,
             pointHoverRadius: 9,
-            pointBackgroundColor: lineColor,
+            pointBackgroundColor: pointColors,  // Array of colors for each point
             pointBorderColor: '#000',
             pointBorderWidth: 2.5
         }
@@ -1238,6 +1261,17 @@ async function deleteScoreFromList(scoreId) {
       // All categories view - use filtered statistics (which will be all when no category selected)
       const categories = [...new Set(filteredStatistics.map(s => s.category))];
       
+      // Color code points based on win/loss for all categories
+      const pointColors = dates.map(date => {
+        const result = gameResults[date];
+        if (result === 'win') {
+          return '#00ff00';  // Green for win
+        } else if (result === 'loss') {
+          return '#F9423A';  // Red for loss
+        }
+        return null;  // Will use default color if result unknown
+      });
+      
       const datasets = categories.map(cat => {
         const categoryData = filteredStatistics
           .filter(s => s.category === cat)
@@ -1259,7 +1293,7 @@ async function deleteScoreFromList(scoreId) {
           tension: 0.4,
           pointRadius: 5,
           pointHoverRadius: 8,
-          pointBackgroundColor: lineColor,
+          pointBackgroundColor: pointColors.map(color => color || lineColor),  // Use win/loss colors or default
           pointBorderColor: '#000',
           pointBorderWidth: 2
         };

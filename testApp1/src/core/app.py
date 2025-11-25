@@ -444,9 +444,14 @@ def api_team_statistics():
                 # Sync overall scores to team_cog_scores table (for analytics dashboard)
                 _sync_overall_scores_to_analytics(overall_scores, game_info, db_manager)
                 
+                # Fetch game results (win/loss) for all dates
+                from src.core.game_results import fetch_multiple_game_results
+                unique_dates = list(set(stat['date'] for stat in statistics_data))
+                game_results = fetch_multiple_game_results(unique_dates)
+                
                 # Log how many unique games we have
-                unique_dates = set(stat['date'] for stat in statistics_data)
                 logger.info(f"Retrieved {len(unique_dates)} unique game dates from database")
+                logger.info(f"Found game results for {len(game_results)} games")
                 
                 return jsonify({
                     'success': True,
@@ -454,6 +459,7 @@ def api_team_statistics():
                     'category': category,
                     'overall_scores': overall_scores,
                     'game_info': game_info,
+                    'game_results': game_results,  # Add win/loss data
                     'source': 'database',
                     'unique_games': len(unique_dates)
                 })
@@ -590,6 +596,7 @@ def api_team_statistics():
             'category': category,
             'overall_scores': overall_scores,  # Overall cog scores by date
             'game_info': game_info,  # Additional game metadata
+            'game_results': game_results,  # Add win/loss data
             'source': 'csv_calculated',
             'diagnostics': {
                 'files_found': len(csv_files),
