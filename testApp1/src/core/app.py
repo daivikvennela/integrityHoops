@@ -213,7 +213,32 @@ def api_cog_scores():
         team = request.args.get('team')
         player_name = request.args.get('player_name')
         points = db_manager.get_cog_scores_over_time(level=level, team=team, player_name=player_name)
-        return jsonify({'success': True, 'level': level, 'points': points})
+        
+        # Fetch game results (win/loss) for team level
+        game_results = {}
+        if level == 'team' and points:
+            from src.core.game_results import fetch_multiple_game_results
+            # Extract dates from points (points have 'timestamp' field)
+            dates = []
+            for point in points:
+                if 'timestamp' in point:
+                    dt = datetime.fromtimestamp(point['timestamp'])
+                    date_iso = dt.strftime('%Y-%m-%d')
+                    dates.append(date_iso)
+                elif 'date' in point:
+                    # If point has date field directly (YYYY-MM-DD format)
+                    dates.append(point['date'])
+            
+            if dates:
+                game_results = fetch_multiple_game_results(dates)
+                logger.info(f"Fetched game results for {len(game_results)} of {len(dates)} games")
+        
+        return jsonify({
+            'success': True, 
+            'level': level, 
+            'points': points,
+            'game_results': game_results  # Add win/loss data
+        })
     except Exception as e:
         logger.exception('Error fetching cog scores')
         return jsonify({'success': False, 'error': str(e)}), 500

@@ -6,12 +6,56 @@
 
   const chart = echarts.init(chartEl, null, { renderer: 'canvas' });
 
-  function setChart(labels, scores) {
+  function setChart(labels, scores, gameResults = {}) {
     // Get accent color from current theme
     const isHeatTheme = document.body.classList.contains('theme-heat');
     const accentColor = isHeatTheme ? '#F9423A' : '#a855f7';
     const accentColorLight = isHeatTheme ? '#FF5349' : '#c084fc';
     const accentColorFaded = isHeatTheme ? 'rgba(249,66,58,0.06)' : 'rgba(168,85,247,0.06)';
+    
+    // Create data array with individual item styles for win/loss coloring
+    // Extract dates from labels (format: "MM/DD/YY Team v Opponent")
+    const dataWithColors = scores.map((score, index) => {
+      const label = labels[index];
+      // Try to extract date from label or use point data
+      let dateIso = null;
+      
+      // Try to get date from stored points
+      if (window.__cogPoints__ && window.__cogPoints__[index]) {
+        const point = window.__cogPoints__[index];
+        if (point.timestamp) {
+          const dt = new Date(point.timestamp * 1000);
+          dateIso = dt.toISOString().split('T')[0]; // YYYY-MM-DD
+        } else if (point.date) {
+          dateIso = point.date;
+        }
+      }
+      
+      // Determine color based on win/loss
+      let pointColor = accentColor;  // Default
+      let borderColor = accentColorLight;
+      
+      if (dateIso && gameResults[dateIso]) {
+        if (gameResults[dateIso] === 'win') {
+          pointColor = '#00ff00';  // Green for win
+          borderColor = '#00cc00';
+        } else if (gameResults[dateIso] === 'loss') {
+          pointColor = '#F9423A';  // Red for loss
+          borderColor = '#FF5349';
+        }
+      }
+      
+      return {
+        value: score,
+        itemStyle: {
+          color: pointColor,
+          borderColor: borderColor,
+          borderWidth: 2,
+          shadowBlur: 10,
+          shadowColor: pointColor
+        }
+      };
+    });
     
     const option = {
       backgroundColor: 'transparent',
@@ -26,6 +70,28 @@
         },
         formatter: function(params) {
           const param = params[0];
+          const index = param.dataIndex;
+          let resultText = '';
+          
+          // Try to get win/loss info
+          if (window.__cogPoints__ && window.__cogPoints__[index]) {
+            const point = window.__cogPoints__[index];
+            let dateIso = null;
+            if (point.timestamp) {
+              const dt = new Date(point.timestamp * 1000);
+              dateIso = dt.toISOString().split('T')[0];
+            } else if (point.date) {
+              dateIso = point.date;
+            }
+            
+            if (dateIso && gameResults[dateIso]) {
+              const result = gameResults[dateIso];
+              resultText = result === 'win' 
+                ? '<div style="color: #00ff00; font-weight: 600; margin-top: 4px;">✓ WIN</div>'
+                : '<div style="color: #F9423A; font-weight: 600; margin-top: 4px;">✗ LOSS</div>';
+            }
+          }
+          
           return `
             <div style="padding: 8px;">
               <div style="font-weight: 700; font-size: 16px; color: ${accentColor}; margin-bottom: 8px;">
@@ -37,6 +103,7 @@
               <div style="margin-top: 6px; font-size: 12px; color: rgba(255,255,255,0.7);">
                 Cognitive Score
               </div>
+              ${resultText}
             </div>
           `;
         }
@@ -65,24 +132,16 @@
       },
       series: [{
         type: 'line',
-        data: scores,
+        data: dataWithColors,  // Use data array with individual colors
         smooth: true,
         symbol: 'circle',
         symbolSize: 10,
         lineStyle: { color: accentColor, width: 3 },
-        itemStyle: { 
-          color: accentColor, 
-          borderColor: accentColorLight, 
-          borderWidth: 2,
-          shadowBlur: 10,
-          shadowColor: accentColor
-        },
         emphasis: {
           itemStyle: {
             symbolSize: 16,
             borderWidth: 3,
-            shadowBlur: 20,
-            shadowColor: accentColor
+            shadowBlur: 20
           }
         },
         areaStyle: { color: accentColorFaded }
@@ -110,9 +169,10 @@
     if (!json.success) return;
     const labels = json.points.map(p => p.label);
     const scores = json.points.map(p => p.score);
+    const gameResults = json.game_results || {};  // Get win/loss data
     // stash ids for click deletion
     window.__cogPoints__ = json.points;
-    setChart(labels, scores);
+    setChart(labels, scores, gameResults);
   }
 
   function toEpoch(dateStr) {
