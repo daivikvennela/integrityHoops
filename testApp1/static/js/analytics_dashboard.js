@@ -1261,25 +1261,45 @@ async function deleteScoreFromList(scoreId) {
       }
       
       // Initialize or update precision slider for Chart.js
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS) {
-        if (!sliderContainer.dataset.bound) {
-          // First time initialization
-          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-            chart: statisticsChart,
-            container: sliderContainer,
-            initialPrecision,
-            anchor: 'end'
+      setTimeout(() => {
+        const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+        console.log('Slider container:', sliderContainer);
+        console.log('IntegrityHoopsSlider:', window.IntegrityHoopsSlider);
+        console.log('createForChartJS:', window.IntegrityHoopsSlider?.createForChartJS);
+        console.log('statisticsChart:', statisticsChart);
+        
+        if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart) {
+          if (!sliderContainer.dataset.bound) {
+            // First time initialization
+            const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+            console.log('Initializing slider with precision:', initialPrecision);
+            try {
+              window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+                chart: statisticsChart,
+                container: sliderContainer,
+                initialPrecision,
+                anchor: 'end'
+              });
+              sliderContainer.dataset.bound = '1';
+              console.log('Slider initialized successfully');
+            } catch (error) {
+              console.error('Error initializing slider:', error);
+            }
+          } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
+            // Update slider with new chart data
+            setTimeout(() => {
+              window.teamStatsSlider.updateOriginalData();
+            }, 100);
+          }
+        } else {
+          console.warn('Slider initialization failed:', {
+            container: !!sliderContainer,
+            sliderLib: !!window.IntegrityHoopsSlider,
+            createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+            chart: !!statisticsChart
           });
-          sliderContainer.dataset.bound = '1';
-        } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
-          // Update slider with new chart data
-          setTimeout(() => {
-            window.teamStatsSlider.updateOriginalData();
-          }, 100);
         }
-      }
+      }, 500);
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
@@ -1551,25 +1571,45 @@ async function deleteScoreFromList(scoreId) {
       }
       
       // Initialize or update precision slider for Chart.js
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS) {
-        if (!sliderContainer.dataset.bound) {
-          // First time initialization
-          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-            chart: statisticsChart,
-            container: sliderContainer,
-            initialPrecision,
-            anchor: 'end'
+      setTimeout(() => {
+        const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+        console.log('Slider container:', sliderContainer);
+        console.log('IntegrityHoopsSlider:', window.IntegrityHoopsSlider);
+        console.log('createForChartJS:', window.IntegrityHoopsSlider?.createForChartJS);
+        console.log('statisticsChart:', statisticsChart);
+        
+        if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart) {
+          if (!sliderContainer.dataset.bound) {
+            // First time initialization
+            const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+            console.log('Initializing slider with precision:', initialPrecision);
+            try {
+              window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+                chart: statisticsChart,
+                container: sliderContainer,
+                initialPrecision,
+                anchor: 'end'
+              });
+              sliderContainer.dataset.bound = '1';
+              console.log('Slider initialized successfully');
+            } catch (error) {
+              console.error('Error initializing slider:', error);
+            }
+          } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
+            // Update slider with new chart data
+            setTimeout(() => {
+              window.teamStatsSlider.updateOriginalData();
+            }, 100);
+          }
+        } else {
+          console.warn('Slider initialization failed:', {
+            container: !!sliderContainer,
+            sliderLib: !!window.IntegrityHoopsSlider,
+            createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+            chart: !!statisticsChart
           });
-          sliderContainer.dataset.bound = '1';
-        } else if (window.teamStatsSlider && typeof window.teamStatsSlider.updateOriginalData === 'function') {
-          // Update slider with new chart data
-          setTimeout(() => {
-            window.teamStatsSlider.updateOriginalData();
-          }, 100);
         }
-      }
+      }, 500);
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
