@@ -122,6 +122,11 @@
     }
 
     // Store original data
+    if (!chart.data || !chart.data.labels || chart.data.labels.length === 0) {
+      console.error('createForChartJS: Chart has no data or labels');
+      return null;
+    }
+    
     const originalData = {
       labels: [...chart.data.labels],
       datasets: chart.data.datasets.map(ds => ({
@@ -129,6 +134,11 @@
         data: [...ds.data]
       }))
     };
+    
+    console.log('Stored original data:', {
+      labelsCount: originalData.labels.length,
+      datasetsCount: originalData.datasets.length
+    });
 
     // Build DOM
     const wrapper = document.createElement('div');

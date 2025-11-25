@@ -1245,40 +1245,49 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
-      // Initialize slider after first chart paint
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      console.log('Attempting to initialize slider:', {
-        container: !!sliderContainer,
-        sliderLib: !!window.IntegrityHoopsSlider,
-        createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
-        chart: !!statisticsChart,
-        bound: sliderContainer?.dataset.bound
-      });
-      
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && !sliderContainer.dataset.bound) {
-        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        console.log('Creating slider with precision:', initialPrecision);
-        try {
-          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-            chart: statisticsChart,
-            container: sliderContainer,
-            initialPrecision,
-            anchor: 'end'
-          });
-          sliderContainer.dataset.bound = '1';
-          console.log('Slider created successfully:', window.teamStatsSlider);
-        } catch (error) {
-          console.error('Error creating slider:', error);
-        }
-      } else {
-        console.warn('Slider initialization skipped:', {
+      // Initialize slider after chart is fully rendered
+      setTimeout(() => {
+        const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+        console.log('Attempting to initialize slider:', {
           container: !!sliderContainer,
           sliderLib: !!window.IntegrityHoopsSlider,
           createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
           chart: !!statisticsChart,
+          chartData: statisticsChart?.data,
+          labelsCount: statisticsChart?.data?.labels?.length,
+          datasetsCount: statisticsChart?.data?.datasets?.length,
           bound: sliderContainer?.dataset.bound
         });
-      }
+        
+        if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && statisticsChart.data && statisticsChart.data.labels && statisticsChart.data.labels.length > 0 && !sliderContainer.dataset.bound) {
+          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+          console.log('Creating slider with precision:', initialPrecision);
+          try {
+            window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+              chart: statisticsChart,
+              container: sliderContainer,
+              initialPrecision,
+              anchor: 'end'
+            });
+            sliderContainer.dataset.bound = '1';
+            console.log('Slider created successfully:', window.teamStatsSlider);
+          } catch (error) {
+            console.error('Error creating slider:', error);
+            console.error('Error stack:', error.stack);
+          }
+        } else {
+          console.warn('Slider initialization skipped:', {
+            container: !!sliderContainer,
+            sliderLib: !!window.IntegrityHoopsSlider,
+            createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+            chart: !!statisticsChart,
+            hasData: !!statisticsChart?.data,
+            hasLabels: !!statisticsChart?.data?.labels,
+            labelsLength: statisticsChart?.data?.labels?.length,
+            bound: sliderContainer?.dataset.bound
+          });
+        }
+      }, 100);
       
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
@@ -1549,40 +1558,49 @@ async function deleteScoreFromList(scoreId) {
         return;
       }
       
-      // Initialize slider after first chart paint
-      const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
-      console.log('Attempting to initialize slider:', {
-        container: !!sliderContainer,
-        sliderLib: !!window.IntegrityHoopsSlider,
-        createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
-        chart: !!statisticsChart,
-        bound: sliderContainer?.dataset.bound
-      });
-      
-      if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && !sliderContainer.dataset.bound) {
-        const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
-        console.log('Creating slider with precision:', initialPrecision);
-        try {
-          window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
-            chart: statisticsChart,
-            container: sliderContainer,
-            initialPrecision,
-            anchor: 'end'
-          });
-          sliderContainer.dataset.bound = '1';
-          console.log('Slider created successfully:', window.teamStatsSlider);
-        } catch (error) {
-          console.error('Error creating slider:', error);
-        }
-      } else {
-        console.warn('Slider initialization skipped:', {
+      // Initialize slider after chart is fully rendered
+      setTimeout(() => {
+        const sliderContainer = document.getElementById('teamStatsPrecisionSlider');
+        console.log('Attempting to initialize slider:', {
           container: !!sliderContainer,
           sliderLib: !!window.IntegrityHoopsSlider,
           createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
           chart: !!statisticsChart,
+          chartData: statisticsChart?.data,
+          labelsCount: statisticsChart?.data?.labels?.length,
+          datasetsCount: statisticsChart?.data?.datasets?.length,
           bound: sliderContainer?.dataset.bound
         });
-      }
+        
+        if (sliderContainer && window.IntegrityHoopsSlider && window.IntegrityHoopsSlider.createForChartJS && statisticsChart && statisticsChart.data && statisticsChart.data.labels && statisticsChart.data.labels.length > 0 && !sliderContainer.dataset.bound) {
+          const initialPrecision = parseInt(localStorage.getItem('teamStatsPrecision') || '40', 10);
+          console.log('Creating slider with precision:', initialPrecision);
+          try {
+            window.teamStatsSlider = window.IntegrityHoopsSlider.createForChartJS({
+              chart: statisticsChart,
+              container: sliderContainer,
+              initialPrecision,
+              anchor: 'end'
+            });
+            sliderContainer.dataset.bound = '1';
+            console.log('Slider created successfully:', window.teamStatsSlider);
+          } catch (error) {
+            console.error('Error creating slider:', error);
+            console.error('Error stack:', error.stack);
+          }
+        } else {
+          console.warn('Slider initialization skipped:', {
+            container: !!sliderContainer,
+            sliderLib: !!window.IntegrityHoopsSlider,
+            createFn: !!window.IntegrityHoopsSlider?.createForChartJS,
+            chart: !!statisticsChart,
+            hasData: !!statisticsChart?.data,
+            hasLabels: !!statisticsChart?.data?.labels,
+            labelsLength: statisticsChart?.data?.labels?.length,
+            bound: sliderContainer?.dataset.bound
+          });
+        }
+      }, 100);
       
       // Update overall scores list with chart instance for toggle functionality
       updateOverallScoresList(overallScores, gameInfo, statisticsChart);
