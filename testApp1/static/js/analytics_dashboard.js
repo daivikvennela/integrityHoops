@@ -966,6 +966,157 @@ async function deleteScoreFromList(scoreId) {
     console.log('renderCategoryToggleButtons: created', container.children.length, 'buttons');
   }
   
+  // Watchdog timer to monitor and reset toggle buttons if they're not working
+  let toggleWatchdogTimer = null;
+  let lastToggleCheck = Date.now();
+  
+  function initToggleWatchdog() {
+    // Clear existing timer if any
+    if (toggleWatchdogTimer) {
+      clearInterval(toggleWatchdogTimer);
+    }
+    
+    console.log('Toggle Watchdog: Started - checking every 60 seconds');
+    
+    // Check every 60 seconds (1 minute)
+    toggleWatchdogTimer = setInterval(() => {
+      try {
+        console.log('Toggle Watchdog: Running health check...');
+        
+        // Check if toggle container exists
+        const container = document.getElementById('statisticsDatasetToggles');
+        if (!container) {
+          console.warn('Toggle Watchdog: Container not found, skipping check');
+          return;
+        }
+        
+        // Check if statisticsChart exists
+        if (!statisticsChart) {
+          console.warn('Toggle Watchdog: Chart not initialized, skipping check');
+          return;
+        }
+        
+        // Check if chart has datasets
+        if (!statisticsChart.data || !statisticsChart.data.datasets || statisticsChart.data.datasets.length === 0) {
+          console.warn('Toggle Watchdog: No datasets found, skipping check');
+          return;
+        }
+        
+        // Check if toggle buttons exist
+        const buttons = container.querySelectorAll('button[data-dataset-index]');
+        const expectedButtons = statisticsChart.data.datasets.length;
+        
+        console.log(`Toggle Watchdog: Found ${buttons.length} buttons, expected ${expectedButtons}`);
+        
+        // If buttons don't match datasets, re-render
+        if (buttons.length !== expectedButtons) {
+          console.warn('Toggle Watchdog: Button count mismatch - re-rendering toggles');
+          renderCategoryToggleButtons(statisticsChart);
+          return;
+        }
+        
+        // Check if buttons are functional by testing click event listeners
+        let workingButtons = 0;
+        buttons.forEach((button, index) => {
+          // Check if button has click listener by checking if it has the data attribute
+          if (button.hasAttribute('data-dataset-index')) {
+            workingButtons++;
+          }
+        });
+        
+        console.log(`Toggle Watchdog: ${workingButtons}/${buttons.length} buttons appear functional`);
+        
+        // If less than 50% of buttons are working, re-render
+        if (workingButtons < buttons.length * 0.5) {
+          console.warn('Toggle Watchdog: Less than 50% of buttons functional - re-rendering toggles');
+          renderCategoryToggleButtons(statisticsChart);
+          return;
+        }
+        
+        // Check if buttons are visible
+        if (container.offsetParent === null) {
+          console.warn('Toggle Watchdog: Container is hidden');
+        }
+        
+        // All checks passed
+        console.log('Toggle Watchdog: All checks passed - toggles are healthy');
+        lastToggleCheck = Date.now();
+        
+      } catch (error) {
+        console.error('Toggle Watchdog: Error during health check:', error);
+        // Try to re-render on error
+        try {
+          if (statisticsChart) {
+            renderCategoryToggleButtons(statisticsChart);
+          }
+        } catch (renderError) {
+          console.error('Toggle Watchdog: Failed to re-render toggles:', renderError);
+        }
+      }
+    }, 60000); // Check every 60 seconds
+    
+    // Also add a manual reset function to window
+    window.resetToggleButtons = function() {
+      console.log('Manual toggle reset requested');
+      if (statisticsChart) {
+        renderCategoryToggleButtons(statisticsChart);
+        console.log('Toggle buttons manually reset');
+      } else {
+        console.warn('Cannot reset toggles: chart not initialized');
+      }
+    };
+  }
+  
+  // Force re-render toggles function that can be called anytime
+  window.forceReinitToggleButtons = function() {
+    console.log('🔧 Force re-initializing toggle buttons...');
+    
+    const container = document.getElementById('statisticsDatasetToggles');
+    if (!container) {
+      console.error('❌ Toggle container not found');
+      return false;
+    }
+    
+    if (!statisticsChart) {
+      console.error('❌ Chart not initialized');
+      return false;
+    }
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Re-render
+    renderCategoryToggleButtons(statisticsChart);
+    
+    console.log('✅ Toggle buttons force re-initialized');
+    return true;
+  };
+  
+  // Start watchdog when page loads
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        initToggleWatchdog();
+        // Force check after 2 seconds
+        setTimeout(() => {
+          console.log('🔄 Running initial toggle check...');
+          if (statisticsChart) {
+            renderCategoryToggleButtons(statisticsChart);
+          }
+        }, 2000);
+      });
+    } else {
+      initToggleWatchdog();
+      // Force check immediately
+      setTimeout(() => {
+        console.log('🔄 Running initial toggle check...');
+        if (statisticsChart) {
+          renderCategoryToggleButtons(statisticsChart);
+        }
+      }, 2000);
+    }
+  }
+  
   function updateStatisticsChart(statistics, category, overallScores = {}, gameInfo = {}, gameResults = {}) {
     const ctx = chartCanvas.getContext('2d');
     const overlay = document.getElementById('categoryHoverOverlay');
@@ -1333,7 +1484,20 @@ async function deleteScoreFromList(scoreId) {
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
+        console.log('📊 Rendering toggle buttons...');
         renderCategoryToggleButtons(statisticsChart);
+        
+        // Double-check after another delay
+        setTimeout(() => {
+          const container = document.getElementById('statisticsDatasetToggles');
+          const buttons = container ? container.querySelectorAll('button[data-dataset-index]').length : 0;
+          console.log(`🔍 Verification: ${buttons} toggle buttons rendered`);
+          
+          if (buttons === 0 && statisticsChart) {
+            console.warn('⚠️ No buttons found, re-rendering...');
+            renderCategoryToggleButtons(statisticsChart);
+          }
+        }, 500);
       }, 100);
 
       // Canvas hover to show dataset label near cursor - improved for line detection
@@ -1672,7 +1836,20 @@ async function deleteScoreFromList(scoreId) {
       
       // Render custom toggle buttons for datasets (use setTimeout to ensure chart is fully initialized)
       setTimeout(() => {
+        console.log('📊 Rendering toggle buttons for all categories view...');
         renderCategoryToggleButtons(statisticsChart);
+        
+        // Double-check after another delay
+        setTimeout(() => {
+          const container = document.getElementById('statisticsDatasetToggles');
+          const buttons = container ? container.querySelectorAll('button[data-dataset-index]').length : 0;
+          console.log(`🔍 Verification: ${buttons} toggle buttons rendered`);
+          
+          if (buttons === 0 && statisticsChart) {
+            console.warn('⚠️ No buttons found, re-rendering...');
+            renderCategoryToggleButtons(statisticsChart);
+          }
+        }, 500);
       }, 100);
       
       // Add hover support for all categories view
@@ -2185,6 +2362,83 @@ async function deleteScoreFromList(scoreId) {
     }
     
     return insights;
+  }
+})();
+
+/**
+ * Auto-refresh analytics when new game is uploaded
+ */
+(function() {
+  // Listen for new game uploads from database-viz page
+  window.addEventListener('newGameUploaded', function(event) {
+    console.log('New game uploaded, refreshing analytics...', event.detail);
+    
+    // Reload team statistics
+    if (typeof loadTeamStatistics === 'function') {
+      loadTeamStatistics('', true);
+    }
+    
+    // Reload team series/scores
+    if (typeof loadTeamSeries === 'function') {
+      loadTeamSeries();
+    }
+    
+    // Show notification
+    showNotificationBanner('New game data imported! Dashboard updated.', 'success');
+  });
+  
+  // Check localStorage on page load for recent uploads
+  if (typeof loadTeamStatistics === 'function') {
+    const lastUpload = localStorage.getItem('lastGameUpload');
+    if (lastUpload) {
+      try {
+        const uploadData = JSON.parse(lastUpload);
+        const uploadTime = uploadData.timestamp;
+        const now = Date.now();
+        
+        // If upload was within last 5 minutes, show notification
+        if (now - uploadTime < 5 * 60 * 1000) {
+          setTimeout(() => {
+            showNotificationBanner(
+              `Recent upload detected: ${uploadData.date} vs ${uploadData.opponent}`, 
+              'info'
+            );
+          }, 1000);
+        }
+      } catch (e) {
+        console.error('Error parsing lastGameUpload:', e);
+      }
+    }
+  }
+  
+  function showNotificationBanner(message, type = 'info') {
+    const banner = document.createElement('div');
+    banner.className = `alert alert-${type === 'success' ? 'success' : 'info'}`;
+    banner.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 9999;
+      background: ${type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
+      border: 2px solid ${type === 'success' ? '#10B981' : '#3B82F6'};
+      color: #fff;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      animation: slideInRight 0.3s ease;
+    `;
+    banner.innerHTML = `
+      <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+      ${message}
+    `;
+    
+    document.body.appendChild(banner);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      banner.style.animation = 'slideOutRight 0.3s ease';
+      setTimeout(() => banner.remove(), 300);
+    }, 5000);
   }
 })();
 

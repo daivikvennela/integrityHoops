@@ -9,13 +9,14 @@ from datetime import datetime
 from typing import Tuple, Optional
 
 
-def generate_game_id(date_string: str, opponent: str, team: str = "Heat") -> str:
+def generate_game_id(date_string: str, opponent: str = None, team: str = "Heat") -> str:
     """
-    Generate a deterministic game ID based on date and opponent.
+    Generate a deterministic game ID based on date and team.
+    Note: A team can only play one game per date.
     
     Args:
         date_string (str): Date string in MM.DD.YY format
-        opponent (str): Opponent team name
+        opponent (str): Opponent team name (optional, not used in game_id)
         team (str): Team name (default: "Heat")
         
     Returns:
@@ -23,11 +24,10 @@ def generate_game_id(date_string: str, opponent: str, team: str = "Heat") -> str
     """
     # Normalize inputs
     normalized_date = date_string.strip()
-    normalized_opponent = opponent.strip().lower()
     normalized_team = team.strip().lower()
     
-    # Create hash input: date_team_opponent
-    hash_input = f"{normalized_date}_{normalized_team}_{normalized_opponent}"
+    # Create hash input: date_team (one game per team per date)
+    hash_input = f"{normalized_date}_{normalized_team}"
     
     # Generate SHA256 hash and take first 16 characters
     hash_obj = hashlib.sha256(hash_input.encode('utf-8'))

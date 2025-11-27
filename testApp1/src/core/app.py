@@ -15,6 +15,7 @@ from src.api.player_management_dashboard import player_dashboard
 from src.core.dashboard import dashboard_bp
 from src.database.db_manager import DatabaseManager
 from src.api.notebook_api import notebook_api, notebook_bp
+from src.api.database_viz_api import database_viz_api
 try:
     import sys
     import os
@@ -53,6 +54,7 @@ app.register_blueprint(player_dashboard)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(notebook_api)
 app.register_blueprint(notebook_bp)
+app.register_blueprint(database_viz_api)
 if systems_check_bp:
     app.register_blueprint(systems_check_bp)
 
@@ -1495,6 +1497,11 @@ def scorecard_with_data(filename):
     except Exception as e:
         flash(f'Error loading data: {str(e)}')
         return redirect(url_for('scorecard'))
+
+@app.route('/database-viz')
+def database_viz():
+    """Database Visualization dashboard route"""
+    return render_template('database_viz.html')
 
 @app.route('/scorecard-plus')
 def scorecard_plus():

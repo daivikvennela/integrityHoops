@@ -145,6 +145,31 @@ class DatabaseManager:
                     relocation_corner_fill_negative INTEGER DEFAULT 0,
                     relocation_reverse_direction_positive INTEGER DEFAULT 0,
                     relocation_reverse_direction_negative INTEGER DEFAULT 0,
+                    -- Footwork
+                    footwork_step_to_ball_positive INTEGER DEFAULT 0,
+                    footwork_step_to_ball_negative INTEGER DEFAULT 0,
+                    footwork_patient_pickup_positive INTEGER DEFAULT 0,
+                    footwork_patient_pickup_negative INTEGER DEFAULT 0,
+                    footwork_long_2_positive INTEGER DEFAULT 0,
+                    footwork_long_2_negative INTEGER DEFAULT 0,
+                    -- Passing
+                    passing_teammate_on_move_positive INTEGER DEFAULT 0,
+                    passing_teammate_on_move_negative INTEGER DEFAULT 0,
+                    passing_read_length_positive INTEGER DEFAULT 0,
+                    passing_read_length_negative INTEGER DEFAULT 0,
+                    -- Finishing
+                    finishing_stride_pivot_positive INTEGER DEFAULT 0,
+                    finishing_stride_pivot_negative INTEGER DEFAULT 0,
+                    finishing_read_length_positive INTEGER DEFAULT 0,
+                    finishing_read_length_negative INTEGER DEFAULT 0,
+                    finishing_ball_security_positive INTEGER DEFAULT 0,
+                    finishing_ball_security_negative INTEGER DEFAULT 0,
+                    finishing_earn_foul_positive INTEGER DEFAULT 0,
+                    finishing_earn_foul_negative INTEGER DEFAULT 0,
+                    finishing_physicality_positive INTEGER DEFAULT 0,
+                    finishing_physicality_negative INTEGER DEFAULT 0,
+                    finishing_stride_holds_positive INTEGER DEFAULT 0,
+                    finishing_stride_holds_negative INTEGER DEFAULT 0,
                     game_id TEXT,
                     FOREIGN KEY (player_name) REFERENCES players (name),
                     FOREIGN KEY (game_id) REFERENCES games (id)
@@ -1313,4 +1338,166 @@ class DatabaseManager:
                 return cursor.rowcount > 0
         except Exception as e:
             print(f"Error deleting team statistics: {e}")
-            return False 
+            return False
+    
+    # ----------------------
+    # Database Visualization Methods
+    # ----------------------
+    
+    def get_games_with_stats(self) -> List[Dict[str, Any]]:
+        """
+        Get all games with aggregated statistics.
+        
+        Returns:
+            List[Dict]: List of games with player counts and scorecard counts
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT 
+                        g.id as game_id,
+                        g.date,
+                        g.date_string,
+                        g.opponent,
+                        g.team,
+                        g.created_at,
+                        COUNT(DISTINCT s.player_name) as player_count,
+                        COUNT(s.id) as scorecard_count
+                    FROM games g
+                    LEFT JOIN scorecards s ON g.id = s.game_id
+                    GROUP BY g.id
+                    ORDER BY g.date DESC
+                ''')
+                
+                rows = cursor.fetchall()
+                games = []
+                for row in rows:
+                    games.append({
+                        'game_id': row[0],
+                        'date': row[1],
+                        'date_string': row[2],
+                        'opponent': row[3],
+                        'team': row[4],
+                        'created_at': row[5],
+                        'player_count': row[6],
+                        'scorecard_count': row[7]
+                    })
+                
+                return games
+        except Exception as e:
+            print(f"Error getting games with stats: {e}")
+            return []
+    
+    def get_game_with_players(self, game_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get game with array of players and their stats.
+        
+        Args:
+            game_id (str): The game ID
+            
+        Returns:
+            Optional[Dict]: Game data with players array, or None if not found
+        """
+        try:
+            # Get game details
+            game = self.get_game_by_id(game_id)
+            if not game:
+                return None
+            
+            game_dict = game.to_dict()
+            
+            # Get players and their scorecards for this game
+            players = self.get_players_by_game(game_id)
+            game_dict['players'] = players
+            game_dict['player_count'] = len(players)
+            
+            return game_dict
+        except Exception as e:
+            print(f"Error getting game with players: {e}")
+            return None
+    
+    def get_players_by_game(self, game_id: str) -> List[Dict[str, Any]]:
+        """
+        Get all players for a game with their stats.
+        
+        Args:
+            game_id (str): The game ID
+            
+        Returns:
+            List[Dict]: List of players with their scorecard data
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT 
+                        p.name,
+                        p.date_created,
+                        s.*
+                    FROM players p
+                    INNER JOIN scorecards s ON p.name = s.player_name
+                    WHERE s.game_id = ?
+                    ORDER BY p.name
+                ''', (game_id,))
+                
+                rows = cursor.fetchall()
+                column_names = [description[0] for description in cursor.description]
+                
+                players = []
+                for row in rows:
+                    player_data = dict(zip(column_names, row))
+                    players.append(player_data)
+                
+                return players
+        except Exception as e:
+            print(f"Error getting players by game: {e}")
+            return []
+    
+    def aggregate_game_stats(self, game_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Aggregate all player stats for a game.
+        
+        Args:
+            game_id (str): The game ID
+            
+        Returns:
+            Optional[Dict]: Aggregated statistics, or None if game not found
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Get all scorecards for this game
+                cursor.execute('''
+                    SELECT * FROM scorecards WHERE game_id = ?
+                ''', (game_id,))
+                
+                rows = cursor.fetchall()
+                if not rows:
+                    return None
+                
+                column_names = [description[0] for description in cursor.description]
+                
+                # Initialize aggregated stats
+                aggregated = {
+                    'game_id': game_id,
+                    'player_count': len(rows),
+                    'scorecard_count': len(rows),
+                    'stats': {}
+                }
+                
+                # Define stat columns to aggregate (exclude id, player_name, date_created, game_id)
+                stat_columns = [col for col in column_names 
+                               if col not in ['id', 'player_name', 'date_created', 'game_id']]
+                
+                # Aggregate each stat column
+                for stat_col in stat_columns:
+                    col_idx = column_names.index(stat_col)
+                    total = sum(row[col_idx] if row[col_idx] is not None else 0 for row in rows)
+                    aggregated['stats'][stat_col] = total
+                
+                return aggregated
+        except Exception as e:
+            print(f"Error aggregating game stats: {e}")
+            return None 

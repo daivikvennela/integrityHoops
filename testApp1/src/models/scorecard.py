@@ -59,7 +59,32 @@ class Scorecard:
                  relocation_corner_fill_positive: int = 0,
                  relocation_corner_fill_negative: int = 0,
                  relocation_reverse_direction_positive: int = 0,
-                 relocation_reverse_direction_negative: int = 0):
+                 relocation_reverse_direction_negative: int = 0,
+                 # Footwork
+                 footwork_step_to_ball_positive: int = 0,
+                 footwork_step_to_ball_negative: int = 0,
+                 footwork_patient_pickup_positive: int = 0,
+                 footwork_patient_pickup_negative: int = 0,
+                 footwork_long_2_positive: int = 0,
+                 footwork_long_2_negative: int = 0,
+                 # Passing
+                 passing_teammate_on_move_positive: int = 0,
+                 passing_teammate_on_move_negative: int = 0,
+                 passing_read_length_positive: int = 0,
+                 passing_read_length_negative: int = 0,
+                 # Finishing
+                 finishing_stride_pivot_positive: int = 0,
+                 finishing_stride_pivot_negative: int = 0,
+                 finishing_read_length_positive: int = 0,
+                 finishing_read_length_negative: int = 0,
+                 finishing_ball_security_positive: int = 0,
+                 finishing_ball_security_negative: int = 0,
+                 finishing_earn_foul_positive: int = 0,
+                 finishing_earn_foul_negative: int = 0,
+                 finishing_physicality_positive: int = 0,
+                 finishing_physicality_negative: int = 0,
+                 finishing_stride_holds_positive: int = 0,
+                 finishing_stride_holds_negative: int = 0):
         """
         Initialize a new Scorecard instance.
         
@@ -169,6 +194,31 @@ class Scorecard:
         self.relocation_corner_fill_negative = relocation_corner_fill_negative
         self.relocation_reverse_direction_positive = relocation_reverse_direction_positive
         self.relocation_reverse_direction_negative = relocation_reverse_direction_negative
+        # Footwork
+        self.footwork_step_to_ball_positive = footwork_step_to_ball_positive
+        self.footwork_step_to_ball_negative = footwork_step_to_ball_negative
+        self.footwork_patient_pickup_positive = footwork_patient_pickup_positive
+        self.footwork_patient_pickup_negative = footwork_patient_pickup_negative
+        self.footwork_long_2_positive = footwork_long_2_positive
+        self.footwork_long_2_negative = footwork_long_2_negative
+        # Passing
+        self.passing_teammate_on_move_positive = passing_teammate_on_move_positive
+        self.passing_teammate_on_move_negative = passing_teammate_on_move_negative
+        self.passing_read_length_positive = passing_read_length_positive
+        self.passing_read_length_negative = passing_read_length_negative
+        # Finishing
+        self.finishing_stride_pivot_positive = finishing_stride_pivot_positive
+        self.finishing_stride_pivot_negative = finishing_stride_pivot_negative
+        self.finishing_read_length_positive = finishing_read_length_positive
+        self.finishing_read_length_negative = finishing_read_length_negative
+        self.finishing_ball_security_positive = finishing_ball_security_positive
+        self.finishing_ball_security_negative = finishing_ball_security_negative
+        self.finishing_earn_foul_positive = finishing_earn_foul_positive
+        self.finishing_earn_foul_negative = finishing_earn_foul_negative
+        self.finishing_physicality_positive = finishing_physicality_positive
+        self.finishing_physicality_negative = finishing_physicality_negative
+        self.finishing_stride_holds_positive = finishing_stride_holds_positive
+        self.finishing_stride_holds_negative = finishing_stride_holds_negative
         # Note: player bars are derived from the atomic counts above; not persisted
     
     def to_dict(self) -> dict:
@@ -248,6 +298,31 @@ class Scorecard:
             'relocation_corner_fill_negative': self.relocation_corner_fill_negative,
             'relocation_reverse_direction_positive': self.relocation_reverse_direction_positive,
             'relocation_reverse_direction_negative': self.relocation_reverse_direction_negative,
+            # Footwork
+            'footwork_step_to_ball_positive': self.footwork_step_to_ball_positive,
+            'footwork_step_to_ball_negative': self.footwork_step_to_ball_negative,
+            'footwork_patient_pickup_positive': self.footwork_patient_pickup_positive,
+            'footwork_patient_pickup_negative': self.footwork_patient_pickup_negative,
+            'footwork_long_2_positive': self.footwork_long_2_positive,
+            'footwork_long_2_negative': self.footwork_long_2_negative,
+            # Passing
+            'passing_teammate_on_move_positive': self.passing_teammate_on_move_positive,
+            'passing_teammate_on_move_negative': self.passing_teammate_on_move_negative,
+            'passing_read_length_positive': self.passing_read_length_positive,
+            'passing_read_length_negative': self.passing_read_length_negative,
+            # Finishing
+            'finishing_stride_pivot_positive': self.finishing_stride_pivot_positive,
+            'finishing_stride_pivot_negative': self.finishing_stride_pivot_negative,
+            'finishing_read_length_positive': self.finishing_read_length_positive,
+            'finishing_read_length_negative': self.finishing_read_length_negative,
+            'finishing_ball_security_positive': self.finishing_ball_security_positive,
+            'finishing_ball_security_negative': self.finishing_ball_security_negative,
+            'finishing_earn_foul_positive': self.finishing_earn_foul_positive,
+            'finishing_earn_foul_negative': self.finishing_earn_foul_negative,
+            'finishing_physicality_positive': self.finishing_physicality_positive,
+            'finishing_physicality_negative': self.finishing_physicality_negative,
+            'finishing_stride_holds_positive': self.finishing_stride_holds_positive,
+            'finishing_stride_holds_negative': self.finishing_stride_holds_negative,
         }
 
     # --------------------- Player Bar Model & Builder ---------------------

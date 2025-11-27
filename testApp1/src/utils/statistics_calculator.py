@@ -45,19 +45,45 @@ class StatisticsCalculator:
         },
         'Finishing': {
             'positive': [
+                'finishing_stride_pivot_positive',
+                'finishing_read_length_positive',
+                'finishing_ball_security_positive',
+                'finishing_earn_foul_positive',
+                'finishing_physicality_positive',
+                'finishing_stride_holds_positive',
                 'driving_paint_touch_positive'
             ],
             'negative': [
+                'finishing_stride_pivot_negative',
+                'finishing_read_length_negative',
+                'finishing_ball_security_negative',
+                'finishing_earn_foul_negative',
+                'finishing_physicality_negative',
+                'finishing_stride_holds_negative',
                 'driving_paint_touch_negative'
             ]
         },
         'Footwork': {
-            'positive': [],  # Note: Footwork fields may need to be added to scorecard model
-            'negative': []
+            'positive': [
+                'footwork_step_to_ball_positive',
+                'footwork_patient_pickup_positive',
+                'footwork_long_2_positive'
+            ],
+            'negative': [
+                'footwork_step_to_ball_negative',
+                'footwork_patient_pickup_negative',
+                'footwork_long_2_negative'
+            ]
         },
         'Passing': {
-            'positive': [],  # Note: Passing fields may need to be added to scorecard model
-            'negative': []
+            'positive': [
+                'passing_teammate_on_move_positive',
+                'passing_read_length_positive'
+            ],
+            'negative': [
+                'passing_teammate_on_move_negative',
+                'passing_read_length_negative'
+            ]
         },
         'Positioning': {
             'positive': [
