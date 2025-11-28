@@ -92,6 +92,41 @@
         user-select: none;
     }
     
+    /* Toggle Button Neon Glow Effect - Subtle */
+    .toggle-button-neon-glow {
+        box-shadow: 0 0 5px currentColor, 
+                    0 0 10px currentColor !important;
+        transform: scale(1.05) !important;
+        z-index: 10 !important;
+        transition: all 0.3s ease !important;
+        opacity: 0.9 !important;
+    }
+    
+    /* Chart Container Scrollbar Styling */
+    #teamStatsChartContainer {
+        scrollbar-width: thick;
+        scrollbar-color: rgba(249, 66, 58, 0.6) rgba(0, 0, 0, 0.3);
+    }
+    
+    #teamStatsChartContainer::-webkit-scrollbar {
+        height: 12px;
+    }
+    
+    #teamStatsChartContainer::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+    }
+    
+    #teamStatsChartContainer::-webkit-scrollbar-thumb {
+        background: rgba(249, 66, 58, 0.6);
+        border-radius: 6px;
+        border: 2px solid rgba(0, 0, 0, 0.3);
+    }
+    
+    #teamStatsChartContainer::-webkit-scrollbar-thumb:hover {
+        background: rgba(249, 66, 58, 0.8);
+    }
+    
     /* Systems Check Styles */
     .status-healthy {
         background: rgba(0, 255, 0, 0.2);
@@ -428,11 +463,50 @@
         opacity: 0.6;
         cursor: not-allowed;
     }
+    
+    .analytics-mode-btn {
+        min-width: 160px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .analytics-mode-btn.active {
+        background: #F9423A !important;
+        color: #000 !important;
+        border-color: #F9423A !important;
+        box-shadow: 0 0 18px rgba(249, 66, 58, 0.6) !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
+    <div class="card mb-4 heat-analytics-card">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                <div class="mb-3 mb-md-0">
+                    <h5 class="text-uppercase text-muted mb-2">Visualization Modes</h5>
+                    <p class="text-muted small mb-0">Switch between standard charts, temporal shot-clock analysis, pressure gradients, and coach-focused team insights.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2" id="analyticsModeGroup">
+                    <button class="btn btn-black-red analytics-mode-btn active" data-analytics-mode="standard">
+                        <i class="fas fa-chart-line me-1"></i> Standard View
+                    </button>
+                    <button class="btn btn-black-red analytics-mode-btn" data-analytics-mode="temporal">
+                        <i class="fas fa-wave-square me-1"></i> Temporal Load
+                    </button>
+                    <button class="btn btn-black-red analytics-mode-btn" data-analytics-mode="pressure">
+                        <i class="fas fa-stopwatch me-1"></i> Shot Clock Pressure
+                    </button>
+                    <button class="btn btn-black-red analytics-mode-btn" data-analytics-mode="team-insights">
+                        <i class="fas fa-users me-1"></i> Team Insights
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="standardAnalyticsSection">
     <div class="card mb-4 heat-analytics-card">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
@@ -493,17 +567,13 @@
                     <option value="Space Read">Space Read</option>
                     <option value="Transition">Transition</option>
                 </select>
-                <button class="btn btn-sm btn-black-red" onclick="document.getElementById('chartLineMenu').classList.toggle('show')">
+                <button class="btn btn-sm btn-black-red" onclick="return toggleChartLineMenuPanel(event);">
                     <i class="fas fa-eye me-1"></i>Toggle Lines
                 </button>
                 <button class="btn btn-sm btn-outline-light" onclick="runTooltipDiagnostic()" title="Test why tooltips aren't showing">
                     <i class="fas fa-bug me-1"></i>Test Tooltips
                 </button>
             </div>
-        </div>
-        <!-- Precision Slider for Team Statistics -->
-        <div id="teamStatsPrecisionSlider" class="px-3 pt-3" style="min-height: 50px; background-color: #000; border-top: 1px solid rgba(249,66,58,0.3); padding: 15px;">
-            <!-- Slider will be initialized here -->
         </div>
         <div id="chartLineMenu" class="chart-line-menu">
             <div class="chart-menu-header">
@@ -516,13 +586,27 @@
                 <!-- Lines will be populated by JavaScript -->
             </div>
         </div>
-        <div class="card-body" style="background-color: #000000; padding: 15px;">
-            <canvas id="teamStatisticsChart" style="width: 100%; height: 700px;"></canvas>
+        <div class="card-body" style="background-color: #000000; padding: 15px; position: relative;">
+            <div id="teamStatsChartContainer" style="width: 100%; overflow-x: auto; overflow-y: hidden; position: relative;">
+                <div id="teamStatsChartWrapper" style="min-width: 100%; position: relative;">
+                    <canvas id="teamStatisticsChart" style="width: 100%; height: 700px;"></canvas>
+                </div>
+            </div>
+            <!-- Hover Tooltip that follows cursor -->
+            <div id="categoryHoverOverlay" style="display: none; position: absolute; pointer-events: none; z-index: 1000; background: rgba(0, 0, 0, 0.95); border: 2px solid #F9423A; border-radius: 8px; padding: 12px 16px; box-shadow: 0 0 20px rgba(249, 66, 58, 0.6), 0 0 40px rgba(249, 66, 58, 0.3); color: #fff; font-size: 14px; font-weight: 600; min-width: 200px; transition: opacity 0.2s ease;">
+                <div id="hoverCategoryName" style="color: #F9423A; font-size: 16px; font-weight: bold; margin-bottom: 4px;"></div>
+                <div id="hoverDate" style="color: #fff; font-size: 12px; margin-bottom: 4px;"></div>
+                <div id="hoverValue" style="color: #fff; font-size: 14px;"></div>
+            </div>
             <div class="mt-3 d-flex justify-content-between align-items-center">
                 <div id="statisticsDatasetToggles" class="d-flex flex-wrap gap-2" style="flex: 1;"></div>
                 <button class="btn btn-sm btn-black-red ms-2" onclick="window.forceReinitToggleButtons()" title="Click if toggles are not working">
                     <i class="fas fa-sync-alt me-1"></i>Reset Toggles
                 </button>
+            </div>
+            <!-- Precision Slider for Team Statistics -->
+            <div id="teamStatsPrecisionSlider" class="mt-3 px-3 pt-3" style="min-height: 50px; background-color: #000; border-top: 1px solid rgba(249,66,58,0.3); padding: 15px;">
+                <!-- Slider will be initialized here -->
             </div>
             <!-- Overall Cog Scores List - displayed below chart -->
             <div id="overallScoresList" class="mt-3" style="padding: 10px 0;"></div>
@@ -589,6 +673,61 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Temporal Visualization -->
+    <div id="temporalSection" class="card heat-analytics-card mt-4" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Temporal Cognitive Load & Shot Clock Flow</h4>
+            <span class="text-muted small">Animated playback of possessions with estimated shot-clock pressure</span>
+        </div>
+        <div class="card-body">
+            <div id="temporalChart" style="width: 100%; height: 420px;"></div>
+            <div id="temporalInsights" class="mt-3 text-muted small"></div>
+        </div>
+    </div>
+
+    <!-- Pressure Heatmap -->
+    <div id="pressureSection" class="card heat-analytics-card mt-4" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Shot Clock Pressure Gradient</h4>
+            <span class="text-muted small">Average cognitive score by quarter & shot-clock phase</span>
+        </div>
+        <div class="card-body">
+            <div id="pressureHeatmap" style="width: 100%; height: 420px;"></div>
+            <div id="pressureInsights" class="mt-3 text-muted small"></div>
+        </div>
+    </div>
+
+    <!-- Team Insights Center -->
+    <div id="teamInsightsSection" class="card heat-analytics-card mt-4" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="m-0">Team Insights War Room</h4>
+            <span class="text-muted small">Lineup synergy, EPA flow, and radar profile</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <h5 class="text-muted">Cognitive Radar</h5>
+                    <div id="teamRadarChart" style="width: 100%; height: 360px;"></div>
+                </div>
+                <div class="col-lg-6">
+                    <h5 class="text-muted">Lineup Synergy Matrix</h5>
+                    <div id="synergyMatrix" style="width: 100%; height: 360px;"></div>
+                </div>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-lg-6">
+                    <h5 class="text-muted">DM Catch → Driving → Finishing (EPA)</h5>
+                    <div id="epaWaterfallChart" style="width: 100%; height: 360px;"></div>
+                </div>
+                <div class="col-lg-6">
+                    <h5 class="text-muted">Coach Takeaways</h5>
+                    <div id="coachInsightsList" class="text-muted small"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -757,6 +896,8 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <!-- Chart.js for Team Statistics -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<!-- Plotly for advanced visualizations -->
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/slider.css') }}">
 <script src="{{ url_for('static', filename='js/slider.js') }}"></script>
 <script src="{{ url_for('static', filename='js/analytics_dashboard.js') }}"></script>
@@ -1048,6 +1189,37 @@ function populateChartLineMenu(forceUpdate = false) {
     }
 }
 
+function toggleChartLineMenuPanel(event) {
+    try {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        const menu = document.getElementById('chartLineMenu');
+        if (!menu) {
+            console.warn('toggleChartLineMenuPanel: menu not found');
+            return false;
+        }
+        
+        const isOpening = !menu.classList.contains('show');
+        menu.classList.toggle('show');
+        
+        if (isOpening) {
+            // Ensure menu content and checkbox state are synced whenever it opens
+            if (typeof populateChartLineMenu === 'function') {
+                populateChartLineMenu(true);
+            }
+            syncCheckboxState();
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('toggleChartLineMenuPanel: unexpected error', error);
+        return false;
+    }
+}
+
 // Watch for chart updates and refresh menu
 let chartWatchInterval = null;
 
@@ -1100,7 +1272,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // Close menu when clicking outside
 document.addEventListener('click', (e) => {
     const menu = document.getElementById('chartLineMenu');
-    if (menu && !menu.contains(e.target) && !e.target.closest('button')) {
+    if (!menu || !menu.classList.contains('show')) {
+        return;
+    }
+    
+    if (!menu.contains(e.target) && !e.target.closest('button')) {
         menu.classList.remove('show');
     }
 });

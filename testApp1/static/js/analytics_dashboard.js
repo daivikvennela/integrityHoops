@@ -935,10 +935,9 @@ async function deleteScoreFromList(scoreId) {
       // Add click handler
       button.addEventListener('click', function() {
         const idx = parseInt(this.getAttribute('data-dataset-index'));
-        const meta = chartInstance.getDatasetMeta(idx);
-        meta.hidden = meta.hidden === null ? true : null;
+        const currentlyVisible = chartInstance.isDatasetVisible(idx);
+        chartInstance.setDatasetVisibility(idx, !currentlyVisible);
         chartInstance.update('none');
-        // Re-render buttons to update visual state
         renderCategoryToggleButtons(chartInstance);
       });
       
@@ -1301,6 +1300,28 @@ async function deleteScoreFromList(scoreId) {
         const updateSliderAfterCreation = true;
       }
       
+      // Calculate chart dimensions for 4-game scrolling view (single category)
+      const container = document.getElementById('teamStatsChartContainer');
+      const wrapper = document.getElementById('teamStatsChartWrapper');
+      const totalGames = catFormattedDates.length;
+      const gamesPerView = 4;
+      
+      // Get container width
+      const containerWidth = container ? container.offsetWidth || container.clientWidth : 1200;
+      
+      // Calculate width per game (use full container width divided by 4)
+      const widthPerGame = containerWidth / gamesPerView;
+      const totalChartWidth = totalGames * widthPerGame;
+      
+      // Set wrapper width to accommodate all games
+      if (wrapper) {
+        wrapper.style.width = totalChartWidth + 'px';
+        wrapper.style.minWidth = '100%'; // Ensure at least container width
+      }
+      
+      // Configure chart to be non-responsive but use calculated width
+      const chartWidth = totalChartWidth;
+      
       try {
         statisticsChart = new Chart(ctx, {
         type: 'line',
@@ -1309,8 +1330,9 @@ async function deleteScoreFromList(scoreId) {
           datasets: datasets
         },
         options: {
-          responsive: true,
+          responsive: false,
           maintainAspectRatio: false,
+          devicePixelRatio: 2,
           backgroundColor: '#000000',  // Black background for plot
           interaction: {
             mode: 'point',
@@ -1418,6 +1440,14 @@ async function deleteScoreFromList(scoreId) {
           }
         }
       });
+      
+      // Set canvas dimensions explicitly for single category view
+      if (statisticsChart && statisticsChart.canvas) {
+        statisticsChart.canvas.style.width = chartWidth + 'px';
+        statisticsChart.canvas.style.height = '700px';
+        statisticsChart.canvas.width = chartWidth;
+        statisticsChart.canvas.height = 700;
+      }
       } catch (error) {
         console.error('Error creating chart for single category:', error);
         return;
@@ -1500,67 +1530,245 @@ async function deleteScoreFromList(scoreId) {
         }, 500);
       }, 100);
 
-      // Canvas hover to show dataset label near cursor - improved for line detection
+      // Canvas hover to show dataset label near cursor with enhanced tooltip and button highlighting
+      let lastHoveredDatasetIndex = -1;
       mousemoveHandler = function(ev) {
         if (!overlay || !statisticsChart) return;
         
-        // Use 'index' mode to find nearest point, then check if we're close to the line
-        const points = statisticsChart.getElementsAtEventForMode(ev, 'index', { intersect: false }, true);
+        // Remove glow from previously hovered button
+        if (lastHoveredDatasetIndex >= 0) {
+          const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+          if (prevButton) {
+            prevButton.classList.remove('toggle-button-neon-glow');
+            prevButton.style.color = '';
+          }
+        }
         
-        if (points && points.length > 0) {
-          const point = points[0];
+        const chartArea = statisticsChart.chartArea;
+        const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
+        const x = canvasPos.x;
+        const y = canvasPos.y;
+        
+        // Check if cursor is within chart area
+        if (x < chartArea.left || x > chartArea.right || 
+            y < chartArea.top || y > chartArea.bottom) {
+          overlay.style.display = 'none';
+          if (lastHoveredDatasetIndex >= 0) {
+            const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+            if (prevButton) {
+              prevButton.classList.remove('toggle-button-neon-glow');
+              prevButton.style.color = '';
+            }
+            lastHoveredDatasetIndex = -1;
+          }
+          return;
+        }
+        
+        // Try multiple detection methods to catch all points
+        let foundPoint = null;
+        let foundDataset = null;
+        let foundValue = null;
+        let foundDateLabel = null;
+        
+        // Method 1: Try 'nearest' mode with larger threshold
+        const nearestPoints = statisticsChart.getElementsAtEventForMode(ev, 'nearest', { intersect: false, threshold: 50 }, true);
+        if (nearestPoints && nearestPoints.length > 0) {
+          const point = nearestPoints[0];
           const dsIndex = point.datasetIndex;
-          const label = statisticsChart.data.datasets[dsIndex]?.label;
-          
-          if (label) {
-            // Check if we're within reasonable distance from the line (more lenient)
-            const meta = statisticsChart.getDatasetMeta(dsIndex);
-            const index = point.index;
-            
-            // Calculate distance from cursor to line segment
-            const chartArea = statisticsChart.chartArea;
-            const xScale = statisticsChart.scales.x;
-            const yScale = statisticsChart.scales.y;
-            
-            const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
-            const x = canvasPos.x;
-            const y = canvasPos.y;
-            
-            // Check if we're within chart area and near any point
-            if (x >= chartArea.left && x <= chartArea.right && 
-                y >= chartArea.top && y <= chartArea.bottom) {
-              // Show overlay for any point in the dataset
-            overlay.style.display = 'block';
-            overlay.textContent = label;
-            const rect = cardBody.getBoundingClientRect();
-            overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
-            overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
-              return;
+          const dataset = statisticsChart.data.datasets[dsIndex];
+          if (dataset && !dataset.hidden) {
+            const dataIndex = point.index;
+            const value = dataset.data[dataIndex];
+            if (value !== null && value !== undefined) {
+              foundPoint = point;
+              foundDataset = dataset;
+              foundValue = value;
+              foundDateLabel = statisticsChart.data.labels[dataIndex];
             }
           }
         }
         
-        // Fallback: try 'nearest' mode with more lenient detection
-        const nearestPoints = statisticsChart.getElementsAtEventForMode(ev, 'nearest', { intersect: false, threshold: 30 }, true);
-        if (nearestPoints && nearestPoints.length > 0) {
-          const dsIndex = nearestPoints[0].datasetIndex;
-          const label = statisticsChart.data.datasets[dsIndex]?.label;
-          if (label) {
-            overlay.style.display = 'block';
-            overlay.textContent = label;
-            const rect = cardBody.getBoundingClientRect();
-            overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
-            overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
-            return;
+        // Method 2: If not found, try 'index' mode
+        if (!foundPoint) {
+          const indexPoints = statisticsChart.getElementsAtEventForMode(ev, 'index', { intersect: false }, true);
+          if (indexPoints && indexPoints.length > 0) {
+            // Find the closest visible dataset
+            for (const point of indexPoints) {
+              const dsIndex = point.datasetIndex;
+              const dataset = statisticsChart.data.datasets[dsIndex];
+              if (dataset && !dataset.hidden) {
+                const dataIndex = point.index;
+                const value = dataset.data[dataIndex];
+                if (value !== null && value !== undefined) {
+                  foundPoint = point;
+                  foundDataset = dataset;
+                  foundValue = value;
+                  foundDateLabel = statisticsChart.data.labels[dataIndex];
+                  break;
+                }
+              }
+            }
           }
         }
         
-        overlay.style.display = 'none';
+        // Method 3: Calculate distance to all visible lines and find closest
+        if (!foundPoint) {
+          let closestDistance = Infinity;
+          let closestDatasetIndex = -1;
+          let closestDataIndex = -1;
+          
+          const xScale = statisticsChart.scales.x;
+          
+          // First, determine which x-axis index we're closest to based on x position
+          let closestXIndex = -1;
+          let closestXDistance = Infinity;
+          
+          if (xScale && statisticsChart.data.labels) {
+            statisticsChart.data.labels.forEach((label, idx) => {
+              const labelX = xScale.getPixelForValue(idx);
+              const distance = Math.abs(x - labelX);
+              if (distance < closestXDistance) {
+                closestXDistance = distance;
+                closestXIndex = idx;
+              }
+            });
+          }
+          
+          statisticsChart.data.datasets.forEach((dataset, dsIdx) => {
+            if (dataset.hidden) return;
+            
+            const meta = statisticsChart.getDatasetMeta(dsIdx);
+            if (!meta || !meta.data) return;
+            
+            // Check each point in this dataset
+            meta.data.forEach((point, idx) => {
+              if (point.skip) return;
+              
+              const pointX = point.x;
+              const pointY = point.y;
+              
+              // Calculate distance from cursor to point
+              const distance = Math.sqrt(Math.pow(x - pointX, 2) + Math.pow(y - pointY, 2));
+              
+              if (distance < closestDistance && distance < 50) {
+                const value = dataset.data[idx];
+                if (value !== null && value !== undefined) {
+                  closestDistance = distance;
+                  closestDatasetIndex = dsIdx;
+                  closestDataIndex = idx;
+                }
+              }
+            });
+          });
+          
+          if (closestDatasetIndex >= 0) {
+            foundDataset = statisticsChart.data.datasets[closestDatasetIndex];
+            foundValue = foundDataset.data[closestDataIndex];
+            // Use the x-axis label for the closest x position
+            if (closestXIndex >= 0 && statisticsChart.data.labels[closestXIndex]) {
+              foundDateLabel = statisticsChart.data.labels[closestXIndex];
+            } else {
+              foundDateLabel = statisticsChart.data.labels[closestDataIndex];
+            }
+            foundPoint = { datasetIndex: closestDatasetIndex, index: closestDataIndex };
+          } else if (closestXIndex >= 0) {
+            // If we can't find a point but we know the x position, use that
+            // Find the first visible dataset with data at this index
+            for (let dsIdx = 0; dsIdx < statisticsChart.data.datasets.length; dsIdx++) {
+              const dataset = statisticsChart.data.datasets[dsIdx];
+              if (dataset.hidden) continue;
+              
+              const value = dataset.data[closestXIndex];
+              if (value !== null && value !== undefined) {
+                foundDataset = dataset;
+                foundValue = value;
+                foundDateLabel = statisticsChart.data.labels[closestXIndex];
+                foundPoint = { datasetIndex: dsIdx, index: closestXIndex };
+                break;
+              }
+            }
+          }
+        }
+        
+        // If we found a point, show tooltip and highlight button
+        if (foundPoint && foundDataset) {
+          const label = foundDataset.label;
+          const dsIndex = foundPoint.datasetIndex;
+          
+          // Determine x-axis label based on x position if not already set
+          if (!foundDateLabel) {
+            const xScale = statisticsChart.scales.x;
+            if (xScale && statisticsChart.data.labels) {
+              // Find closest x-axis label based on cursor x position
+              let closestXIndex = -1;
+              let closestXDistance = Infinity;
+              statisticsChart.data.labels.forEach((lbl, idx) => {
+                const labelX = xScale.getPixelForValue(idx);
+                const distance = Math.abs(x - labelX);
+                if (distance < closestXDistance) {
+                  closestXDistance = distance;
+                  closestXIndex = idx;
+                }
+              });
+              if (closestXIndex >= 0) {
+                foundDateLabel = statisticsChart.data.labels[closestXIndex];
+              }
+            }
+          }
+          
+          // Update tooltip content
+          const categoryNameEl = document.getElementById('hoverCategoryName');
+          const dateEl = document.getElementById('hoverDate');
+          const valueEl = document.getElementById('hoverValue');
+          
+          if (categoryNameEl) categoryNameEl.textContent = label || 'Unknown';
+          if (dateEl) dateEl.textContent = `📅 ${foundDateLabel || 'N/A'}`;
+          if (valueEl) valueEl.textContent = `📊 ${foundValue.toFixed(2)}%`;
+          
+          // Set tooltip border color to match line color (subtle glow)
+          const lineColor = foundDataset.borderColor || '#F9423A';
+          overlay.style.borderColor = lineColor;
+          overlay.style.boxShadow = `0 0 8px ${lineColor}50, 0 0 15px ${lineColor}25`;
+          
+          // Position tooltip to follow cursor
+          const rect = cardBody.getBoundingClientRect();
+          overlay.style.display = 'block';
+          overlay.style.left = (ev.clientX - rect.left + 20) + 'px';
+          overlay.style.top = (ev.clientY - rect.top - 80) + 'px';
+          
+          // Highlight corresponding toggle button with neon glow
+          const toggleButton = document.querySelector(`button[data-dataset-index="${dsIndex}"]`);
+          if (toggleButton) {
+            toggleButton.classList.add('toggle-button-neon-glow');
+            toggleButton.style.color = lineColor;
+            lastHoveredDatasetIndex = dsIndex;
+          }
+        } else {
+          // No point found - hide tooltip and remove glow
+          overlay.style.display = 'none';
+          if (lastHoveredDatasetIndex >= 0) {
+            const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+            if (prevButton) {
+              prevButton.classList.remove('toggle-button-neon-glow');
+              prevButton.style.color = '';
+            }
+            lastHoveredDatasetIndex = -1;
+          }
+        }
       };
       chartCanvas.addEventListener('mousemove', mousemoveHandler);
       
       mouseleaveHandler = function() {
         if (overlay) overlay.style.display = 'none';
+        // Remove glow from any hovered button
+        if (lastHoveredDatasetIndex >= 0) {
+          const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+          if (prevButton) {
+            prevButton.classList.remove('toggle-button-neon-glow');
+            prevButton.style.color = '';
+          }
+          lastHoveredDatasetIndex = -1;
+        }
       };
       chartCanvas.addEventListener('mouseleave', mouseleaveHandler);
     } else {
@@ -1647,6 +1855,28 @@ async function deleteScoreFromList(scoreId) {
         console.warn('No overall scores available to add to chart');
       }
       
+      // Calculate chart dimensions for 4-game scrolling view
+      const container = document.getElementById('teamStatsChartContainer');
+      const wrapper = document.getElementById('teamStatsChartWrapper');
+      const totalGames = formattedDates.length;
+      const gamesPerView = 4;
+      
+      // Get container width
+      const containerWidth = container ? container.offsetWidth || container.clientWidth : 1200;
+      
+      // Calculate width per game (use full container width divided by 4)
+      const widthPerGame = containerWidth / gamesPerView;
+      const totalChartWidth = totalGames * widthPerGame;
+      
+      // Set wrapper width to accommodate all games
+      if (wrapper) {
+        wrapper.style.width = totalChartWidth + 'px';
+        wrapper.style.minWidth = '100%'; // Ensure at least container width
+      }
+      
+      // Configure chart to be non-responsive but use calculated width
+      const chartWidth = totalChartWidth;
+      
       try {
       statisticsChart = new Chart(ctx, {
         type: 'line',
@@ -1655,8 +1885,9 @@ async function deleteScoreFromList(scoreId) {
           datasets: datasets
         },
         options: {
-          responsive: true,
+          responsive: false,
           maintainAspectRatio: false,
+          devicePixelRatio: 2,
           interaction: {
             mode: 'point',
             intersect: false
@@ -1766,10 +1997,25 @@ async function deleteScoreFromList(scoreId) {
               });
               
               ctx.restore();
+              
+              // Set canvas dimensions after chart is rendered
+              if (chart.canvas) {
+                chart.canvas.width = chartWidth;
+                chart.canvas.height = 700;
+                chart.resize();
+              }
             }
           }
         }
       });
+      
+      // Set canvas dimensions explicitly
+      if (statisticsChart && statisticsChart.canvas) {
+        statisticsChart.canvas.style.width = chartWidth + 'px';
+        statisticsChart.canvas.style.height = '700px';
+        statisticsChart.canvas.width = chartWidth;
+        statisticsChart.canvas.height = 700;
+      }
       } catch (error) {
         console.error('Error creating chart for all categories:', error);
         return;
@@ -1852,56 +2098,246 @@ async function deleteScoreFromList(scoreId) {
         }, 500);
       }, 100);
       
-      // Add hover support for all categories view
+      // Add hover support for all categories view with enhanced tooltip and button highlighting
+      let lastHoveredDatasetIndex = -1;
       mousemoveHandler = function(ev) {
         if (!overlay || !statisticsChart) return;
         
-        const points = statisticsChart.getElementsAtEventForMode(ev, 'index', { intersect: false }, true);
+        // Remove glow from previously hovered button
+        if (lastHoveredDatasetIndex >= 0) {
+          const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+          if (prevButton) {
+            prevButton.classList.remove('toggle-button-neon-glow');
+            prevButton.style.color = '';
+          }
+        }
         
-        if (points && points.length > 0) {
-          const point = points[0];
+        const chartArea = statisticsChart.chartArea;
+        const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
+        const x = canvasPos.x;
+        const y = canvasPos.y;
+        
+        // Check if cursor is within chart area
+        if (x < chartArea.left || x > chartArea.right || 
+            y < chartArea.top || y > chartArea.bottom) {
+          overlay.style.display = 'none';
+          if (lastHoveredDatasetIndex >= 0) {
+            const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+            if (prevButton) {
+              prevButton.classList.remove('toggle-button-neon-glow');
+              prevButton.style.color = '';
+            }
+            lastHoveredDatasetIndex = -1;
+          }
+          return;
+        }
+        
+        // Try multiple detection methods to catch all points
+        let foundPoint = null;
+        let foundDataset = null;
+        let foundValue = null;
+        let foundDateLabel = null;
+        
+        // Method 1: Try 'nearest' mode with larger threshold
+        const nearestPoints = statisticsChart.getElementsAtEventForMode(ev, 'nearest', { intersect: false, threshold: 50 }, true);
+        if (nearestPoints && nearestPoints.length > 0) {
+          const point = nearestPoints[0];
           const dsIndex = point.datasetIndex;
-          const label = statisticsChart.data.datasets[dsIndex]?.label;
-          
-          if (label) {
-            const chartArea = statisticsChart.chartArea;
-            const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
-            const x = canvasPos.x;
-            const y = canvasPos.y;
-            
-            if (x >= chartArea.left && x <= chartArea.right && 
-                y >= chartArea.top && y <= chartArea.bottom) {
-              overlay.style.display = 'block';
-              overlay.textContent = label;
-              const rect = cardBody.getBoundingClientRect();
-              overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
-              overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
-              return;
+          const dataset = statisticsChart.data.datasets[dsIndex];
+          if (dataset && !dataset.hidden) {
+            const dataIndex = point.index;
+            const value = dataset.data[dataIndex];
+            if (value !== null && value !== undefined) {
+              foundPoint = point;
+              foundDataset = dataset;
+              foundValue = value;
+              foundDateLabel = statisticsChart.data.labels[dataIndex];
             }
           }
         }
         
-        // Fallback: try nearest with threshold
-        const nearestPoints = statisticsChart.getElementsAtEventForMode(ev, 'nearest', { intersect: false, threshold: 30 }, true);
-        if (nearestPoints && nearestPoints.length > 0) {
-          const dsIndex = nearestPoints[0].datasetIndex;
-          const label = statisticsChart.data.datasets[dsIndex]?.label;
-          if (label) {
-            overlay.style.display = 'block';
-            overlay.textContent = label;
-            const rect = cardBody.getBoundingClientRect();
-            overlay.style.left = (ev.clientX - rect.left + 12) + 'px';
-            overlay.style.top = (ev.clientY - rect.top + 12) + 'px';
-            return;
+        // Method 2: If not found, try 'index' mode
+        if (!foundPoint) {
+          const indexPoints = statisticsChart.getElementsAtEventForMode(ev, 'index', { intersect: false }, true);
+          if (indexPoints && indexPoints.length > 0) {
+            // Find the closest visible dataset
+            for (const point of indexPoints) {
+              const dsIndex = point.datasetIndex;
+              const dataset = statisticsChart.data.datasets[dsIndex];
+              if (dataset && !dataset.hidden) {
+                const dataIndex = point.index;
+                const value = dataset.data[dataIndex];
+                if (value !== null && value !== undefined) {
+                  foundPoint = point;
+                  foundDataset = dataset;
+                  foundValue = value;
+                  foundDateLabel = statisticsChart.data.labels[dataIndex];
+                  break;
+                }
+              }
+            }
           }
         }
         
-        overlay.style.display = 'none';
+        // Method 3: Calculate distance to all visible lines and find closest
+        if (!foundPoint) {
+          let closestDistance = Infinity;
+          let closestDatasetIndex = -1;
+          let closestDataIndex = -1;
+          
+          const xScale = statisticsChart.scales.x;
+          const yScale = statisticsChart.scales.y;
+          
+          // First, determine which x-axis index we're closest to based on x position
+          let closestXIndex = -1;
+          let closestXDistance = Infinity;
+          
+          if (xScale && statisticsChart.data.labels) {
+            statisticsChart.data.labels.forEach((label, idx) => {
+              const labelX = xScale.getPixelForValue(idx);
+              const distance = Math.abs(x - labelX);
+              if (distance < closestXDistance) {
+                closestXDistance = distance;
+                closestXIndex = idx;
+              }
+            });
+          }
+          
+          statisticsChart.data.datasets.forEach((dataset, dsIdx) => {
+            if (dataset.hidden) return;
+            
+            const meta = statisticsChart.getDatasetMeta(dsIdx);
+            if (!meta || !meta.data) return;
+            
+            // Check each point in this dataset
+            meta.data.forEach((point, idx) => {
+              if (point.skip) return;
+              
+              const pointX = point.x;
+              const pointY = point.y;
+              
+              // Calculate distance from cursor to point
+              const distance = Math.sqrt(Math.pow(x - pointX, 2) + Math.pow(y - pointY, 2));
+              
+              if (distance < closestDistance && distance < 50) {
+                const value = dataset.data[idx];
+                if (value !== null && value !== undefined) {
+                  closestDistance = distance;
+                  closestDatasetIndex = dsIdx;
+                  closestDataIndex = idx;
+                }
+              }
+            });
+          });
+          
+          if (closestDatasetIndex >= 0) {
+            foundDataset = statisticsChart.data.datasets[closestDatasetIndex];
+            foundValue = foundDataset.data[closestDataIndex];
+            // Use the x-axis label for the closest x position
+            if (closestXIndex >= 0 && statisticsChart.data.labels[closestXIndex]) {
+              foundDateLabel = statisticsChart.data.labels[closestXIndex];
+            } else {
+              foundDateLabel = statisticsChart.data.labels[closestDataIndex];
+            }
+            foundPoint = { datasetIndex: closestDatasetIndex, index: closestDataIndex };
+          } else if (closestXIndex >= 0) {
+            // If we can't find a point but we know the x position, use that
+            // Find the first visible dataset with data at this index
+            for (let dsIdx = 0; dsIdx < statisticsChart.data.datasets.length; dsIdx++) {
+              const dataset = statisticsChart.data.datasets[dsIdx];
+              if (dataset.hidden) continue;
+              
+              const value = dataset.data[closestXIndex];
+              if (value !== null && value !== undefined) {
+                foundDataset = dataset;
+                foundValue = value;
+                foundDateLabel = statisticsChart.data.labels[closestXIndex];
+                foundPoint = { datasetIndex: dsIdx, index: closestXIndex };
+                break;
+              }
+            }
+          }
+        }
+        
+        // If we found a point, show tooltip and highlight button
+        if (foundPoint && foundDataset) {
+          const label = foundDataset.label;
+          const dsIndex = foundPoint.datasetIndex;
+          
+          // Determine x-axis label based on x position if not already set
+          if (!foundDateLabel) {
+            const xScale = statisticsChart.scales.x;
+            if (xScale && statisticsChart.data.labels) {
+              // Find closest x-axis label based on cursor x position
+              let closestXIndex = -1;
+              let closestXDistance = Infinity;
+              statisticsChart.data.labels.forEach((lbl, idx) => {
+                const labelX = xScale.getPixelForValue(idx);
+                const distance = Math.abs(x - labelX);
+                if (distance < closestXDistance) {
+                  closestXDistance = distance;
+                  closestXIndex = idx;
+                }
+              });
+              if (closestXIndex >= 0) {
+                foundDateLabel = statisticsChart.data.labels[closestXIndex];
+              }
+            }
+          }
+          
+          // Update tooltip content
+          const categoryNameEl = document.getElementById('hoverCategoryName');
+          const dateEl = document.getElementById('hoverDate');
+          const valueEl = document.getElementById('hoverValue');
+          
+          if (categoryNameEl) categoryNameEl.textContent = label || 'Unknown';
+          if (dateEl) dateEl.textContent = `📅 ${foundDateLabel || 'N/A'}`;
+          if (valueEl) valueEl.textContent = `📊 ${foundValue.toFixed(2)}%`;
+          
+          // Set tooltip border color to match line color
+          const lineColor = foundDataset.borderColor || '#F9423A';
+          overlay.style.borderColor = lineColor;
+          overlay.style.boxShadow = `0 0 10px ${lineColor}60, 0 0 20px ${lineColor}30`;
+          
+          // Position tooltip to follow cursor
+          const rect = cardBody.getBoundingClientRect();
+          overlay.style.display = 'block';
+          overlay.style.left = (ev.clientX - rect.left + 20) + 'px';
+          overlay.style.top = (ev.clientY - rect.top - 80) + 'px';
+          
+          // Highlight corresponding toggle button with neon glow
+          const toggleButton = document.querySelector(`button[data-dataset-index="${dsIndex}"]`);
+          if (toggleButton) {
+            toggleButton.classList.add('toggle-button-neon-glow');
+            toggleButton.style.color = lineColor;
+            lastHoveredDatasetIndex = dsIndex;
+          }
+        } else {
+          // No point found - hide tooltip and remove glow
+          overlay.style.display = 'none';
+          if (lastHoveredDatasetIndex >= 0) {
+            const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+            if (prevButton) {
+              prevButton.classList.remove('toggle-button-neon-glow');
+              prevButton.style.color = '';
+            }
+            lastHoveredDatasetIndex = -1;
+          }
+        }
       };
       chartCanvas.addEventListener('mousemove', mousemoveHandler);
       
       mouseleaveHandler = function() {
         if (overlay) overlay.style.display = 'none';
+        // Remove glow from any hovered button
+        if (lastHoveredDatasetIndex >= 0) {
+          const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
+          if (prevButton) {
+            prevButton.classList.remove('toggle-button-neon-glow');
+            prevButton.style.color = '';
+          }
+          lastHoveredDatasetIndex = -1;
+        }
       };
       chartCanvas.addEventListener('mouseleave', mouseleaveHandler);
     }
@@ -2366,6 +2802,458 @@ async function deleteScoreFromList(scoreId) {
 })();
 
 /**
+ * Advanced Visualization Modules (Temporal, Pressure, Team Insights)
+ */
+(function() {
+  const modeButtons = document.querySelectorAll('[data-analytics-mode]');
+  const sections = {
+    standard: document.getElementById('standardAnalyticsSection'),
+    temporal: document.getElementById('temporalSection'),
+    pressure: document.getElementById('pressureSection'),
+    'team-insights': document.getElementById('teamInsightsSection')
+  };
+  
+  let activeMode = 'standard';
+  let temporalCache = null;
+  let pressureCache = null;
+  let insightsCache = null;
+  
+  function setMode(mode) {
+    if (!sections.standard) {
+      return;
+    }
+    activeMode = mode;
+    Object.entries(sections).forEach(([key, el]) => {
+      if (!el) return;
+      if (key === 'standard') {
+        el.style.display = (mode === 'standard') ? 'block' : 'none';
+      } else {
+        el.style.display = (mode === key) ? 'block' : 'none';
+      }
+    });
+    
+    modeButtons.forEach(btn => {
+      const btnMode = btn.getAttribute('data-analytics-mode');
+      btn.classList.toggle('active', btnMode === mode);
+    });
+    
+    if (mode === 'temporal') {
+      loadTemporalVisualization();
+    } else if (mode === 'pressure') {
+      loadPressureVisualization();
+    } else if (mode === 'team-insights') {
+      loadTeamInsights();
+    }
+  }
+  
+  function getPhaseColor(phase) {
+    const colors = {
+      Early: '#00bcd4',
+      Middle: '#ff9800',
+      Late: '#F9423A',
+      Unknown: '#9e9e9e'
+    };
+    return colors[phase] || '#9e9e9e';
+  }
+  
+  async function loadTemporalVisualization(force = false) {
+    if (temporalCache && !force) {
+      renderTemporalChart(temporalCache);
+      return;
+    }
+    try {
+      const res = await fetch('/api/analytics/time-series');
+      const json = await res.json();
+      if (!json.success) {
+        showTemporalMessage('Unable to load temporal analytics.');
+        return;
+      }
+      temporalCache = json.events || [];
+      renderTemporalChart(temporalCache);
+    } catch (err) {
+      console.error('Temporal analytics error', err);
+      showTemporalMessage('Unexpected error loading temporal analytics.');
+    }
+  }
+  
+  function showTemporalMessage(message) {
+    const insightsEl = document.getElementById('temporalInsights');
+    const chartEl = document.getElementById('temporalChart');
+    if (chartEl && window.Plotly) {
+      Plotly.purge(chartEl);
+    }
+    if (insightsEl) {
+      insightsEl.textContent = message;
+    }
+  }
+  
+  function renderTemporalChart(events) {
+    const chartEl = document.getElementById('temporalChart');
+    const insightsEl = document.getElementById('temporalInsights');
+    if (!chartEl || !window.Plotly) {
+      return;
+    }
+    
+    const scoredEvents = (events || []).filter(ev => typeof ev.cognitive_score === 'number');
+    if (!scoredEvents.length) {
+      showTemporalMessage('No possession data available yet. Import a CSV to unlock temporal analytics.');
+      return;
+    }
+    
+    const quarters = Array.from(new Set(scoredEvents.map(ev => ev.quarter || 'All')));
+    if (!quarters.includes('All')) {
+      quarters.unshift('All');
+    }
+    const baseTrace = {
+      x: scoredEvents.map(ev => ev.timestamp ?? scoredEvents.indexOf(ev)),
+      y: scoredEvents.map(ev => ev.cognitive_score),
+      mode: 'markers',
+      marker: {
+        color: scoredEvents.map(ev => getPhaseColor(ev.shot_clock_phase)),
+        size: 10,
+        line: { width: 1, color: '#ffffff' }
+      },
+      text: scoredEvents.map(ev => {
+        const phase = ev.shot_clock_phase || 'Unknown';
+        const outcome = ev.shot_outcome || 'N/A';
+        const timeLabel = typeof ev.timestamp === 'number'
+          ? `${(ev.timestamp / 60).toFixed(1)} min`
+          : `Event ${scoredEvents.indexOf(ev) + 1}`;
+        return `${timeLabel}<br>Phase: ${phase}<br>Score: ${ev.cognitive_score.toFixed(1)}<br>Outcome: ${outcome}`;
+      }),
+      hoverinfo: 'text'
+    };
+    
+    const frames = quarters.map(q => {
+      const subset = q === 'All' ? scoredEvents : scoredEvents.filter(ev => ev.quarter === q);
+      return {
+        name: q,
+        data: [{
+          x: subset.map(ev => ev.timestamp ?? scoredEvents.indexOf(ev)),
+          y: subset.map(ev => ev.cognitive_score),
+          mode: 'markers',
+          marker: {
+            color: subset.map(ev => getPhaseColor(ev.shot_clock_phase)),
+            size: 11,
+            line: { width: 1, color: '#ffffff' }
+          },
+          text: subset.map(ev => {
+            const phase = ev.shot_clock_phase || 'Unknown';
+            const outcome = ev.shot_outcome || 'N/A';
+            const timeLabel = typeof ev.timestamp === 'number'
+              ? `${(ev.timestamp / 60).toFixed(1)} min`
+              : `Event ${scoredEvents.indexOf(ev) + 1}`;
+            return `${timeLabel}<br>Phase: ${phase}<br>Score: ${ev.cognitive_score?.toFixed(1) ?? '—'}<br>Outcome: ${outcome}`;
+          })
+        }]
+      };
+    });
+    
+    const sliderSteps = frames.map(frame => ({
+      label: frame.name,
+      method: 'animate',
+      args: [[frame.name], { mode: 'immediate', transition: { duration: 0 }, frame: { duration: 450, redraw: true } }]
+    }));
+    
+    const layout = {
+      paper_bgcolor: '#000',
+      plot_bgcolor: '#000',
+      font: { color: '#fff' },
+      xaxis: {
+        title: 'Timeline (seconds)',
+        color: '#fff'
+      },
+      yaxis: {
+        title: 'Cognitive Score',
+        range: [0, 100],
+        color: '#fff'
+      },
+      updatemenus: [{
+        type: 'buttons',
+        showactive: false,
+        x: 0.05,
+        y: 1.15,
+        buttons: [
+          {
+            label: 'Play',
+            method: 'animate',
+            args: [null, { fromcurrent: true, transition: { duration: 200 }, frame: { duration: 450, redraw: true } }]
+          },
+          {
+            label: 'Pause',
+            method: 'animate',
+            args: [[null], { mode: 'immediate', transition: { duration: 0 }, frame: { duration: 0 } }]
+          }
+        ]
+      }],
+      sliders: [{
+        pad: { l: 80, t: 35 },
+        currentvalue: { visible: true, prefix: 'Quarter: ', font: { color: '#fff', size: 14 } },
+        steps: sliderSteps
+      }]
+    };
+    
+    Plotly.newPlot(chartEl, [baseTrace], layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['lasso2d'] })
+      .then(() => {
+        if (frames.length > 0) {
+          Plotly.addFrames(chartEl, frames);
+        }
+      });
+    
+    if (insightsEl) {
+      const latePhase = scoredEvents.filter(ev => ev.shot_clock_phase === 'Late');
+      const lateAvg = latePhase.length ? latePhase.reduce((sum, ev) => sum + ev.cognitive_score, 0) / latePhase.length : null;
+      const earlyPhase = scoredEvents.filter(ev => ev.shot_clock_phase === 'Early');
+      const earlyAvg = earlyPhase.length ? earlyPhase.reduce((sum, ev) => sum + ev.cognitive_score, 0) / earlyPhase.length : null;
+      let text = '';
+      if (lateAvg !== null && earlyAvg !== null) {
+        const delta = (lateAvg - earlyAvg).toFixed(1);
+        text = `Late clock possessions average ${lateAvg.toFixed(1)} vs ${earlyAvg.toFixed(1)} early clock (${delta} net change).`;
+      } else {
+        text = 'Insufficient data for clock-phase comparison.';
+      }
+      insightsEl.textContent = text;
+    }
+  }
+  
+  async function loadPressureVisualization(force = false) {
+    if (pressureCache && !force) {
+      renderPressureHeatmap(pressureCache);
+      return;
+    }
+    try {
+      const res = await fetch('/api/analytics/pressure-summary');
+      const json = await res.json();
+      if (!json.success) {
+        renderPressureHeatmap({ phases: [], quarter_grid: [] });
+        return;
+      }
+      pressureCache = json;
+      renderPressureHeatmap(json);
+    } catch (err) {
+      console.error('Pressure summary error', err);
+    }
+  }
+  
+  function renderPressureHeatmap(summary) {
+    const container = document.getElementById('pressureHeatmap');
+    const insightsEl = document.getElementById('pressureInsights');
+    if (!container || !window.Plotly) return;
+    
+    const phases = ['Early', 'Middle', 'Late', 'Unknown'];
+    const order = ['Q1', 'Q2', 'Q3', 'Q4', 'OT', 'Q?'];
+    const quarterSet = new Set(summary.quarter_grid?.map(item => item.quarter || 'Q?'));
+    const quarters = Array.from(quarterSet).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    if (!quarters.length) {
+      container.innerHTML = '<div class="text-muted">No shot clock data available yet.</div>';
+      if (insightsEl) {
+        insightsEl.textContent = '';
+      }
+      return;
+    }
+    
+    const z = phases.map(phase => quarters.map(q => {
+      const match = (summary.quarter_grid || []).find(item => item.quarter === q && item.phase === phase);
+      return match ? (match.avg_score ?? 0) : 0;
+    }));
+    
+    const text = phases.map(phase => quarters.map(q => {
+      const match = (summary.quarter_grid || []).find(item => item.quarter === q && item.phase === phase);
+      if (!match) return `Phase: ${phase}<br>${q}<br>No data`;
+      return `Phase: ${phase}<br>${q}<br>Avg Score: ${match.avg_score?.toFixed(1) ?? '—'}<br>Possessions: ${match.possessions}`;
+    }));
+    
+    Plotly.newPlot(container, [{
+      z,
+      x: quarters,
+      y: phases,
+      type: 'heatmap',
+      colorscale: 'Jet',
+      hoverinfo: 'text',
+      text
+    }], {
+      paper_bgcolor: '#000',
+      plot_bgcolor: '#000',
+      font: { color: '#fff' },
+      xaxis: { title: 'Quarter', color: '#fff' },
+      yaxis: { title: 'Shot Clock Phase', color: '#fff' },
+      margin: { t: 40, r: 20, b: 40, l: 80 }
+    }, { responsive: true, displaylogo: false });
+    
+    if (insightsEl && summary.phases) {
+      const sorted = [...summary.phases].sort((a, b) => (b.avg_score || 0) - (a.avg_score || 0));
+      if (sorted.length) {
+        const best = sorted[0];
+        const worst = sorted[sorted.length - 1];
+        const diff = ((best.avg_score || 0) - (worst.avg_score || 0)).toFixed(1);
+        insightsEl.innerHTML = `
+          <div>Most efficient phase: <strong>${best.phase}</strong> (${(best.avg_score || 0).toFixed(1)}).</div>
+          <div>Gap to ${worst.phase}: ${diff} pts.</div>
+        `;
+      } else {
+        insightsEl.textContent = '';
+      }
+    }
+  }
+  
+  async function loadTeamInsights(force = false) {
+    if (insightsCache && !force) {
+      renderTeamInsights(insightsCache);
+      return;
+    }
+    try {
+      const res = await fetch('/api/analytics/team-insights');
+      const json = await res.json();
+      if (!json.success) {
+        return;
+      }
+      insightsCache = json;
+      renderTeamInsights(json);
+    } catch (err) {
+      console.error('Team insights error', err);
+    }
+  }
+  
+  function renderTeamInsights(data) {
+    if (!window.Plotly) return;
+    renderRadarChart(data.radar || {});
+    renderSynergyMatrix(data.synergy || {});
+    renderEpaWaterfall(data.epa || {});
+    renderCoachInsights(data);
+  }
+  
+  function renderRadarChart(radarData) {
+    const container = document.getElementById('teamRadarChart');
+    if (!container || !radarData.labels || !radarData.labels.length) return;
+    Plotly.newPlot(container, [{
+      type: 'scatterpolar',
+      r: radarData.team_average || [],
+      theta: radarData.labels,
+      fill: 'toself',
+      name: 'Heat',
+      line: { color: '#F9423A' }
+    }, {
+      type: 'scatterpolar',
+      r: radarData.opponent_pressure || [],
+      theta: radarData.labels,
+      fill: 'toself',
+      name: 'Opponent Pressure',
+      line: { color: '#00bcd4' }
+    }], {
+      polar: {
+        bgcolor: '#000',
+        radialaxis: { visible: true, range: [0, 100], color: '#fff' },
+        angularaxis: { color: '#fff' }
+      },
+      paper_bgcolor: '#000',
+      legend: { orientation: 'h', x: 0.1, y: -0.2 }
+    }, { responsive: true, displaylogo: false });
+  }
+  
+  function renderSynergyMatrix(synergy) {
+    const container = document.getElementById('synergyMatrix');
+    if (!container || !synergy.players || !synergy.players.length || !window.Plotly) return;
+    Plotly.newPlot(container, [{
+      z: synergy.matrix || [],
+      x: synergy.players,
+      y: synergy.players,
+      type: 'heatmap',
+      colorscale: 'Viridis',
+      hoverongaps: false,
+      hovertemplate: 'Lineup: %{y} + %{x}<br>Avg Score: %{z:.1f}<extra></extra>'
+    }], {
+      paper_bgcolor: '#000',
+      plot_bgcolor: '#000',
+      font: { color: '#fff' },
+      margin: { t: 10 }
+    }, { responsive: true, displaylogo: false });
+  }
+  
+  function renderEpaWaterfall(epa) {
+    const container = document.getElementById('epaWaterfallChart');
+    if (!container || !epa.stages || !epa.stages.length || !window.Plotly) return;
+    
+    const x = ['Baseline'].concat(epa.stages.map(stage => stage.label)).concat(['Result']);
+    const measures = ['absolute']
+      .concat(Array(epa.stages.length).fill('relative'))
+      .concat(['total']);
+    const y = [epa.baseline || 50]
+      .concat(epa.stages.map(stage => stage.delta || 0))
+      .concat([epa.final || epa.baseline || 50]);
+    
+    Plotly.newPlot(container, [{
+      type: 'waterfall',
+      x,
+      y,
+      measure: measures,
+      decreasing: { marker: { color: '#F9423A' } },
+      increasing: { marker: { color: '#00ff00' } },
+      totals: { marker: { color: '#2196f3' } },
+      connector: { line: { color: '#ffffff' } }
+    }], {
+      paper_bgcolor: '#000',
+      plot_bgcolor: '#000',
+      font: { color: '#fff' },
+      margin: { t: 10 }
+    }, { responsive: true, displaylogo: false });
+  }
+  
+  function renderCoachInsights(data) {
+    const list = document.getElementById('coachInsightsList');
+    if (!list) return;
+    const insights = [];
+    if (data.epa && Array.isArray(data.epa.insights)) {
+      insights.push(...data.epa.insights);
+    }
+    const synergy = data.synergy;
+    if (synergy && synergy.players && synergy.matrix) {
+      let bestPair = null;
+      let bestScore = -Infinity;
+      synergy.players.forEach((player, i) => {
+        synergy.players.forEach((partner, j) => {
+          if (i >= j) return;
+          const value = synergy.matrix[i][j];
+          if (value !== null && value !== undefined && value > bestScore) {
+            bestScore = value;
+            bestPair = `${player} + ${partner}`;
+          }
+        });
+      });
+      if (bestPair) {
+        insights.push(`Top synergy pairing: ${bestPair} (${bestScore.toFixed(1)})`);
+      }
+    }
+    
+    if (!insights.length) {
+      list.innerHTML = '<div class="text-muted">No insights yet.</div>';
+      return;
+    }
+    
+    list.innerHTML = `<ul class="mb-0">${insights.map(item => `<li>${item}</li>`).join('')}</ul>`;
+  }
+  
+  if (modeButtons.length) {
+    modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-analytics-mode');
+        setMode(mode);
+      });
+    });
+  }
+  
+  setMode('standard');
+  
+  window.refreshAdvancedVisualizations = function() {
+    temporalCache = null;
+    pressureCache = null;
+    insightsCache = null;
+    if (activeMode !== 'standard') {
+      setMode(activeMode);
+    }
+  };
+})();
+
+/**
  * Auto-refresh analytics when new game is uploaded
  */
 (function() {
@@ -2381,6 +3269,10 @@ async function deleteScoreFromList(scoreId) {
     // Reload team series/scores
     if (typeof loadTeamSeries === 'function') {
       loadTeamSeries();
+    }
+    
+    if (typeof refreshAdvancedVisualizations === 'function') {
+      refreshAdvancedVisualizations();
     }
     
     // Show notification
