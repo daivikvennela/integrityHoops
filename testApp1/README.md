@@ -16,6 +16,7 @@ IntegrityHoops processes game performance CSV files to calculate cognitive score
 
 - **📊 Analytics Dashboard**: Interactive charts showing performance trends across games
 - **🎯 10 Performance Categories**: Cutting & Screening, DM Catch, Finishing, Footwork, Passing, Positioning, QB12 DM, Relocation, Space Read, Transition
+- **🧠 Temporal & Pressure Visualizations**: Plotly-powered time-series, shot-clock heatmaps, and team insight center with radar, synergy matrix, and EPA waterfall
 - **📈 Cognitive Score Calculation**: Automated calculation of overall and category-specific scores
 - **👥 Player Management**: Individual player tracking and performance comparison
 - **📄 PDF Export**: Generate player performance cards in 2K/Madden style
@@ -31,16 +32,16 @@ IntegrityHoops processes game performance CSV files to calculate cognitive score
 
 ### Installation
 
-```bash
+   ```bash
 # 1. Navigate to project directory
-cd testApp1
+   cd testApp1
 
 # 2. Create virtual environment
 python3.12 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # 3. Install dependencies
-pip install -r requirements.txt
+   pip install -r requirements.txt
 
 # 4. Run the application
 python main.py
@@ -174,6 +175,17 @@ In the **Player Management** tab:
 - **Comparison Card**: Export multi-player comparison as PDF
 - **CSV Data**: Download raw statistics from API endpoints
 
+### Advanced Visualization Modes
+
+Switch between four dashboard modes using the new heat-card toggle:
+
+1. **Standard View** – Existing ECharts + Chart.js visualizations
+2. **Temporal Load** – Plotly animated scatter of every possession with estimated shot-clock phase, highlighting late-clock fatigue
+3. **Shot Clock Pressure** – Gradient heatmap of quarter vs. phase showing cognitive drop-offs during crunch time
+4. **Team Insights War Room** – Radar chart (Heat vs opponent pressure), lineup synergy heatmap, and DM Catch → Driving → Finishing EPA waterfall with coach takeaways
+
+All modes auto-refresh when new CSVs are imported (via the `newGameUploaded` cross-tab event).
+
 ---
 
 ## 📊 Performance Categories
@@ -234,6 +246,15 @@ In the **Player Management** tab:
 - `positive_count` (INTEGER)
 - `negative_count` (INTEGER)
 - `overall_score` (REAL)
+
+**possession_events**
+- `game_id` (TEXT, FK): Linked to `games`
+- `timestamp` (REAL): Seconds from game start (from CSV Start time)
+- `duration` (REAL): Possession duration / action time
+- `shot_clock_phase` (TEXT): Early/Middle/Late/Unknown
+- `cognitive_score` (REAL): Per-possession signal strength
+- `positive_count` / `negative_count`
+- `shot_outcome`, `shot_location`, `quarter`, `opponent`
 
 ---
 

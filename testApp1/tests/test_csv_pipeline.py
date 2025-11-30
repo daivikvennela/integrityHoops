@@ -7,11 +7,13 @@ import unittest
 import os
 import tempfile
 import shutil
+import pandas as pd
 from src.processors.csv_preprocessor import CSVPreprocessor
 from src.services.game_validator import GameValidator
 from src.processors.csv_to_database_importer import CSVToDatabaseImporter
 from src.database.db_manager import DatabaseManager
-from src.utils.game_id_generator import generate_game_id
+from src.utils.game_id_generator import generate_game_id, date_string_to_timestamp
+from src.models.game import Game
 
 
 class TestCSVPreprocessor(unittest.TestCase):
@@ -256,6 +258,36 @@ class TestCSVToDatabaseImporter(unittest.TestCase):
         self.assertFalse(result2['success'])
         self.assertTrue(result2.get('duplicate', False))
 
+    def test_possession_event_extraction(self):
+        """Ensure possession events are extracted and stored."""
+        df = pd.DataFrame({
+            'Start time': [5, 18, 31],
+            'Duration': [4, 12, 19],
+            'Shot Outcome': ['Made 3PT', 'Miss Jumper', 'Made Layup'],
+            'Space Read': ['+ve Space Read: Catch', '-ve Space Read: Catch', '+ve Space Read: Live Dribble'],
+            'Passing': ['+ve Passing: Read the Length', '', '-ve Passing: Read the Length'],
+            'Notes': ['Q1', 'Q2', 'Q4']
+        })
+        
+        events = self.importer._extract_possession_events(df, 'game-temp', 'ORL')
+        self.assertEqual(len(events), 3)
+        self.assertEqual(events[0]['shot_clock_phase'], 'Early')
+        self.assertEqual(events[1]['shot_clock_phase'], 'Middle')
+        self.assertEqual(events[2]['shot_clock_phase'], 'Late')
+        self.assertIsInstance(events[0]['cognitive_score'], float)
+        
+        game = Game(
+            game_id='game-temp',
+            date=date_string_to_timestamp('10.12.25'),
+            date_string='10.12.25',
+            opponent='ORL',
+            team='Heat'
+        )
+        self.db_manager.create_game(game)
+        self.db_manager.insert_possession_events('game-temp', events)
+        stored = self.db_manager.get_possession_events('game-temp')
+        self.assertEqual(len(stored), 3)
+
 
 class TestPipelineIntegration(unittest.TestCase):
     """Test complete pipeline integration."""
@@ -310,7 +342,7 @@ class TestPipelineIntegration(unittest.TestCase):
         # Verify game exists
         game = db_manager.get_game_by_id(game_id)
         self.assertIsNotNone(game)
-        self.assertEqual(game['opponent'], 'ORL')
+        self.assertEqual(game.opponent, 'ORL')
         
         # Verify players exist
         players = db_manager.get_players_by_game(game_id)

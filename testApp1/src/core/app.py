@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 import json
 from datetime import datetime
 import logging
+from collections import defaultdict
+from typing import Dict, Any, List
 from src.processors.custom_etl_processor import StatisticalDataProcessor
 from src.processors.basketball_cognitive_processor import BasketballCognitiveProcessor
 from src.processors.cog_score_calculator import CogScoreCalculator
@@ -661,6 +663,155 @@ def api_team_statistics():
     except Exception as e:
         logger.exception('Error fetching team statistics')
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/time-series', methods=['GET'])
+def api_analytics_time_series():
+    """Return possession-level events for temporal cognitive load visualization."""
+    try:
+        game_id = request.args.get('game_id')
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        events = db_manager.get_possession_events(game_id)
+        return jsonify({'success': True, 'events': events})
+    except Exception as e:
+        logger.exception("Error fetching temporal analytics data")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/pressure-summary', methods=['GET'])
+def api_analytics_pressure_summary():
+    """Return aggregated shot-clock pressure metrics for heatmap/contour visualization."""
+    try:
+        game_id = request.args.get('game_id')
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        summary = db_manager.get_shot_clock_summary(game_id)
+        return jsonify({'success': True, **summary})
+    except Exception as e:
+        logger.exception("Error fetching shot clock pressure summary")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/analytics/team-insights', methods=['GET'])
+def api_analytics_team_insights():
+    """Provide coach-focused insights: radar, synergy matrix, and EPA waterfall data."""
+    try:
+        db_manager = DatabaseManager(app.config['DB_PATH'])
+        radar = _build_radar_dataset(db_manager)
+        synergy = _build_synergy_matrix(db_manager)
+        epa = _build_epa_breakdown(db_manager)
+        return jsonify({
+            'success': True,
+            'radar': radar,
+            'synergy': synergy,
+            'epa': epa
+        })
+    except Exception as e:
+        logger.exception("Error building team insights")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+def _build_radar_dataset(db_manager: DatabaseManager) -> Dict[str, Any]:
+    """Aggregate team vs opponent pressure for radar chart."""
+    stats = db_manager.get_team_statistics(team='Heat')
+    if not stats:
+        return {'labels': [], 'team_average': [], 'opponent_pressure': []}
+    
+    categories = {}
+    opponent_pressure = {}
+    for stat in stats:
+        cat = stat['category']
+        categories.setdefault(cat, []).append(stat['percentage'])
+        neg = stat.get('negative_count') or 0
+        total = stat.get('total_count') or 1
+        opponent_pressure.setdefault(cat, []).append((neg / total) * 100 if total else 0)
+    
+    labels = sorted(categories.keys())
+    team_avg = [sum(categories[label]) / len(categories[label]) for label in labels]
+    opponent_avg = [sum(opponent_pressure.get(label, [0])) / max(len(opponent_pressure.get(label, [])), 1) for label in labels]
+    
+    return {
+        'labels': labels,
+        'team_average': team_avg,
+        'opponent_pressure': opponent_avg
+    }
+
+
+def _build_synergy_matrix(db_manager: DatabaseManager) -> Dict[str, Any]:
+    """Build lineup synergy heatmap data using stored player cog scores."""
+    scores = db_manager.get_player_cog_scores()
+    if not scores:
+        return {'players': [], 'matrix': []}
+    
+    from collections import defaultdict
+    games: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    players_set = set()
+    for row in scores:
+        players_set.add(row['player_name'])
+        games[row['game_date']].append(row)
+    
+    players = sorted(players_set)
+    pair_values: Dict[tuple, List[float]] = defaultdict(list)
+    
+    for game_rows in games.values():
+        for i, player_a in enumerate(game_rows):
+            pair_values[(player_a['player_name'], player_a['player_name'])].append(player_a['score'])
+            for j in range(i + 1, len(game_rows)):
+                player_b = game_rows[j]
+                pair = tuple(sorted([player_a['player_name'], player_b['player_name']]))
+                pair_values[pair].append((player_a['score'] + player_b['score']) / 2)
+    
+    matrix = []
+    for row_player in players:
+        row = []
+        for col_player in players:
+            key = tuple(sorted([row_player, col_player]))
+            values = pair_values.get(key, [])
+            avg = sum(values) / len(values) if values else None
+            row.append(avg)
+        matrix.append(row)
+    
+    return {'players': players, 'matrix': matrix}
+
+
+def _build_epa_breakdown(db_manager: DatabaseManager) -> Dict[str, Any]:
+    """Approximate expected points added flow using DM Catch -> Driving -> Finishing."""
+    stats = db_manager.get_team_statistics(team='Heat')
+    if not stats:
+        return {'baseline': 50, 'stages': [], 'insights': []}
+    
+    stage_order = ['DM Catch', 'Driving', 'Finishing']
+    stage_data = {}
+    for stat in stats:
+        if stat['category'] in stage_order:
+            stage_data.setdefault(stat['category'], []).append(stat['percentage'])
+    
+    baseline = 50
+    stages = []
+    running_total = baseline
+    for category in stage_order:
+        values = stage_data.get(category, [])
+        avg = sum(values) / len(values) if values else baseline
+        delta = avg - baseline
+        running_total += delta
+        stages.append({
+            'label': category,
+            'average': avg,
+            'delta': delta
+        })
+    
+    insights = []
+    if stages:
+        strongest = max(stages, key=lambda s: s['average'])
+        weakest = min(stages, key=lambda s: s['average'])
+        insights.append(f"Strongest decision phase: {strongest['label']} at {strongest['average']:.1f}%")
+        insights.append(f"Needs attention: {weakest['label']} dips to {weakest['average']:.1f}%")
+    
+    return {
+        'baseline': baseline,
+        'stages': stages,
+        'final': running_total,
+        'insights': insights
+    }
 
 @app.route('/api/games-dashboard', methods=['GET'])
 def api_games_dashboard():

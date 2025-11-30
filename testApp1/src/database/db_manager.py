@@ -188,6 +188,10 @@ class DatabaseManager:
                     note TEXT
                 )
             ''')
+            cursor.execute('''
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_team_cog_unique
+                ON team_cog_scores (game_date, team, opponent)
+            ''')
 
             # Create player cog scores table
             cursor.execute('''
@@ -232,6 +236,29 @@ class DatabaseManager:
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_team_statistics_category 
                 ON team_statistics(category)
+            ''')
+            
+            # Create possession events table for temporal analytics
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS possession_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    game_id TEXT NOT NULL,
+                    timestamp REAL,
+                    duration REAL,
+                    shot_clock_phase TEXT,
+                    cognitive_score REAL,
+                    positive_count INTEGER DEFAULT 0,
+                    negative_count INTEGER DEFAULT 0,
+                    shot_outcome TEXT,
+                    shot_location TEXT,
+                    quarter TEXT,
+                    opponent TEXT,
+                    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+                )
+            ''')
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_possession_game_time
+                ON possession_events(game_id, timestamp)
             ''')
             cursor.execute('''
                 CREATE INDEX IF NOT EXISTS idx_team_statistics_date_category 
@@ -1501,3 +1528,146 @@ class DatabaseManager:
         except Exception as e:
             print(f"Error aggregating game stats: {e}")
             return None 
+
+    # ----------------------
+    # Possession Event Analytics
+    # ----------------------
+
+    def insert_possession_events(self, game_id: str, events: List[Dict[str, Any]]) -> None:
+        """
+        Store possession-level events for temporal analytics.
+        Existing events for the game are replaced.
+        """
+        if not events:
+            return
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM possession_events WHERE game_id = ?', (game_id,))
+                cursor.executemany('''
+                    INSERT INTO possession_events (
+                        game_id, timestamp, duration, shot_clock_phase, cognitive_score,
+                        positive_count, negative_count, shot_outcome, shot_location,
+                        quarter, opponent
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', [
+                    (
+                        game_id,
+                        event.get('timestamp'),
+                        event.get('duration'),
+                        event.get('shot_clock_phase'),
+                        event.get('cognitive_score'),
+                        event.get('positive_count', 0),
+                        event.get('negative_count', 0),
+                        event.get('shot_outcome'),
+                        event.get('shot_location'),
+                        event.get('quarter'),
+                        event.get('opponent')
+                    )
+                    for event in events
+                ])
+                conn.commit()
+        except Exception as e:
+            print(f"Error inserting possession events: {e}")
+
+    def get_possession_events(self, game_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Retrieve possession events ordered chronologically.
+        """
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                base_query = '''
+                    SELECT id, game_id, timestamp, duration, shot_clock_phase,
+                           cognitive_score, positive_count, negative_count,
+                           shot_outcome, shot_location, quarter, opponent
+                    FROM possession_events
+                '''
+                params: List[Any] = []
+                if game_id:
+                    base_query += ' WHERE game_id = ?'
+                    params.append(game_id)
+                base_query += ' ORDER BY COALESCE(timestamp, id), id'
+                cursor.execute(base_query, tuple(params))
+                rows = cursor.fetchall()
+                events: List[Dict[str, Any]] = []
+                for row in rows:
+                    events.append({
+                        'id': row[0],
+                        'game_id': row[1],
+                        'timestamp': row[2],
+                        'duration': row[3],
+                        'shot_clock_phase': row[4],
+                        'cognitive_score': row[5],
+                        'positive_count': row[6],
+                        'negative_count': row[7],
+                        'shot_outcome': row[8],
+                        'shot_location': row[9],
+                        'quarter': row[10],
+                        'opponent': row[11],
+                    })
+                return events
+        except Exception as e:
+            print(f"Error fetching possession events: {e}")
+            return []
+
+    def get_shot_clock_summary(self, game_id: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Aggregate possession events by shot clock phase and quarter.
+        """
+        summary = {'phases': [], 'quarter_grid': []}
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                
+                params: List[Any] = []
+                where_clause = ''
+                if game_id:
+                    where_clause = 'WHERE game_id = ?'
+                    params.append(game_id)
+                param_tuple = tuple(params)
+                
+                cursor.execute(f'''
+                    SELECT 
+                        COALESCE(shot_clock_phase, 'Unknown') as phase,
+                        COUNT(*) as possessions,
+                        AVG(cognitive_score) as avg_score,
+                        SUM(CASE WHEN LOWER(COALESCE(shot_outcome,'')) LIKE 'made%%' THEN 1 ELSE 0 END) as made_count,
+                        SUM(CASE WHEN LOWER(COALESCE(shot_outcome,'')) LIKE 'miss%%' THEN 1 ELSE 0 END) as missed_count
+                    FROM possession_events
+                    {where_clause}
+                    GROUP BY phase
+                ''', param_tuple)
+                
+                for row in cursor.fetchall():
+                    attempts = row[1] or 0
+                    made = row[3] or 0
+                    summary['phases'].append({
+                        'phase': row[0],
+                        'possessions': attempts,
+                        'avg_score': row[2] or 0,
+                        'made_rate': (made / attempts * 100) if attempts else 0,
+                        'missed': row[4] or 0
+                    })
+                
+                cursor.execute(f'''
+                    SELECT 
+                        COALESCE(quarter, 'Q?') as quarter,
+                        COALESCE(shot_clock_phase, 'Unknown') as phase,
+                        COUNT(*) as possessions,
+                        AVG(cognitive_score) as avg_score
+                    FROM possession_events
+                    {where_clause}
+                    GROUP BY quarter, phase
+                ''', param_tuple)
+                
+                for row in cursor.fetchall():
+                    summary['quarter_grid'].append({
+                        'quarter': row[0],
+                        'phase': row[1],
+                        'possessions': row[2],
+                        'avg_score': row[3] or 0
+                    })
+        except Exception as e:
+            print(f"Error building shot clock summary: {e}")
+        return summary

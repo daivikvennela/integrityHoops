@@ -615,6 +615,7 @@ async function deleteScoreFromList(scoreId) {
   let statisticsChart = null;
   let mousemoveHandler = null;
   let mouseleaveHandler = null;
+  let chartZoomedOut = false; // Track zoom state
   
   // Category colors - High contrast palette for better visibility
   const categoryColors = {
@@ -935,9 +936,23 @@ async function deleteScoreFromList(scoreId) {
       // Add click handler
       button.addEventListener('click', function() {
         const idx = parseInt(this.getAttribute('data-dataset-index'));
+        if (isNaN(idx)) {
+          console.warn('Toggle button missing dataset index');
+          return;
+        }
+        
+        // Prefer the global toggleChartLine helper so checkbox/menu state stays in sync
         const currentlyVisible = chartInstance.isDatasetVisible(idx);
-        chartInstance.setDatasetVisibility(idx, !currentlyVisible);
+        const nextVisible = !currentlyVisible;
+        
+        if (typeof toggleChartLine === 'function') {
+          toggleChartLine(idx, nextVisible);
+        } else {
+          chartInstance.setDatasetVisibility(idx, nextVisible);
         chartInstance.update('none');
+        }
+        
+        // Re-render buttons to refresh styles and order
         renderCategoryToggleButtons(chartInstance);
       });
       
@@ -1300,27 +1315,34 @@ async function deleteScoreFromList(scoreId) {
         const updateSliderAfterCreation = true;
       }
       
-      // Calculate chart dimensions for 4-game scrolling view (single category)
+      // Calculate chart dimensions - support both 4-game view and zoomed-out view (single category)
       const container = document.getElementById('teamStatsChartContainer');
       const wrapper = document.getElementById('teamStatsChartWrapper');
       const totalGames = catFormattedDates.length;
-      const gamesPerView = 4;
+      const gamesPerView = chartZoomedOut ? totalGames : 4;
       
       // Get container width
       const containerWidth = container ? container.offsetWidth || container.clientWidth : 1200;
       
-      // Calculate width per game (use full container width divided by 4)
+      // Calculate width per game
       const widthPerGame = containerWidth / gamesPerView;
-      const totalChartWidth = totalGames * widthPerGame;
+      const totalChartWidth = chartZoomedOut ? containerWidth : (totalGames * widthPerGame);
       
       // Set wrapper width to accommodate all games
       if (wrapper) {
-        wrapper.style.width = totalChartWidth + 'px';
-        wrapper.style.minWidth = '100%'; // Ensure at least container width
+        if (chartZoomedOut) {
+          // When zoomed out, fit all games in container width
+          wrapper.style.width = '100%';
+          wrapper.style.minWidth = '100%';
+        } else {
+          // When zoomed in, use calculated width for scrolling
+          wrapper.style.width = totalChartWidth + 'px';
+          wrapper.style.minWidth = '100%';
+        }
       }
       
-      // Configure chart to be non-responsive but use calculated width
-      const chartWidth = totalChartWidth;
+      // Configure chart width
+      const chartWidth = chartZoomedOut ? containerWidth : totalChartWidth;
       
       try {
         statisticsChart = new Chart(ctx, {
@@ -1330,7 +1352,7 @@ async function deleteScoreFromList(scoreId) {
           datasets: datasets
         },
         options: {
-          responsive: false,
+          responsive: chartZoomedOut, // Make responsive when zoomed out
           maintainAspectRatio: false,
           devicePixelRatio: 2,
           backgroundColor: '#000000',  // Black background for plot
@@ -1443,10 +1465,19 @@ async function deleteScoreFromList(scoreId) {
       
       // Set canvas dimensions explicitly for single category view
       if (statisticsChart && statisticsChart.canvas) {
-        statisticsChart.canvas.style.width = chartWidth + 'px';
-        statisticsChart.canvas.style.height = '700px';
-        statisticsChart.canvas.width = chartWidth;
-        statisticsChart.canvas.height = 700;
+        if (chartZoomedOut) {
+          // When zoomed out, use responsive sizing
+          statisticsChart.canvas.style.width = '100%';
+          statisticsChart.canvas.style.height = '700px';
+          statisticsChart.canvas.style.maxWidth = '100%';
+        } else {
+          // When zoomed in, use explicit dimensions
+          statisticsChart.canvas.style.width = chartWidth + 'px';
+          statisticsChart.canvas.style.height = '700px';
+          statisticsChart.canvas.width = chartWidth;
+          statisticsChart.canvas.height = 700;
+        }
+        statisticsChart.resize();
       }
       } catch (error) {
         console.error('Error creating chart for single category:', error);
@@ -1544,11 +1575,11 @@ async function deleteScoreFromList(scoreId) {
           }
         }
         
-        const chartArea = statisticsChart.chartArea;
-        const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
-        const x = canvasPos.x;
-        const y = canvasPos.y;
-        
+            const chartArea = statisticsChart.chartArea;
+            const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
+            const x = canvasPos.x;
+            const y = canvasPos.y;
+            
         // Check if cursor is within chart area
         if (x < chartArea.left || x > chartArea.right || 
             y < chartArea.top || y > chartArea.bottom) {
@@ -1745,7 +1776,7 @@ async function deleteScoreFromList(scoreId) {
           }
         } else {
           // No point found - hide tooltip and remove glow
-          overlay.style.display = 'none';
+        overlay.style.display = 'none';
           if (lastHoveredDatasetIndex >= 0) {
             const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
             if (prevButton) {
@@ -1855,27 +1886,34 @@ async function deleteScoreFromList(scoreId) {
         console.warn('No overall scores available to add to chart');
       }
       
-      // Calculate chart dimensions for 4-game scrolling view
+      // Calculate chart dimensions - support both 4-game view and zoomed-out view
       const container = document.getElementById('teamStatsChartContainer');
       const wrapper = document.getElementById('teamStatsChartWrapper');
       const totalGames = formattedDates.length;
-      const gamesPerView = 4;
+      const gamesPerView = chartZoomedOut ? totalGames : 4;
       
       // Get container width
       const containerWidth = container ? container.offsetWidth || container.clientWidth : 1200;
       
-      // Calculate width per game (use full container width divided by 4)
+      // Calculate width per game
       const widthPerGame = containerWidth / gamesPerView;
-      const totalChartWidth = totalGames * widthPerGame;
+      const totalChartWidth = chartZoomedOut ? containerWidth : (totalGames * widthPerGame);
       
       // Set wrapper width to accommodate all games
       if (wrapper) {
-        wrapper.style.width = totalChartWidth + 'px';
-        wrapper.style.minWidth = '100%'; // Ensure at least container width
+        if (chartZoomedOut) {
+          // When zoomed out, fit all games in container width
+          wrapper.style.width = '100%';
+          wrapper.style.minWidth = '100%';
+        } else {
+          // When zoomed in, use calculated width for scrolling
+          wrapper.style.width = totalChartWidth + 'px';
+          wrapper.style.minWidth = '100%';
+        }
       }
       
-      // Configure chart to be non-responsive but use calculated width
-      const chartWidth = totalChartWidth;
+      // Configure chart width
+      const chartWidth = chartZoomedOut ? containerWidth : totalChartWidth;
       
       try {
       statisticsChart = new Chart(ctx, {
@@ -1885,7 +1923,7 @@ async function deleteScoreFromList(scoreId) {
           datasets: datasets
         },
         options: {
-          responsive: false,
+          responsive: chartZoomedOut, // Make responsive when zoomed out
           maintainAspectRatio: false,
           devicePixelRatio: 2,
           interaction: {
@@ -2000,9 +2038,15 @@ async function deleteScoreFromList(scoreId) {
               
               // Set canvas dimensions after chart is rendered
               if (chart.canvas) {
-                chart.canvas.width = chartWidth;
-                chart.canvas.height = 700;
-                chart.resize();
+                if (chartZoomedOut) {
+                  // When zoomed out, let Chart.js handle responsive sizing
+                  chart.resize();
+                } else {
+                  // When zoomed in, set explicit dimensions
+                  chart.canvas.width = chartWidth;
+                  chart.canvas.height = 700;
+                  chart.resize();
+                }
               }
             }
           }
@@ -2011,10 +2055,19 @@ async function deleteScoreFromList(scoreId) {
       
       // Set canvas dimensions explicitly
       if (statisticsChart && statisticsChart.canvas) {
-        statisticsChart.canvas.style.width = chartWidth + 'px';
-        statisticsChart.canvas.style.height = '700px';
-        statisticsChart.canvas.width = chartWidth;
-        statisticsChart.canvas.height = 700;
+        if (chartZoomedOut) {
+          // When zoomed out, use responsive sizing
+          statisticsChart.canvas.style.width = '100%';
+          statisticsChart.canvas.style.height = '700px';
+          statisticsChart.canvas.style.maxWidth = '100%';
+        } else {
+          // When zoomed in, use explicit dimensions
+          statisticsChart.canvas.style.width = chartWidth + 'px';
+          statisticsChart.canvas.style.height = '700px';
+          statisticsChart.canvas.width = chartWidth;
+          statisticsChart.canvas.height = 700;
+        }
+        statisticsChart.resize();
       }
       } catch (error) {
         console.error('Error creating chart for all categories:', error);
@@ -2112,11 +2165,11 @@ async function deleteScoreFromList(scoreId) {
           }
         }
         
-        const chartArea = statisticsChart.chartArea;
-        const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
-        const x = canvasPos.x;
-        const y = canvasPos.y;
-        
+            const chartArea = statisticsChart.chartArea;
+            const canvasPos = Chart.helpers.getRelativePosition(ev, statisticsChart);
+            const x = canvasPos.x;
+            const y = canvasPos.y;
+            
         // Check if cursor is within chart area
         if (x < chartArea.left || x > chartArea.right || 
             y < chartArea.top || y > chartArea.bottom) {
@@ -2314,7 +2367,7 @@ async function deleteScoreFromList(scoreId) {
           }
         } else {
           // No point found - hide tooltip and remove glow
-          overlay.style.display = 'none';
+        overlay.style.display = 'none';
           if (lastHoveredDatasetIndex >= 0) {
             const prevButton = document.querySelector(`button[data-dataset-index="${lastHoveredDatasetIndex}"]`);
             if (prevButton) {
@@ -2348,6 +2401,29 @@ async function deleteScoreFromList(scoreId) {
     console.log('🔄 Refreshing team statistics with force recalculation...');
     const selectedCategory = categorySelect.value || '';
     loadTeamStatistics(selectedCategory, true); // true = force refresh
+  };
+  
+  // Global function to toggle chart zoom (called from HTML button)
+  window.toggleChartZoom = function() {
+    // Toggle zoom state
+    chartZoomedOut = !chartZoomedOut;
+    
+    // Update button text and icon
+    const zoomBtn = document.getElementById('zoomOutBtn');
+    if (zoomBtn) {
+      if (chartZoomedOut) {
+        zoomBtn.innerHTML = '<i class="fas fa-search-plus me-1"></i>Zoom In';
+        zoomBtn.title = 'Zoom in to see 4 games at a time';
+      } else {
+        zoomBtn.innerHTML = '<i class="fas fa-search-minus me-1"></i>Zoom Out';
+        zoomBtn.title = 'Zoom out to see all games';
+      }
+    }
+    
+    // Reload the chart with new zoom state
+    console.log('🔍 Toggling chart zoom:', chartZoomedOut ? 'Zoomed Out (all games)' : 'Zoomed In (4 games)');
+    const selectedCategory = categorySelect.value || '';
+    loadTeamStatistics(selectedCategory, false);
   };
   
   // Load statistics on page load
@@ -2508,6 +2584,201 @@ async function deleteScoreFromList(scoreId) {
     // Load statistics for the selected category (empty string = all categories)
     loadTeamStatistics(selectedCategory || '');
   });
+
+  // Leaderboard Functions
+  let leaderboardData = [];
+  let currentSortColumn = 'overall';
+  let currentSortDirection = 'desc'; // 'asc' or 'desc'
+  
+  async function loadLeaderboard() {
+    try {
+      const response = await fetch('/api/team-statistics');
+      const data = await response.json();
+      
+      if (!data.success || !data.statistics) {
+        document.getElementById('leaderboardBody').innerHTML = 
+          '<tr><td colspan="10" class="text-center text-muted">No data available</td></tr>';
+        return;
+      }
+      
+      // Transform statistics array into games-by-categories matrix
+      const gamesMap = new Map();
+      const categories = new Set();
+      
+      // Process all statistics
+      data.statistics.forEach(stat => {
+        const date = stat.date;
+        if (!gamesMap.has(date)) {
+          gamesMap.set(date, {
+            date: date,
+            date_string: stat.date_string || date,
+            opponent: stat.opponent || 'Unknown',
+            overall: data.overall_scores?.[date] || 0,
+            categories: {}
+          });
+        }
+        
+        const game = gamesMap.get(date);
+        game.categories[stat.category] = stat.percentage;
+        categories.add(stat.category);
+      });
+      
+      // Convert to array and sort by overall score (default)
+      leaderboardData = Array.from(gamesMap.values());
+      sortLeaderboardData('overall', 'desc');
+      
+      // Render the table
+      renderLeaderboard(Array.from(categories).sort());
+      
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+      document.getElementById('leaderboardBody').innerHTML = 
+        '<tr><td colspan="10" class="text-center text-danger">Error loading leaderboard</td></tr>';
+    }
+  }
+  
+  function sortLeaderboardData(column, direction) {
+    leaderboardData.sort((a, b) => {
+      let aVal, bVal;
+      
+      if (column === 'date') {
+        aVal = new Date(a.date);
+        bVal = new Date(b.date);
+      } else if (column === 'opponent') {
+        aVal = a.opponent.toLowerCase();
+        bVal = b.opponent.toLowerCase();
+      } else if (column === 'overall') {
+        aVal = a.overall || 0;
+        bVal = b.overall || 0;
+      } else {
+        // Category column
+        aVal = a.categories[column] || 0;
+        bVal = b.categories[column] || 0;
+      }
+      
+      if (direction === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+  }
+  
+  function sortLeaderboard(column) {
+    // Toggle direction if same column, otherwise default to desc
+    if (currentSortColumn === column) {
+      currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      currentSortColumn = column;
+      currentSortDirection = 'desc';
+    }
+    
+    sortLeaderboardData(column, currentSortDirection);
+    
+    // Re-render with updated sort indicators
+    const categories = Array.from(new Set(leaderboardData.flatMap(g => Object.keys(g.categories)))).sort();
+    renderLeaderboard(categories);
+  }
+  
+  function renderLeaderboard(categories) {
+    const header = document.getElementById('leaderboardHeader');
+    const body = document.getElementById('leaderboardBody');
+    
+    // Build header row
+    let headerHTML = `
+      <tr>
+        <th style="cursor: pointer;" onclick="sortLeaderboard('rank')">
+          Rank ${getSortIcon('rank')}
+        </th>
+        <th style="cursor: pointer;" onclick="sortLeaderboard('date')">
+          Date ${getSortIcon('date')}
+        </th>
+        <th style="cursor: pointer;" onclick="sortLeaderboard('opponent')">
+          Opponent ${getSortIcon('opponent')}
+        </th>
+        <th style="cursor: pointer;" onclick="sortLeaderboard('overall')">
+          Overall ${getSortIcon('overall')}
+        </th>
+    `;
+    
+    categories.forEach(cat => {
+      headerHTML += `
+        <th class="category-column" style="cursor: pointer;" onclick="sortLeaderboard('${cat}')">
+          ${cat} ${getSortIcon(cat)}
+        </th>
+      `;
+    });
+    
+    headerHTML += '</tr>';
+    header.innerHTML = headerHTML;
+    
+    // Build body rows
+    let bodyHTML = '';
+    leaderboardData.forEach((game, index) => {
+      const rank = index + 1;
+      const dateStr = game.date_string || game.date;
+      const opponent = game.opponent || 'Unknown';
+      const overall = game.overall || 0;
+      
+      // Format date for display
+      let displayDate = dateStr;
+      try {
+        const date = new Date(game.date);
+        displayDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } catch (e) {
+        // Keep original if parsing fails
+      }
+      
+      bodyHTML += `
+        <tr>
+          <td><strong>#${rank}</strong></td>
+          <td>${displayDate}</td>
+          <td>${opponent}</td>
+          <td><strong>${overall.toFixed(2)}%</strong></td>
+      `;
+      
+      categories.forEach(cat => {
+        const value = game.categories[cat] || 0;
+        const colorClass = getPercentageColorClass(value);
+        bodyHTML += `
+          <td class="category-column ${colorClass}">${value.toFixed(2)}%</td>
+        `;
+      });
+      
+      bodyHTML += '</tr>';
+    });
+    
+    if (bodyHTML === '') {
+      bodyHTML = '<tr><td colspan="' + (4 + categories.length) + '" class="text-center text-muted">No games found</td></tr>';
+    }
+    
+    body.innerHTML = bodyHTML;
+  }
+  
+  function getSortIcon(column) {
+    if (currentSortColumn !== column) {
+      return '<i class="fas fa-sort text-muted"></i>';
+    }
+    return currentSortDirection === 'asc' 
+      ? '<i class="fas fa-sort-up text-warning"></i>' 
+      : '<i class="fas fa-sort-down text-warning"></i>';
+  }
+  
+  function getPercentageColorClass(value) {
+    if (value >= 80) return 'text-success';
+    if (value >= 60) return 'text-info';
+    if (value >= 40) return 'text-warning';
+    return 'text-danger';
+  }
+  
+  // Make functions globally accessible
+  window.loadLeaderboard = loadLeaderboard;
+  window.sortLeaderboard = sortLeaderboard;
+  
+  // Load leaderboard on page load
+  if (document.getElementById('leaderboardTable')) {
+    loadLeaderboard();
+  }
 
   // Games Dashboard Functions
   async function loadGamesDashboard() {

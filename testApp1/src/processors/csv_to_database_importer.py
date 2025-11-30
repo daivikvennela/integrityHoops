@@ -139,6 +139,25 @@ class CSVToDatabaseImporter:
                 'error': str(e)
             }
     
+    def _load_csv_dataframe(self, csv_path: str) -> Optional[pd.DataFrame]:
+        """
+        Load a CSV into a pandas DataFrame, skipping "Table 1" headers if present.
+        """
+        skip_rows = 0
+        try:
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                first_line = f.readline().strip()
+                if first_line == 'Table 1':
+                    skip_rows = 1
+        except Exception:
+            pass
+        
+        try:
+            return pd.read_csv(csv_path, skiprows=skip_rows)
+        except Exception as e:
+            logger.error(f"Failed to load CSV {csv_path}: {e}")
+            return None
+    
     def _process_team_csv(self, csv_path: str, game_id: str, team_name: str, date_str: str = None, opponent: str = None) -> Dict[str, Any]:
         """
         Process team CSV with CogScoreCalculator and StatisticsCalculator.
@@ -154,6 +173,10 @@ class CSVToDatabaseImporter:
             Dict with team stats and cog score
         """
         try:
+            df = self._load_csv_dataframe(csv_path)
+            if df is None or df.empty:
+                raise ValueError("Team CSV is empty or could not be read.")
+            
             # Calculate cog score
             cog_calculator = CogScoreCalculator(csv_path)
             cog_report = cog_calculator.get_full_report()
@@ -162,7 +185,7 @@ class CSVToDatabaseImporter:
             category_scores = cog_report.get('breakdown', {})
             
             # Create team scorecard
-            scorecard = self._create_scorecard_from_csv(csv_path, game_id, team_name)
+            scorecard = self._create_scorecard_from_row(df, game_id, team_name)
             
             if scorecard:
                 self.db_manager.create_scorecard(scorecard)
@@ -220,6 +243,13 @@ class CSVToDatabaseImporter:
                             )
                     except Exception as e:
                         logger.warning(f"Could not insert team statistics: {e}")
+                
+                try:
+                    events = self._extract_possession_events(df, game_id, opponent or "Unknown")
+                    if events:
+                        self.db_manager.insert_possession_events(game_id, events)
+                except Exception as e:
+                    logger.warning(f"Could not persist possession events: {e}")
             
             return {
                 'cog_score': cog_score,
@@ -334,17 +364,9 @@ class CSVToDatabaseImporter:
             Scorecard instance or None
         """
         try:
-            # Check if first line is "Table 1" and skip it
-            skip_rows = 0
-            try:
-                with open(csv_path, 'r', encoding='utf-8') as f:
-                    first_line = f.readline().strip()
-                    if first_line == 'Table 1':
-                        skip_rows = 1
-            except:
-                pass
-            
-            df = pd.read_csv(csv_path, skiprows=skip_rows)
+            df = self._load_csv_dataframe(csv_path)
+            if df is None:
+                return None
             return self._create_scorecard_from_row(df, game_id, player_name)
         except Exception as e:
             logger.exception(f"Error creating scorecard from CSV {csv_path}")
@@ -724,4 +746,77 @@ class CSVToDatabaseImporter:
         except Exception as e:
             logger.exception(f"Error creating scorecard for {player_name}")
             return None
+
+    def _extract_possession_events(self, df: pd.DataFrame, game_id: str, opponent: str) -> List[Dict[str, Any]]:
+        """
+        Build possession-level events used for temporal analytics.
+        """
+        events: List[Dict[str, Any]] = []
+        if df is None or df.empty:
+            return events
+        
+        for idx, row in df.iterrows():
+            start_time = self._safe_float(row.get('Start time'), default=float(idx))
+            duration = self._safe_float(row.get('Duration'))
+            phase = self._estimate_shot_clock_phase(duration)
+            positive_count, negative_count = self._count_row_sentiment(row)
+            total_actions = positive_count + negative_count
+            cognitive_score = (positive_count / total_actions * 100) if total_actions else None
+            
+            events.append({
+                'game_id': game_id,
+                'timestamp': start_time,
+                'duration': duration,
+                'shot_clock_phase': phase,
+                'cognitive_score': cognitive_score,
+                'positive_count': positive_count,
+                'negative_count': negative_count,
+                'shot_outcome': str(row.get('Shot Outcome') or '').strip(),
+                'shot_location': str(row.get('Shot Location') or '').strip(),
+                'quarter': self._infer_quarter(row),
+                'opponent': opponent
+            })
+        
+        return events
+
+    @staticmethod
+    def _estimate_shot_clock_phase(duration: Optional[float]) -> str:
+        if duration is None:
+            return 'Unknown'
+        try:
+            if duration <= 8:
+                return 'Early'
+            if duration <= 16:
+                return 'Middle'
+            return 'Late'
+        except Exception:
+            return 'Unknown'
+
+    @staticmethod
+    def _count_row_sentiment(row: pd.Series) -> tuple[int, int]:
+        positive = 0
+        negative = 0
+        for value in row.values:
+            if isinstance(value, str):
+                positive += value.count('+ve')
+                negative += value.count('-ve')
+        return positive, negative
+
+    @staticmethod
+    def _infer_quarter(row: pd.Series) -> str:
+        import re
+        fields_to_check = ['Notes', 'Ungrouped', 'Timeline']
+        for field in fields_to_check:
+            text = str(row.get(field) or '')
+            match = re.search(r'Q(\d+)', text)
+            if match:
+                return f"Q{match.group(1)}"
+        return 'Q?'
+
+    @staticmethod
+    def _safe_float(value: Any, default: Optional[float] = None) -> Optional[float]:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
 
